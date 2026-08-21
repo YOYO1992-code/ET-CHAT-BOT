@@ -54,6 +54,28 @@ let appQuickReplies = [];
 
 // Pre-configured System Agents for ET OPC Company (HR ET Featured)
 const SYSTEM_CHARACTERS = [
+  { 
+    id:"opc-secretary", 
+    name:"เลขาส่วนตัว (Administration & Secretary)", 
+    creator:"@ETPIM", 
+    icon:"briefcase", 
+    imageUrl: "",
+    color:"linear-gradient(135deg,#EC4899,#831843)", 
+    chatCount: 1540, 
+    isPrivate: false,
+    role: {v:"role-summary", t:"Executive Assistant", color:"#7C3AED"},
+    bio:"ผู้ช่วยเลขาประจำตัว คอยดูแลจัดการตารางงาน สรุปการประชุม วิเคราะห์เอกสาร จัดการข้อมูลต่างๆ และช่วยอำนวยความสะดวกในการทำงานอย่างมืออาชีพ",
+    requirements: "1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร\n2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ\n3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร",
+    tags:[{v:"tag-summary", t:"#สรุปรายงาน", c:"tag-summary"},{v:"tag-meeting", t:"#การประชุม", c:"tag-meeting"}], 
+    featured:true, 
+    badge:"เลขาส่วนตัวประจำตัว",
+    prompt:`คุณคือ 'เลขาส่วนตัวและผู้ช่วยผู้บริหาร (Executive Secretary)' ประจำ ET OPC Company มีความสามารถรอบด้านในการบริหารจัดการงาน:
+1. ช่วยสรุปบันทึกการประชุม จัดทำ Action Items และติดตามงานคั่งค้าง
+2. ร่างหนังสือราชการ อีเมลประสานงาน และแบบฟอร์มขออนุมัติต่างๆ อย่างเป็นทางการ
+3. จัดระเบียบข้อมูล วางแผนตารางการทำงาน และให้ข้อเสนอแนะเชิงบริหาร
+ตอบด้วยน้ำเสียงที่สุภาพ นอบน้อม เป็นมืออาชีพ ชัดเจน และจัดรูปแบบให้อ่านง่าย`,
+    opener:"สวัสดีค่ะ/ครับ! ดิฉัน/ผมคือเลขาส่วนตัวประจำองค์กร พร้อมช่วยดูแลตารางงาน ร่างหนังสือประสานงาน สรุปประชุม หรือจัดระเบียบข้อมูล สั่งงานได้เลยนะคะ/ครับ!"
+  },
     { 
     id:"opc-hr-et", 
     name:"HR ET — ฝ่ายทรัพยากรบุคคล (HR Specialist)", 
@@ -2951,4 +2973,91 @@ window.downloadMessageAsSlides = function(idx) {
     a.click();
     URL.revokeObjectURL(url);
     showToast("ดาวน์โหลดโครงร่างสไลด์นำเสนอเรียบร้อยแล้ว", "success");
+};
+
+
+// --- WORKSPACE BACKUP & RESTORE (DATA MIGRATION ACROSS DOMAINS) ---
+window.exportWorkspaceBackup = function() {
+    try {
+        const backupData = {
+            version: "2.5",
+            timestamp: new Date().toISOString(),
+            exportedBy: currentUser,
+            agents: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'agents_v2')) || appCharacters,
+            adminModels: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'admin_models_v1')) || adminModels,
+            userData: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'userdata_v1')) || appUserData,
+            roles: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'roles_v1')) || appRoles,
+            tags: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'tags_v1')) || appTags,
+            users: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'users')) || {}
+        };
+
+        const jsonStr = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ETOPC_Workspace_Backup_${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("💾 ส่งออกไฟล์สำรองข้อมูล (.json) เรียบร้อยแล้ว", "success");
+    } catch(err) {
+        console.error("Backup export error:", err);
+        showToast("ไม่สามารถส่งออกข้อมูลสำรองได้: " + err.message, "error");
+    }
+};
+
+window.importWorkspaceBackup = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data || (!data.agents && !data.adminModels)) {
+                throw new Error("รูปแบบไฟล์สำรองข้อมูลไม่ถูกต้อง");
+            }
+
+            if (data.agents && Array.isArray(data.agents)) {
+                localStorage.setItem(STORAGE_PREFIX + 'agents_v2', JSON.stringify(data.agents));
+                appCharacters = data.agents;
+            }
+            if (data.adminModels && Array.isArray(data.adminModels)) {
+                localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(data.adminModels));
+                adminModels = data.adminModels;
+            }
+            if (data.userData) {
+                localStorage.setItem(STORAGE_PREFIX + 'userdata_v1', JSON.stringify(data.userData));
+                appUserData = data.userData;
+            }
+            if (data.roles) {
+                localStorage.setItem(STORAGE_PREFIX + 'roles_v1', JSON.stringify(data.roles));
+                appRoles = data.roles;
+            }
+            if (data.tags) {
+                localStorage.setItem(STORAGE_PREFIX + 'tags_v1', JSON.stringify(data.tags));
+                appTags = data.tags;
+            }
+            if (data.users) {
+                let currentUsers = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'users')) || {};
+                let mergedUsers = { ...currentUsers, ...data.users };
+                mergedUsers['ETPIM'] = { password: 'ET@PIMadminpass', role: 'admin' };
+                localStorage.setItem(STORAGE_PREFIX + 'users', JSON.stringify(mergedUsers));
+            }
+
+            loadGeminiConfigs();
+            loadUserData();
+            loadData();
+            updateUIAfterProfileChange();
+            renderSidebarStarred();
+            applyFilters();
+
+            showToast("🎉 กู้คืนข้อมูลสำเร็จ! ข้อมูลทั้งหมดพร้อมใช้งานแล้ว", "success");
+        } catch(err) {
+            console.error("Restore error:", err);
+            showToast("❌ กู้คืนข้อมูลไม่สำเร็จ: " + err.message, "error");
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
 };
