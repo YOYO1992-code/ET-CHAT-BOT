@@ -158,13 +158,13 @@ const SYSTEM_CHARACTERS = [
     name:"เลขาส่วนตัว (Administration & Secretary)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "",
-    color:"linear-gradient(135deg,#EC4899,#831843)", 
+    imageUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80",
+    color:"linear-gradient(135deg,#8B0000,#450A0A)", 
     chatCount: 1540, 
     isPrivate: false,
     role: {v:"role-summary", t:"Executive Assistant", color:"#7C3AED"},
     bio:"ผู้ช่วยเลขาประจำตัว คอยดูแลจัดการตารางงาน สรุปการประชุม วิเคราะห์เอกสาร จัดการข้อมูลต่างๆ และช่วยอำนวยความสะดวกในการทำงานอย่างมืออาชีพ",
-    requirements: "1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร\n2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ\n3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร",
+    requirements: `1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร\n2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ\n3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร`,
     tags:[{v:"tag-summary", t:"#สรุปรายงาน", c:"tag-summary"},{v:"tag-meeting", t:"#การประชุม", c:"tag-meeting"}], 
     featured:true, 
     badge:"เลขาส่วนตัวประจำตัว",
@@ -175,18 +175,18 @@ const SYSTEM_CHARACTERS = [
 ตอบด้วยน้ำเสียงที่สุภาพ นอบน้อม เป็นมืออาชีพ ชัดเจน และจัดรูปแบบให้อ่านง่าย`,
     opener:"สวัสดีค่ะ/ครับ! ดิฉัน/ผมคือเลขาส่วนตัวประจำองค์กร พร้อมช่วยดูแลตารางงาน ร่างหนังสือประสานงาน สรุปประชุม หรือจัดระเบียบข้อมูล สั่งงานได้เลยนะคะ/ครับ!"
   },
-    { 
+  { 
     id:"opc-hr-et", 
     name:"HR ET — ฝ่ายทรัพยากรบุคคล (HR Specialist)", 
     creator:"@ETPIM", 
     icon:"users", 
-    imageUrl: "",
+    imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
     color:"linear-gradient(135deg,#8B0000,#450A0A)", 
     chatCount: 2450, 
     isPrivate: false,
     role: {v:"role-hr", t:"HR & People Operations", color:"#EC4899"},
     bio:"ผู้เชี่ยวชาญด้านทรัพยากรบุคคล คัดกรองและประเมินเรซูเม่เทียบกับความต้องการของตำแหน่งงาน (CV Screening & Score) พร้อมช่วยปรับปรุงประวัติการทำงาน",
-    requirements: "1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี\n2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง\n3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง\n4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น",
+    requirements: `1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี\n2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง\n3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง\n4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น`,
     tags:[{v:"tag-hr", t:"#HR_ET", c:"tag-hr"},{v:"tag-resume", t:"#Resume_CV", c:"tag-resume"},{v:"tag-ops", t:"#Operations", c:"tag-ops"}], 
     featured:true, 
     badge:"ผู้เชี่ยวชาญฝ่ายบุคคล & CV",
@@ -217,7 +217,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ช่วยสรุปงาน & สรุปการประชุม (Executive Summary)", 
     creator:"@ETPIM", 
     icon:"filetext", 
-    imageUrl: "",
+    imageUrl: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=600&q=80",
     color:"linear-gradient(135deg,#7C3AED,#1E1B4B)", 
     chatCount: 1820, 
     isPrivate: false,
@@ -234,7 +234,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ประสานงานฝ่ายปฏิบัติการ (Operations Coordinator)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "",
+    imageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80",
     color:"linear-gradient(135deg,#0284C7,#0F172A)", 
     chatCount: 2310, 
     isPrivate: false,
@@ -251,7 +251,7 @@ const SYSTEM_CHARACTERS = [
     name:"นักวิเคราะห์เอกสารและข้อมูล (Data Analyst Bot)", 
     creator:"@ETPIM", 
     icon:"chart", 
-    imageUrl: "",
+    imageUrl: "https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?auto=format&fit=crop&w=600&q=80",
     color:"linear-gradient(135deg,#059669,#064E3B)", 
     chatCount: 1180, 
     isPrivate: false,
@@ -394,24 +394,42 @@ function logout() {
     window.location.href = 'login.html';
 }
 
+const APP_DATA_VERSION = 'v2.8';
+
 function loadData() {
+    const savedVersion = localStorage.getItem(STORAGE_PREFIX + 'app_version');
     const savedChars = localStorage.getItem(STORAGE_PREFIX + 'agents_v2') || localStorage.getItem(STORAGE_PREFIX + 'agents_v1');
-    if(!savedChars) {
-        appCharacters = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
+    
+    if (savedVersion !== APP_DATA_VERSION || !savedChars) {
+        let existing = [];
+        try { existing = JSON.parse(savedChars || '[]'); } catch(e) {}
+        
+        // Retain any user-created custom agents
+        const userCreated = existing.filter(c => c.creator !== '@ETPIM' && !SYSTEM_CHARACTERS.some(s => s.id === c.id));
+        appCharacters = [...SYSTEM_CHARACTERS, ...userCreated];
+        
         saveToStorage();
+        localStorage.setItem(STORAGE_PREFIX + 'app_version', APP_DATA_VERSION);
     } else {
-        appCharacters = JSON.parse(savedChars);
+        try {
+            appCharacters = JSON.parse(savedChars);
+        } catch(e) {
+            appCharacters = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
+        }
+
+        // Ensure all system characters exist, but NEVER overwrite user custom images or custom edits
         SYSTEM_CHARACTERS.forEach(sysChar => {
             const existingIdx = appCharacters.findIndex(c => c.id === sysChar.id);
             if (existingIdx === -1) {
-                appCharacters.unshift(sysChar);
-            } else if (appCharacters[existingIdx].creator === '@ETPIM') {
-                appCharacters[existingIdx].prompt = sysChar.prompt;
-                appCharacters[existingIdx].requirements = sysChar.requirements || '';
-                appCharacters[existingIdx].bio = sysChar.bio;
-                appCharacters[existingIdx].opener = sysChar.opener;
-                appCharacters[existingIdx].tags = sysChar.tags;
-                appCharacters[existingIdx].badge = sysChar.badge;
+                appCharacters.push(JSON.parse(JSON.stringify(sysChar)));
+            } else {
+                // Only fill in default values if the field is completely empty
+                if (!appCharacters[existingIdx].imageUrl || appCharacters[existingIdx].imageUrl === "") {
+                    appCharacters[existingIdx].imageUrl = sysChar.imageUrl;
+                }
+                if (!appCharacters[existingIdx].requirements) {
+                    appCharacters[existingIdx].requirements = sysChar.requirements || "";
+                }
             }
         });
         saveToStorage();
@@ -2135,10 +2153,10 @@ function saveCharacter() {
     if(!name) return alert("กรุณาใส่ชื่อ Agent");
 
     let finalImg = "";
-    if (currentUploadedImage && currentUploadedImage.trim() !== "") {
-        finalImg = currentUploadedImage;
-    } else if (isImageRemoved) {
+    if (isImageRemoved) {
         finalImg = "";
+    } else if (currentUploadedImage && currentUploadedImage.trim() !== "") {
+        finalImg = currentUploadedImage;
     } else if (editingCharacterId) {
         const existing = appCharacters.find(c => c.id === editingCharacterId);
         finalImg = existing?.imageUrl || "";
@@ -2506,8 +2524,8 @@ function closeCropperModal() {
 }
 function applyCrop() {
     if(!cropper) return;
-    const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
-    const croppedData = canvas.toDataURL('image/jpeg', 0.85);
+    const canvas = cropper.getCroppedCanvas({ width: 240, height: 240 });
+    const croppedData = canvas.toDataURL('image/jpeg', 0.78);
 
     if (currentCropperTarget === 'profile') {
         currentUploadedProfileImage = croppedData;
@@ -3177,4 +3195,113 @@ window.importWorkspaceBackup = function(event) {
     };
     reader.readAsText(file);
     event.target.value = '';
+};
+
+
+// --- CLOUD DATABASE CONTROL CENTER FUNCTIONS ---
+window.openSupabaseModal = function() {
+    document.getElementById('supabaseModal')?.classList.remove('hidden');
+    const savedUrl = localStorage.getItem(STORAGE_PREFIX + 'supabase_url') || SUPABASE_URL;
+    const savedKey = localStorage.getItem(STORAGE_PREFIX + 'supabase_key') || SUPABASE_ANON_KEY;
+    if (document.getElementById('supabaseUrlInput')) document.getElementById('supabaseUrlInput').value = savedUrl;
+    if (document.getElementById('supabaseKeyInput')) document.getElementById('supabaseKeyInput').value = savedKey;
+};
+
+window.closeSupabaseModal = function() {
+    document.getElementById('supabaseModal')?.classList.add('hidden');
+};
+
+window.saveSupabaseSettings = function() {
+    const url = document.getElementById('supabaseUrlInput')?.value.trim();
+    const key = document.getElementById('supabaseKeyInput')?.value.trim();
+    if (!url || !key) {
+        showToast("กรุณากรอก URL และ API Key ให้ครบถ้วน", "warning");
+        return;
+    }
+    localStorage.setItem(STORAGE_PREFIX + 'supabase_url', url);
+    localStorage.setItem(STORAGE_PREFIX + 'supabase_key', key);
+    
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        supabaseClient = window.supabase.createClient(url, key);
+    }
+    showToast("💾 บันทึกการตั้งค่า Cloud เรียบร้อยแล้ว", "success");
+    testSupabaseConnection();
+};
+
+window.testSupabaseConnection = async function() {
+    const statusDiv = document.getElementById('supabaseTestStatus');
+    if (!statusDiv) return;
+    
+    statusDiv.style.display = 'block';
+    statusDiv.style.background = 'rgba(59,130,246,0.1)';
+    statusDiv.style.color = '#3B82F6';
+    statusDiv.textContent = '⏳ กำลังทดสอบเชื่อมต่อกับ Supabase...';
+
+    const url = document.getElementById('supabaseUrlInput')?.value.trim() || SUPABASE_URL;
+    const key = document.getElementById('supabaseKeyInput')?.value.trim() || SUPABASE_ANON_KEY;
+
+    try {
+        if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+            throw new Error("ไม่พบไลบรารี Supabase ในระบบ");
+        }
+        const client = window.supabase.createClient(url, key);
+        const { data, error } = await client.from('agents').select('count', { count: 'exact', head: true });
+
+        if (error) {
+            throw new Error(error.message || JSON.stringify(error));
+        }
+
+        statusDiv.style.background = 'rgba(16,185,129,0.1)';
+        statusDiv.style.color = '#10B981';
+        statusDiv.innerHTML = `✅ เชื่อมต่อ Supabase สำเร็จ! (พบตาราง agents พร้อมใช้งาน)`;
+    } catch(err) {
+        statusDiv.style.background = 'rgba(239,68,68,0.1)';
+        statusDiv.style.color = '#EF4444';
+        statusDiv.innerHTML = `❌ เชื่อมต่อไม่สำเร็จ: ${escapeHtml(err.message)}<br><small>*โปรดตรวจสอบว่าได้รันคำสั่ง SQL สร้างตาราง agents และใช้ anon key ที่ถูกต้อง</small>`;
+    }
+};
+
+window.forcePushAllToSupabase = async function() {
+    if (!supabaseClient) {
+        showToast("ยังไม่ได้เชื่อมต่อ Supabase", "error");
+        return;
+    }
+    showToast("⏳ กำลังอัปโหลดข้อมูล Agent ทั้งหมดขึ้น Cloud...", "info");
+    try {
+        const payload = appCharacters.map(mapCharToDb);
+        const { data, error } = await supabaseClient.from('agents').upsert(payload);
+        if (error) throw error;
+
+        showToast("🎉 อัปโหลด Agent และรูปภาพทั้งหมดขึ้น Cloud สำเร็จแล้ว!", "success");
+        closeSupabaseModal();
+    } catch(err) {
+        console.error("Force push error:", err);
+        showToast("อัปโหลดไม่สำเร็จ: " + err.message, "error");
+    }
+};
+
+window.forcePullAllFromSupabase = async function() {
+    if (!supabaseClient) {
+        showToast("ยังไม่ได้เชื่อมต่อ Supabase", "error");
+        return;
+    }
+    showToast("⏳ กำลังดึงข้อมูลล่าสุดจาก Cloud...", "info");
+    try {
+        const { data, error } = await supabaseClient.from('agents').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+            appCharacters = data.map(mapDbToChar).filter(Boolean);
+            saveToStorage();
+            applyFilters();
+            renderSidebarStarred();
+            showToast(`🎉 ดึงข้อมูลสำเร็จ! โหลด Agent ทั้งหมด ${data.length} รายการ`, "success");
+            closeSupabaseModal();
+        } else {
+            showToast("ไม่พบข้อมูล Agent บน Cloud", "warning");
+        }
+    } catch(err) {
+        console.error("Force pull error:", err);
+        showToast("ดึงข้อมูลไม่สำเร็จ: " + err.message, "error");
+    }
 };
