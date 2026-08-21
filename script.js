@@ -1,3 +1,102 @@
+// --- SUPABASE CLOUD DATABASE INTEGRATION ---
+const SUPABASE_URL = 'https://euqjuabbvxtckrlsmdfv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_jbaz1zO7GBGYjEnuKmsqeA_t4fBC5TH';
+let supabaseClient = null;
+
+try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+} catch (err) {
+    console.warn("Supabase initialization error:", err);
+}
+
+// Convert Supabase DB snake_case record to App Character object
+function mapDbToChar(row) {
+    if(!row) return null;
+    return {
+        id: row.id,
+        name: row.name,
+        creator: row.creator || '@ETPIM',
+        icon: row.icon || 'briefcase',
+        imageUrl: row.image_url || '',
+        color: row.color || 'linear-gradient(135deg,#8B0000,#0F172A)',
+        chatCount: row.chat_count || 0,
+        isPrivate: row.is_private || false,
+        role: (typeof row.role === 'string') ? JSON.parse(row.role) : (row.role || DEFAULT_ROLES[0]),
+        bio: row.bio || '',
+        requirements: row.requirements || '',
+        tags: (typeof row.tags === 'string') ? JSON.parse(row.tags) : (row.tags || []),
+        featured: row.featured || false,
+        badge: row.badge || (row.featured ? 'Agent แนะนำ' : ''),
+        prompt: row.prompt || '',
+        opener: row.opener || 'สวัสดีครับ มีอะไรให้ช่วยไหมครับ?'
+    };
+}
+
+// Convert App Character object to Supabase DB record
+function mapCharToDb(c) {
+    return {
+        id: c.id,
+        name: c.name,
+        creator: c.creator || '@ETPIM',
+        icon: c.icon || 'briefcase',
+        image_url: c.imageUrl || '',
+        color: c.color || 'linear-gradient(135deg,#8B0000,#0F172A)',
+        chat_count: c.chatCount || 0,
+        is_private: c.isPrivate || false,
+        role: c.role || {},
+        bio: c.bio || '',
+        requirements: c.requirements || '',
+        tags: c.tags || [],
+        featured: c.featured || false,
+        badge: c.badge || '',
+        prompt: c.prompt || '',
+        opener: c.opener || ''
+    };
+}
+
+async function syncFromSupabase() {
+    if (!supabaseClient) return;
+    try {
+        const { data, error } = await supabaseClient.from('agents').select('*').order('created_at', { ascending: false });
+        if (error) {
+            console.warn("Supabase fetch error:", error);
+            return;
+        }
+
+        if (data && data.length > 0) {
+            // Merge with local characters
+            const cloudChars = data.map(mapDbToChar).filter(Boolean);
+            appCharacters = cloudChars;
+            saveToStorage();
+            applyFilters();
+            renderSidebarStarred();
+        } else if (data && data.length === 0 && appCharacters.length > 0) {
+            // If Supabase table is empty on first setup, seed with current system characters
+            const seedData = appCharacters.map(mapCharToDb);
+            await supabaseClient.from('agents').upsert(seedData);
+            console.log("Seeded initial agents to Supabase.");
+        }
+    } catch(err) {
+        console.warn("Supabase sync error:", err);
+    }
+}
+
+// Real-time Cloud updates listener
+function initSupabaseRealtime() {
+    if (!supabaseClient) return;
+    try {
+        supabaseClient.channel('public:agents')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' }, (payload) => {
+                syncFromSupabase();
+            })
+            .subscribe();
+    } catch (e) {
+        console.warn("Realtime listener error:", e);
+    }
+}
+
 // --- ET OPC COMPANY — PHASE 1: ENTERPRISE AI AGENT & WORKSPACE ENGINE ---
 const STORAGE_PREFIX = 'etopc_company_';
 
@@ -2086,9 +2185,20 @@ function saveCharacter() {
         appCharacters.unshift(newChar);
     }
     
-    saveToStorage();
+        saveToStorage();
     showExplore();
     applyFilters();
+
+    // Supabase Cloud Upsert
+    if (supabaseClient) {
+        const charToSync = editingCharacterId ? appCharacters.find(c => c.id === editingCharacterId) : appCharacters[0];
+        if (charToSync) {
+            supabaseClient.from('agents').upsert(mapCharToDb(charToSync)).then(({ error }) => {
+                if (error) console.warn("Supabase save error:", error);
+                else if (typeof showToast === 'function') showToast("☁️ ซิงก์ Agent ขึ้น Cloud เรียบร้อยแล้ว", "success");
+            });
+        }
+    }
     showToast("บันทึกข้อมูล Agent สำเร็จแล้ว", "success");
 }
 
@@ -2173,8 +2283,15 @@ function confirmDelete() {
         return;
     }
     
-    appCharacters = appCharacters.filter(c => c.id !== targetId);
+        appCharacters = appCharacters.filter(c => c.id !== targetId);
     saveToStorage();
+
+    // Supabase Cloud Delete
+    if (supabaseClient && targetId) {
+        supabaseClient.from('agents').delete().eq('id', targetId).then(({ error }) => {
+            if (error) console.warn("Supabase delete error:", error);
+        });
+    }
     
     closeDeleteModal();
     editingCharacterId = null;
