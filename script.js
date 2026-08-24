@@ -105,19 +105,20 @@ const DEFAULT_QUICK_REPLIES = [
 let appQuickReplies = [];
 
 // Pre-configured System Agents for ET OPC Company
+// Pre-configured System Agents for ET OPC Company (with HD Character Images)
 const SYSTEM_CHARACTERS = [
   { 
     id:"opc-secretary", 
     name:"เลขาส่วนตัว (Administration & Secretary)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "",
+    imageUrl: "Agent Profile/Assice.png",
     color:"linear-gradient(135deg,#EC4899,#831843)", 
     chatCount: 1540, 
     isPrivate: false,
     role: {v:"role-summary", t:"Executive Assistant", color:"#7C3AED"},
     bio:"ผู้ช่วยเลขาประจำตัว คอยดูแลจัดการตารางงาน สรุปการประชุม วิเคราะห์เอกสาร จัดการข้อมูลต่างๆ และช่วยอำนวยความสะดวกในการทำงานอย่างมืออาชีพ",
-    requirements: "1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร\n2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ\n3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร",
+    requirements: `1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร\n2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ\n3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร`,
     tags:[{v:"tag-summary", t:"#สรุปรายงาน", c:"tag-summary"},{v:"tag-meeting", t:"#การประชุม", c:"tag-meeting"}], 
     featured:true, 
     badge:"เลขาส่วนตัวประจำตัว",
@@ -133,13 +134,13 @@ const SYSTEM_CHARACTERS = [
     name:"HR ET — ฝ่ายทรัพยากรบุคคล (HR Specialist)", 
     creator:"@ETPIM", 
     icon:"users", 
-    imageUrl: "",
+    imageUrl: "Agent Profile/HRMAN.png",
     color:"linear-gradient(135deg,#8B0000,#450A0A)", 
     chatCount: 2450, 
     isPrivate: false,
     role: {v:"role-hr", t:"HR & People Operations", color:"#EC4899"},
     bio:"ผู้เชี่ยวชาญด้านทรัพยากรบุคคล คัดกรองและประเมินเรซูเม่เทียบกับความต้องการของตำแหน่งงาน (CV Screening & Score) พร้อมช่วยปรับปรุงประวัติการทำงาน",
-    requirements: "1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี\n2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง\n3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง\n4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น",
+    requirements: `1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี\n2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง\n3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง\n4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น`,
     tags:[{v:"tag-hr", t:"#HR_ET", c:"tag-hr"},{v:"tag-resume", t:"#Resume_CV", c:"tag-resume"},{v:"tag-ops", t:"#Operations", c:"tag-ops"}], 
     featured:true, 
     badge:"ผู้เชี่ยวชาญฝ่ายบุคคล & CV",
@@ -170,7 +171,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ช่วยสรุปงาน & สรุปการประชุม (Executive Summary)", 
     creator:"@ETPIM", 
     icon:"filetext", 
-    imageUrl: "",
+    imageUrl: "Agent Profile/HelperGirl.png",
     color:"linear-gradient(135deg,#7C3AED,#1E1B4B)", 
     chatCount: 1820, 
     isPrivate: false,
@@ -187,7 +188,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ประสานงานฝ่ายปฏิบัติการ (Operations Coordinator)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "",
+    imageUrl: "Agent Profile/CoPx.png",
     color:"linear-gradient(135deg,#0284C7,#0F172A)", 
     chatCount: 2310, 
     isPrivate: false,
@@ -204,7 +205,7 @@ const SYSTEM_CHARACTERS = [
     name:"นักวิเคราะห์เอกสารและข้อมูล (Data Analyst Bot)", 
     creator:"@ETPIM", 
     icon:"chart", 
-    imageUrl: "",
+    imageUrl: "Agent Profile/CheckingGR.png",
     color:"linear-gradient(135deg,#059669,#064E3B)", 
     chatCount: 1180, 
     isPrivate: false,
@@ -365,12 +366,13 @@ function loadData() {
             loaded = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
         }
 
-        // Ensure all system characters exist
+        // Ensure all system characters exist and sync with updated images
         SYSTEM_CHARACTERS.forEach(sysChar => {
             const existingIdx = loaded.findIndex(c => c.id === sysChar.id);
             if (existingIdx === -1) {
                 loaded.push(JSON.parse(JSON.stringify(sysChar)));
             } else if (loaded[existingIdx].creator === '@ETPIM') {
+                loaded[existingIdx].imageUrl = sysChar.imageUrl;
                 loaded[existingIdx].prompt = sysChar.prompt;
                 loaded[existingIdx].requirements = sysChar.requirements || '';
                 loaded[existingIdx].bio = sysChar.bio;
