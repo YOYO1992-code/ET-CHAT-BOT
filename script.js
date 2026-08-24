@@ -250,6 +250,17 @@ let userGeminiPreference = {
 
 // --- INITIALIZATION ---
 function initApp() {
+    const savedTheme = localStorage.getItem(STORAGE_PREFIX + 'theme') || 'light';
+    setTheme(savedTheme, false);
+
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            const currentPref = localStorage.getItem(STORAGE_PREFIX + 'theme');
+            if (currentPref === 'auto') {
+                setTheme('auto', false);
+            }
+        });
+    }
     const loggedIn = localStorage.getItem(STORAGE_PREFIX + 'logged_in') || sessionStorage.getItem(STORAGE_PREFIX + 'logged_in');
     
     if (loggedIn === 'true') {
@@ -1944,7 +1955,7 @@ function applyFilters() {
     if(!grid) return;
     grid.innerHTML = '';
     
-    let filteredChars = appCharacters.filter(c => !c.isPrivate || c.isPrivate === false || c.creator === "@" + currentUser);
+    let filteredChars = appCharacters.filter(c => !c.isPrivate || c.creator === "@" + currentUser);
     
     if(currentSearchQuery) {
         filteredChars = filteredChars.filter(c => c.name.toLowerCase().includes(currentSearchQuery) || (c.bio && c.bio.toLowerCase().includes(currentSearchQuery)));
@@ -1987,33 +1998,39 @@ function applyFilters() {
         card.className = 'char-card';
         card.style.cursor = 'pointer';
         card.onclick = (e) => {
-            if(!e.target.closest('.btn-star')) {
+            if(!e.target.closest('.btn-star') && !e.target.closest('.btn-enter')) {
                 openChat(c.id);
             }
         };
         
         let tagsHtml = c.tags && c.tags.length > 0 ? c.tags.map(t => {
-            return `<span style="display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft);"><span style="width:6px; height:6px; border-radius:50%; background:${t.color || '#8B0000'};"></span>${escapeHtml(t.t)}</span>`;
+            return `<span style="display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); color:var(--ink-soft);"><span style="width:6px; height:6px; border-radius:50%; background:${t.color || '#8B0000'};"></span>${escapeHtml(t.t)}</span>`;
         }).join('') : '';
 
+        const avatarInner = (c.imageUrl && c.imageUrl.trim() !== '') ?
+            `<img src="${c.imageUrl}" alt="${escapeHtml(c.name)}" onerror="this.onerror=null; this.parentElement.innerHTML='💼';">` :
+            `<span style="font-size:22px;">💼</span>`;
+
         card.innerHTML = `
-          <div class="avatar-row">
-            <div style="display:flex; gap:12px; align-items:center; flex:1;">
-              <div class="avatar" style="background:${c.color || 'linear-gradient(135deg,#8B0000,#0F172A)'}">${getAvatarHtml(c)}</div>
-              <div>
-                <p class="char-name">${escapeHtml(c.name)}</p>
-                <p class="char-creator">${c.role?.t || 'Agent'}</p>
-              </div>
+          <div class="char-card-header">
+            <div class="char-squircle-avatar">
+              ${avatarInner}
             </div>
-            <button class="btn-star ${isFav ? 'active' : ''}" onclick="toggleFavorite('${c.id}', event)" title="${isFav ? 'เลิกติดดาว' : 'ติดดาว Agent'}" style="background:transparent; border:none; cursor:pointer; padding:6px; display:flex; align-items:center; justify-content:center; position:relative; z-index:5;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFav ? '#F59E0B' : 'none'}" stroke="${isFav ? '#F59E0B' : 'var(--ink-faint)'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <div style="flex:1; min-width:0;">
+              <span class="char-role-upper">${escapeHtml(c.role?.t || 'OFFICIAL AGENT')}</span>
+              <h4 class="char-name">${escapeHtml(c.name)}</h4>
+            </div>
+            <button class="btn-star ${isFav ? 'active' : ''}" onclick="toggleFavorite('${c.id}', event)" title="${isFav ? 'เลิกติดดาว' : 'ติดดาว Agent'}" style="background:transparent; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; justify-content:center;">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="${isFav ? '#F59E0B' : 'none'}" stroke="${isFav ? '#F59E0B' : 'var(--ink-faint)'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
             </button>
           </div>
           <p class="char-bio">${escapeHtml(c.bio)}</p>
-          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:2px;">${tagsHtml}</div>
-          <button class="btn-enter" onclick="openChat('${c.id}'); event.stopPropagation();">เปิดหน้าต่างสั่งงาน</button>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:auto;">${tagsHtml}</div>
+          <button class="btn-enter" onclick="openChat('${c.id}'); event.stopPropagation();">
+            <span>เปิดหน้าต่างสั่งงาน</span>
+          </button>
         `;
         grid.appendChild(card);
     });
@@ -2111,11 +2128,29 @@ function clearCurrentChat() {
     });
 }
 
-function setTheme(mode){
-    document.documentElement.setAttribute('data-theme', mode);
+function setTheme(mode, save = true){
+    window.setTheme = setTheme;
+    let effectiveMode = mode;
+    if (mode === 'auto') {
+        effectiveMode = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', effectiveMode);
     document.getElementById('btnLight')?.classList.toggle('active', mode === 'light');
     document.getElementById('btnDark')?.classList.toggle('active', mode === 'dark');
+    
+    document.getElementById('themeCardLight')?.classList.toggle('active', mode === 'light');
+    document.getElementById('themeCardDark')?.classList.toggle('active', mode === 'dark');
+    document.getElementById('themeCardAuto')?.classList.toggle('active', mode === 'auto');
+
+    if (save) {
+        localStorage.setItem(STORAGE_PREFIX + 'theme', mode);
+        if (typeof showToast === 'function') {
+            const label = mode === 'dark' ? 'โหมดมืด' : (mode === 'auto' ? 'ตามระบบ' : 'โหมดสว่าง');
+            showToast('เปลี่ยนธีมเป็น ' + label + ' แล้ว', 'info');
+        }
+    }
 }
+window.setTheme = setTheme;
 
 function handleSearch(e) {
     currentSearchQuery = e.target.value.toLowerCase().trim();
@@ -2869,16 +2904,15 @@ function renderSidebarStarred() {
     list.innerHTML = '';
 
     if (starredAgents.length === 0) {
-        list.innerHTML = '<p style="font-size:12px; color:var(--ink-faint); padding:6px 12px; margin:0;">ยังไม่มี Agent ที่ติดดาว</p>';
+        list.innerHTML = '<p style="font-size:11.5px; color:var(--sidebar-muted); padding:6px 12px; margin:0;">ยังไม่มี Agent ที่ติดดาว</p>';
         return;
     }
 
     starredAgents.forEach(c => {
+        const dotColor = c.role?.color || '#F59E0B';
         list.innerHTML += `
         <div class="sidebar-starred-item" onclick="openChat('${c.id}')" title="${escapeHtml(c.name)}">
-            <div class="sidebar-starred-avatar" style="background:${c.color || 'linear-gradient(135deg,#8B0000,#0F172A)'}">
-                ${getAvatarHtml(c)}
-            </div>
+            <span class="starred-dot" style="background:${dotColor};"></span>
             <span class="sidebar-starred-name">${escapeHtml(c.name)}</span>
         </div>`;
     });

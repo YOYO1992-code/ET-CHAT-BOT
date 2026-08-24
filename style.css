@@ -2,69 +2,84 @@
    ET OPC COMPANY — VER 2 (PHASE 1: UNIVERSAL AI & RICH UX)
    =================================================== */
 :root {
-  /* Light Mode */
-  --bg: #F8FAFC;
-  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(139, 0, 0, 0.03) 0%, transparent 40%),
-                      radial-gradient(circle at 90% 90%, rgba(15, 23, 42, 0.03) 0%, transparent 40%),
-                      linear-gradient(135deg, #F8FAFC 0%, #EEF2F6 100%);
+  /* Institutional Emerald & PIM Maroon Luxury Theme */
+  --bg: #FBFBFA;
+  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(6, 44, 34, 0.03) 0%, transparent 40%),
+                      radial-gradient(circle at 90% 90%, rgba(139, 0, 0, 0.03) 0%, transparent 40%),
+                      linear-gradient(135deg, #FAF9F7 0%, #F3F4F1 100%);
   --surface: #FFFFFF;
-  --surface-2: #F1F5F9;
-  --surface-3: #E2E8F0;
-  --ink: #0F172A;
-  --ink-soft: #475569;
-  --ink-faint: #94A3B8;
-  --line: #E2E8F0;
+  --surface-2: #F3F5F1;
+  --surface-3: #E3E7DF;
+  --ink: #14221D;
+  --ink-soft: #485C53;
+  --ink-faint: #7C9186;
+  --line: #E1E6DE;
   
+  --emerald: #062C22;
+  --emerald-dark: #031812;
+  --emerald-light: #0B3B2C;
+  --emerald-tint: rgba(6, 44, 34, 0.07);
+
   --maroon: #8B0000;
-  --maroon-dark: #6B0000;
+  --maroon-dark: #660000;
   --maroon-light: #B91C1C;
   --maroon-tint: rgba(139, 0, 0, 0.07);
+
+  --gold: #D97706;
+  --gold-light: #F59E0B;
+  --gold-tint: #FEF3C7;
+
   --navy: #0F172A;
   --navy-light: #1E293B;
-  --navy-tint: #E9ECF3;
-  --gold: #F59E0B;
-  --gold-tint: #FEF3C7;
-  --purple: #7C3AED;
-  --purple-tint: #EDE9FE;
   
+  --sidebar-bg: #062C22;
+  --sidebar-text: #EAF2EE;
+  --sidebar-muted: #8CA498;
+  --sidebar-active: #0D4536;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+
   --radius-xl: 24px;
   --radius-lg: 18px;
-  --radius-md: 12px;
+  --radius-md: 14px;
   --radius-sm: 8px;
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --shadow-hover: 0 12px 24px -4px rgba(139, 0, 0, 0.12), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+  --shadow: 0 4px 16px -2px rgba(6, 44, 34, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 14px 28px -4px rgba(6, 44, 34, 0.12), 0 6px 12px -2px rgba(0, 0, 0, 0.04);
 }
 
 html[data-theme="dark"] {
-  /* Dark Mode */
-  --bg: #0B1120;
-  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(220, 38, 38, 0.08) 0%, transparent 50%),
-                      radial-gradient(circle at 90% 90%, rgba(30, 41, 59, 0.4) 0%, transparent 50%),
-                      linear-gradient(135deg, #0B1120 0%, #0F172A 100%);
-  --surface: #1E293B;
-  --surface-2: #141E33;
-  --surface-3: #22314D;
-  --ink: #F8FAFC;
-  --ink-soft: #CBD5E1;
-  --ink-faint: #64748B;
-  --line: #334155;
-  
+  /* Dark Mode: Deep Forest Charcoal */
+  --bg: #08120E;
+  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.06) 0%, transparent 50%),
+                      radial-gradient(circle at 90% 90%, rgba(220, 38, 38, 0.06) 0%, transparent 50%),
+                      linear-gradient(135deg, #08120E 0%, #0D1C16 100%);
+  --surface: #11221B;
+  --surface-2: #162B23;
+  --surface-3: #1E3B30;
+  --ink: #EAF2EE;
+  --ink-soft: #9BB3A7;
+  --ink-faint: #6A8578;
+  --line: #223D32;
+
+  --emerald: #10B981;
+  --emerald-dark: #059669;
+  --emerald-light: #34D399;
+  --emerald-tint: rgba(16, 185, 129, 0.15);
+
   --maroon: #DC2626;
   --maroon-dark: #B91C1C;
   --maroon-light: #EF4444;
-  --maroon-tint: rgba(220, 38, 38, 0.14);
-  --navy: #0B1120;
-  --navy-light: #1E293B;
-  --navy-tint: rgba(96, 124, 180, 0.15);
+  --maroon-tint: rgba(220, 38, 38, 0.15);
+
   --gold: #F59E0B;
+  --gold-light: #FBBF24;
   --gold-tint: rgba(245, 158, 11, 0.15);
-  --purple: #A78BFA;
-  --purple-tint: rgba(167, 139, 250, 0.15);
-  
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 12px 28px -4px rgba(0, 0, 0, 0.7);
+
+  --sidebar-bg: #04100C;
+  --sidebar-text: #EAF2EE;
+  --sidebar-muted: #7E978C;
+  --sidebar-active: #0D261E;
+  --sidebar-border: #183329;
 }
 
 * { box-sizing: border-box; }
@@ -118,6 +133,7 @@ button { font: inherit; cursor: pointer; }
   box-shadow: var(--shadow-hover); z-index: 100; display: flex; flex-direction: column; overflow: hidden;
   animation: fadeIn 0.2s ease;
 }
+.profile-dropdown.hidden { display: none !important; }
 .dropdown-header { padding: 14px 16px; display: flex; flex-direction: column; gap: 3px; background: var(--surface-2); }
 .dropdown-divider { height: 1px; background: var(--line); border: none; margin: 0; }
 .dropdown-item {
@@ -1089,7 +1105,6 @@ html[data-theme="dark"] .sidebar-tab-btn.active {
 }
 }
 
-
 /* ===================================================
    AI DOWNLOADABLE FILE CARD & EXPORT TOOLBAR
    =================================================== */
@@ -1423,11 +1438,6 @@ html[data-theme="dark"] .toast {
   border-color: var(--maroon);
 }
 
-
-/* ===================================================
-   USER-FRIENDLY ENHANCEMENTS: STARTER CARDS, GUIDE MODAL, SCROLL BTN
-   =================================================== */
-
 /* Chat Starter Suggestion Cards */
 .chat-starter-container {
   display: grid;
@@ -1471,32 +1481,6 @@ html[data-theme="dark"] .toast {
   font-size: 11px;
   color: var(--ink-faint);
   line-height: 1.35;
-}
-
-/* Scroll to bottom button */
-.btn-scroll-bottom {
-  position: absolute;
-  bottom: 80px;
-  right: 24px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--ink-soft);
-  border: 1.5px solid var(--line);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 20;
-  transition: all 0.2s ease;
-}
-.btn-scroll-bottom:hover {
-  background: var(--maroon);
-  color: #fff;
-  border-color: var(--maroon);
-  transform: scale(1.08);
 }
 
 /* Quick Guide Modal Styles */
@@ -1564,11 +1548,6 @@ html[data-theme="dark"] .toast {
   font-weight: 700;
   box-shadow: 0 1px 2px rgba(0,0,0,0.06);
 }
-
-
-/* ===================================================
-   NEW 5 SUPERIOR ENTERPRISE FEATURES
-   =================================================== */
 
 /* Voice Recording Pulsing Button */
 .btn-voice-recording {
@@ -1642,10 +1621,7 @@ html[data-theme="dark"] .score-total-num {
   color: #EF4444;
 }
 
-
-/* ===================================================
-   CHAT TYPOGRAPHY & MARKDOWN HEADINGS / TABLES / LISTS
-   =================================================== */
+/* Chat Typography & Markdown Headings */
 .chat-heading-1 {
   font-size: 16.5px;
   font-weight: 800;
@@ -1674,13 +1650,11 @@ html[data-theme="dark"] .chat-heading-2,
 html[data-theme="dark"] .chat-heading-3 {
   color: #EF4444;
 }
-
 .chat-divider {
   border: none;
   border-top: 1.5px dashed var(--line);
   margin: 12px 0;
 }
-
 .chat-bullet-row {
   display: flex;
   align-items: flex-start;
@@ -1700,9 +1674,7 @@ html[data-theme="dark"] .chat-bullet-dot {
 }
 .chat-bullet-text {
   flex: 1;
-  word-break: break-word;
 }
-
 .chat-quote {
   margin: 8px 0;
   padding: 8px 14px;
@@ -1717,46 +1689,7 @@ html[data-theme="dark"] .chat-quote {
   border-left-color: #EF4444;
 }
 
-.table-responsive {
-  width: 100%;
-  overflow-x: auto;
-  margin: 10px 0;
-  border-radius: 10px;
-  border: 1.5px solid var(--line);
-}
-.rich-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  background: var(--surface);
-}
-.rich-table th {
-  background: var(--surface-2);
-  font-weight: 800;
-  color: var(--maroon);
-  border: 1px solid var(--line);
-  padding: 9px 12px;
-  text-align: left;
-  white-space: nowrap;
-}
-html[data-theme="dark"] .rich-table th {
-  color: #EF4444;
-}
-.rich-table td {
-  border: 1px solid var(--line);
-  padding: 9px 12px;
-  text-align: left;
-  line-height: 1.55;
-  color: var(--ink);
-}
-.rich-table tr:nth-child(even) {
-  background: var(--surface-2);
-}
-
-
-/* ===================================================
-   ADMIN DASHBOARD ENHANCEMENTS (TABS, STATS, ANNOUNCEMENTS)
-   =================================================== */
+/* Admin Dashboard Tabs */
 .admin-tab-nav {
   display: flex;
   gap: 6px;
@@ -1945,10 +1878,7 @@ html[data-theme="dark"] .announcement-badge {
   background: var(--surface-2);
 }
 
-
-/* ===================================================
-   CUSTOM CONFIRMATION DIALOG MODAL (ELEGANT UX/UI)
-   =================================================== */
+/* Custom Confirmation Modal */
 .confirm-dialog-box {
   max-width: 420px;
   text-align: center;
@@ -2024,10 +1954,7 @@ html[data-theme="dark"] .announcement-badge {
   transform: translateY(-1px);
 }
 
-
-/* ===================================================
-   FRIENDLY ADMIN AI MODAL STYLES (PRESETS & DETECTIONS)
-   =================================================== */
+/* Provider Preset Cards */
 .provider-cards-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -2111,7 +2038,6 @@ html[data-theme="dark"] .provider-preset-card.active {
   animation: fadeIn 0.2s ease;
 }
 
-
 /* Embedded API Key Input & Toggle Eye */
 .api-key-input-container {
   position: relative;
@@ -2147,7 +2073,6 @@ html[data-theme="dark"] .provider-preset-card.active {
 html[data-theme="dark"] .btn-api-key-eye:hover {
   color: #EF4444;
 }
-
 
 /* Admin Recommendation Guide Card */
 .admin-guide-card {
@@ -2197,7 +2122,6 @@ html[data-theme="dark"] .guide-link {
   border-top: 1px dashed var(--line);
 }
 
-
 /* Plan Badges for Provider Cards */
 .plan-badge {
   font-size: 10px;
@@ -2228,4 +2152,76 @@ html[data-theme="dark"] .plan-badge.free {
 html[data-theme="dark"] .plan-badge.paid {
   background: rgba(245, 158, 11, 0.25);
   color: #FBBF24;
+}
+
+/* Theme Choice Cards in Profile Modal */
+.theme-choice-card {
+  padding: 12px 10px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+.theme-choice-card:hover {
+  border-color: var(--maroon);
+  background: var(--surface);
+}
+.theme-choice-card.active {
+  border-color: var(--maroon);
+  background: var(--maroon-tint);
+  box-shadow: 0 0 0 1px var(--maroon);
+}
+html[data-theme="dark"] .theme-choice-card.active {
+  border-color: #EF4444;
+  background: rgba(220, 38, 38, 0.15);
+  box-shadow: 0 0 0 1px #EF4444;
+}
+
+
+/* Global Image Overflow Protection */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Squircle Avatar for Agent Cards */
+.char-squircle-avatar {
+  width: 52px !important;
+  height: 52px !important;
+  max-width: 52px !important;
+  max-height: 52px !important;
+  border-radius: 14px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid var(--line);
+  overflow: hidden !important;
+  position: relative;
+}
+.char-squircle-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+.char-card-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.char-role-upper {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 2px;
+  display: block;
 }
