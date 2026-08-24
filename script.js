@@ -285,10 +285,13 @@ function initApp() {
         const sidebarBtnCreate = document.getElementById('sidebarBtnCreate');
 
         if(currentUserRole === 'admin') {
-            if(btnAdminDash) btnAdminDash.style.display = 'inline-flex';
             if(btnCreateChar) btnCreateChar.style.display = 'inline-flex';
             if(sidebarBtnAdmin) sidebarBtnAdmin.style.display = 'flex';
             if(sidebarBtnCreate) sidebarBtnCreate.style.display = 'flex';
+        } else {
+            if(btnCreateChar) btnCreateChar.style.display = 'none';
+            if(sidebarBtnAdmin) sidebarBtnAdmin.style.display = 'none';
+            if(sidebarBtnCreate) sidebarBtnCreate.style.display = 'none';
         }
         
         loadGeminiConfigs();
@@ -2109,6 +2112,11 @@ function updateUIAfterProfileChange() {
 
 // Character CRUD
 function showCreateForm(pushHistory = true) {
+    if (currentUserRole !== 'admin') {
+        showToast("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถสร้างหรือแก้ไข Agent ได้", "warning");
+        showExplore();
+        return;
+    }
     editingCharacterId = null;
     currentUploadedImage = "";
     isImageRemoved = false;
@@ -3331,13 +3339,14 @@ window.toggleAgentCreationPolicy = toggleAgentCreationPolicy;
 };
 
 function updateCreateButtonVisibility() {
-    const allowUserCreate = localStorage.getItem(STORAGE_PREFIX + 'allow_user_create') !== 'false';
     const btnCreateChar = document.getElementById('btnCreateChar');
     const sidebarBtnCreate = document.getElementById('sidebarBtnCreate');
+    const sidebarBtnAdmin = document.getElementById('sidebarBtnAdmin');
 
-    const shouldShow = (currentUserRole === 'admin') || allowUserCreate;
-    if (btnCreateChar) btnCreateChar.style.display = shouldShow ? 'inline-flex' : 'none';
-    if (sidebarBtnCreate) sidebarBtnCreate.style.display = shouldShow ? 'flex' : 'none';
+    const isAdmin = (currentUserRole === 'admin');
+    if (btnCreateChar) btnCreateChar.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (sidebarBtnCreate) sidebarBtnCreate.style.display = isAdmin ? 'flex' : 'none';
+    if (sidebarBtnAdmin) sidebarBtnAdmin.style.display = isAdmin ? 'flex' : 'none';
 }
 
 function toggleAnnouncementState() {
