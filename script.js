@@ -669,7 +669,7 @@ async function callUniversalAiApi(config, character, profile, history, temperatu
 
     const apiKey = config.apiKey.trim();
     let baseUrl = (config.baseUrl || "https://generativelanguage.googleapis.com/v1beta/models/").trim();
-    const model = (config.modelName || "gemini-2.5-flash").trim();
+    const model = (config.modelName || 'gemini-3.6-flash').trim();
     const providerType = config.providerType || (baseUrl.includes("generativelanguage.googleapis.com") ? "gemini" : "openai");
 
     const systemInstruction = `You are the specialized enterprise AI Agent "${character.name}" at ET OPC Company.
@@ -1015,56 +1015,211 @@ function updateTopbarAiBadge() {
     }
 }
 
-function handleAiHeaderButtonClick() {
-    if (currentUserRole === 'admin') openAdminAiModal();
-    else openUserModelModal();
+
+// --- FRIENDLY ADMIN AI PRESET PROVIDERS CONFIGURATION ---
+const PROVIDER_PRESETS = {
+  gemini: {
+    name: "Google Gemini (3.X)",
+    providerType: "gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/models/",
+    helpLink: "https://aistudio.google.com/app/apikey",
+    helpText: "รับ Gemini API Key ฟรีจาก Google AI Studio ↗",
+    models: [
+      { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", desc: "⚡ แนะนำ: 3.X ล่าสุด เร็ว ประหยัด (รองรับ PDF/รูปภาพ)" },
+      { id: "gemini-3.6-pro", name: "Gemini 3.6 Pro", desc: "🧠 ฉลาดที่สุด: วิเคราะห์เอกสาร & ตารางเชิงลึก 3.X" },
+      { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", desc: "⚡ มาตรฐาน 3.5 เร็ว คล่องตัว" },
+      { id: "gemini-3.5-pro", name: "Gemini 3.5 Pro", desc: "📚 มาตรฐาน 3.5 วิเคราะห์งานเอกสาร" }
+    ]
+  },
+  openrouter: {
+    name: "Claude 3.5 / OpenRouter",
+    providerType: "openai",
+    baseUrl: "https://openrouter.ai/api/v1",
+    helpLink: "https://openrouter.ai/keys",
+    helpText: "รับ OpenRouter API Key ↗",
+    models: [
+      { id: "anthropic/claude-3.5-sonnet", name: "Claude 3.5 Sonnet", desc: "👑 แนะนำ: ฉลาดที่สุด เขียนไทย & วิเคราะห์ CV ยอดเยี่ยม" },
+      { id: "anthropic/claude-3.5-haiku", name: "Claude 3.5 Haiku", desc: "⚡ เร็ว ประหยัด คล่องตัว" },
+      { id: "deepseek/deepseek-chat", name: "DeepSeek V3", desc: "🔥 DeepSeek V3 ฉลาด คุ้มค่า" },
+      { id: "meta-llama/llama-3.3-70b-instruct", name: "Llama 3.3 70B", desc: "🦙 Open-source ตัวท็อป" }
+    ]
+  },
+  openai: {
+    name: "OpenAI (ChatGPT)",
+    providerType: "openai",
+    baseUrl: "https://api.openai.com/v1",
+    helpLink: "https://platform.openai.com/api-keys",
+    helpText: "รับ OpenAI API Key ↗",
+    models: [
+      { id: "gpt-4o-mini", name: "GPT-4o mini", desc: "⚡ แนะนำ: เร็ว ฉลาด ประหยัด" },
+      { id: "gpt-4o", name: "GPT-4o", desc: "🧠 โมเดลเรือธง ความแม่นยำสูง" },
+      { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", desc: "⚡ โมเดล 3.5 มาตรฐาน" }
+    ]
+  },
+  custom: {
+    name: "Custom / Localhost",
+    providerType: "openai",
+    baseUrl: "http://localhost:11434/v1",
+    helpLink: "https://ollama.ai",
+    helpText: "เอกสารคู่มือ Ollama / Local AI ↗",
+    models: [
+      { id: "llama3.2", name: "Ollama Llama 3.2", desc: "🦙 Localhost Ollama" },
+      { id: "custom-model", name: "กำหนด Model ID เอง", desc: "กรอกในช่องตั้งค่าขั้นสูง" }
+    ]
+  }
+};
+
+let currentSelectedPresetKey = 'gemini';
+
+function selectProviderPreset(presetKey) {
+    window.selectProviderPreset = selectProviderPreset;
+    currentSelectedPresetKey = presetKey;
+    const preset = PROVIDER_PRESETS[presetKey] || PROVIDER_PRESETS.gemini;
+
+    // Update active card styling
+    ['gemini', 'openrouter', 'openai', 'custom'].forEach(k => {
+        const cardId = 'pCard' + k.charAt(0).toUpperCase() + k.slice(1);
+        const card = document.getElementById(cardId);
+        if (card) card.classList.toggle('active', k === presetKey);
+    });
+
+    // Set hidden provider type
+    const provInput = document.getElementById('adminAiProviderType');
+    if (provInput) provInput.value = preset.providerType;
+
+    // Set Base URL
+    const urlInput = document.getElementById('adminAiBaseUrl');
+    if (urlInput) urlInput.value = preset.baseUrl;
+
+    // Update Help Link
+    const helpLink = document.getElementById('apiKeyHelpLink');
+    if (helpLink) {
+        helpLink.href = preset.helpLink;
+        helpLink.textContent = preset.helpText;
+    }
+
+    // Populate Model Presets Dropdown
+    const select = document.getElementById('adminAiModelPresetSelect');
+    if (select) {
+        select.innerHTML = '';
+        preset.models.forEach(m => {
+            select.innerHTML += `<option value="${m.id}" data-name="${escapeHtml(m.name)}">${escapeHtml(m.name)} — ${escapeHtml(m.desc)}</option>`;
+        });
+    }
+
+    handleModelPresetChange();
 }
 
-function handleProviderChange() {
-    const select = document.getElementById('adminAiProviderType');
-    const baseInput = document.getElementById('adminAiBaseUrl');
-    const modelInput = document.getElementById('adminAiDefaultModel');
-    const helpLink = document.getElementById('apiKeyHelpLink');
+function handleModelPresetChange() {
+    window.handleModelPresetChange = handleModelPresetChange;
+    const select = document.getElementById('adminAiModelPresetSelect');
+    if (!select) return;
     
-    if (select.value === 'gemini') {
-        baseInput.value = "https://generativelanguage.googleapis.com/v1beta/models/";
-        modelInput.value = "gemini-2.5-flash";
-        if(helpLink) {
-            helpLink.href = "https://aistudio.google.com/app/apikey";
-            helpLink.textContent = "รับ Gemini API Key ฟรี ↗";
-        }
-    } else {
-        baseInput.value = "https://api.openai.com/v1";
-        modelInput.value = "gpt-4o-mini";
-        if(helpLink) {
-            helpLink.href = "https://platform.openai.com/api-keys";
-            helpLink.textContent = "รับ OpenAI/Custom Key ↗";
-        }
+    const selectedOption = select.options[select.selectedIndex];
+    const modelId = select.value;
+    const displayName = selectedOption?.getAttribute('data-name') || modelId;
+
+    const defModelInput = document.getElementById('adminAiDefaultModel');
+    const dispNameInput = document.getElementById('adminAiModelDisplayName');
+
+    if (defModelInput) defModelInput.value = modelId;
+    if (dispNameInput) dispNameInput.value = displayName;
+}
+
+function handleApiKeySmartDetection(val) {
+    window.handleApiKeySmartDetection = handleApiKeySmartDetection;
+    const key = (val || '').trim();
+    const badge = document.getElementById('keyDetectBadge');
+    if (!badge) return;
+
+    if (key.startsWith('AIzaSy') && currentSelectedPresetKey !== 'gemini') {
+        selectProviderPreset('gemini');
+        badge.style.display = 'block';
+        badge.textContent = '✨ ตรวจพบคีย์ Google Gemini อัตโนมัติ!';
+    } else if (key.startsWith('sk-or-v1-') && currentSelectedPresetKey !== 'openrouter') {
+        selectProviderPreset('openrouter');
+        badge.style.display = 'block';
+        badge.textContent = '✨ ตรวจพบคีย์ OpenRouter (Claude 3.5) อัตโนมัติ!';
+    } else if ((key.startsWith('sk-proj-') || key.startsWith('sk-')) && !key.startsWith('sk-or-') && currentSelectedPresetKey !== 'openai') {
+        selectProviderPreset('openai');
+        badge.style.display = 'block';
+        badge.textContent = '✨ ตรวจพบคีย์ OpenAI (ChatGPT) อัตโนมัติ!';
+    } else if (!key) {
+        badge.style.display = 'none';
+    }
+}
+
+function toggleAdminApiKeyVisibility() {
+    window.toggleAdminApiKeyVisibility = toggleAdminApiKeyVisibility;
+    const input = document.getElementById('adminAiApiKey');
+    const eyeIcon = document.getElementById('adminKeyEyeIcon');
+    if (!input) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    if (eyeIcon) {
+        eyeIcon.innerHTML = isPassword ? 
+            `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>` :
+            `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+    }
+}
+
+function toggleAdminAdvancedSettings() {
+    window.toggleAdminAdvancedSettings = toggleAdminAdvancedSettings;
+    const box = document.getElementById('adminAdvancedSettingsBox');
+    const icon = document.getElementById('advancedToggleIcon');
+    if (!box) return;
+
+    box.classList.toggle('hidden');
+    const isHidden = box.classList.contains('hidden');
+    if (icon) {
+        icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)';
     }
 }
 
 function renderAdminModels() {
     const list = document.getElementById('adminModelsList');
+    const countBadge = document.getElementById('adminModelCount');
     if(!list) return;
     list.innerHTML = '';
+    if (countBadge) countBadge.textContent = adminModels.length;
+
     if (adminModels.length === 0) {
-        list.innerHTML = '<p style="font-size:13px; color:var(--ink-faint); padding:8px;">ยังไม่มีโมเดลในระบบ</p>';
+        list.innerHTML = '<p style="font-size:12.5px; color:var(--ink-faint); padding:8px 0; margin:0;">ยังไม่มีโมเดลในระบบ — กรุณาเลือกค่ายและใส่ API Key ด้านล่าง</p>';
         return;
     }
     adminModels.forEach((m) => {
-        const pType = m.providerType === 'openai' ? '🌐 OpenAI Format' : '⚡ Gemini Format';
+        const isCurrent = (m.id === userGeminiPreference.selectedModelId);
+        const pBadge = m.providerType === 'gemini' ? '⚡ Gemini' : (m.baseUrl?.includes('openrouter') ? '🚀 OpenRouter' : '🌐 OpenAI');
         list.innerHTML += `
-        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:8px 12px; border-radius:8px; border:1px solid var(--line);">
-            <div>
-                <div style="font-weight:700; color:var(--ink); font-size:13.5px;">${escapeHtml(m.displayName)} <span style="font-size:10px; color:var(--ink-faint); font-weight:normal;">(${pType})</span></div>
-                <div style="font-size:11px; color:var(--ink-soft);">${escapeHtml(m.modelName)}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:9px 12px; border-radius:10px; border:1px solid ${isCurrent ? 'var(--maroon)' : 'var(--line)'};">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:11px; background:${isCurrent ? 'var(--maroon)' : 'var(--surface-3)'}; color:${isCurrent ? '#fff' : 'var(--ink-soft)'}; padding:2px 7px; border-radius:999px; font-weight:800;">${pBadge}</span>
+                <div>
+                    <div style="font-weight:800; color:var(--ink); font-size:13px;">${escapeHtml(m.displayName)} ${isCurrent ? '<span style="font-size:10.5px; color:#10B981; font-weight:700;">(กำลังใช้งาน)</span>' : ''}</div>
+                    <div style="font-size:11px; color:var(--ink-soft); font-family:monospace;">${escapeHtml(m.modelName)}</div>
+                </div>
             </div>
             <button class="btn-delete" style="padding:4px 8px; font-size:11px;" onclick="deleteAdminModel('${m.id}')">ลบ</button>
         </div>`;
     });
 }
 
+
+function handleAiHeaderButtonClick() {
+    window.handleAiHeaderButtonClick = handleAiHeaderButtonClick;
+    if (currentUserRole === 'admin') {
+        openAdminAiModal();
+    } else {
+        openUserModelModal();
+    }
+}
+window.handleAiHeaderButtonClick = handleAiHeaderButtonClick;
+
+
 function deleteAdminModel(id) {
+    window.deleteAdminModel = deleteAdminModel;
     showConfirmDialog({
         title: "ลบโมเดล AI",
         message: "ต้องการลบโมเดล AI นี้ออกจากระบบใช่หรือไม่?",
@@ -1076,90 +1231,105 @@ function deleteAdminModel(id) {
         if (!confirmed) return;
         adminModels = adminModels.filter(m => m.id !== id);
         localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(adminModels));
+        if (userGeminiPreference.selectedModelId === id) {
+            userGeminiPreference.selectedModelId = adminModels.length > 0 ? adminModels[0].id : null;
+            localStorage.setItem(STORAGE_PREFIX + 'user_pref_v1_' + currentUser, JSON.stringify(userGeminiPreference));
+        }
         renderAdminModels();
         updateTopbarAiBadge();
         showToast("ลบโมเดล AI เรียบร้อยแล้ว", "info");
     });
 }
+window.deleteAdminModel = deleteAdminModel;
 
 function openAdminAiModal() {
-    document.getElementById('adminAiProviderType').value = "gemini";
-    document.getElementById('adminAiBaseUrl').value = "https://generativelanguage.googleapis.com/v1beta/models/";
+    selectProviderPreset('gemini');
     document.getElementById('adminAiApiKey').value = "";
-    document.getElementById('adminAiDefaultModel').value = "gemini-2.5-flash";
-    document.getElementById('adminAiModelDisplayName').value = "";
+    document.getElementById('adminAiTestStatus').style.display = 'none';
+    if (document.getElementById('keyDetectBadge')) document.getElementById('keyDetectBadge').style.display = 'none';
+    
     renderAdminModels();
     document.getElementById('adminAiModal').classList.remove('hidden');
 }
 function closeAdminAiModal() { document.getElementById('adminAiModal').classList.add('hidden'); }
 
 function addAdminModel() {
-    const providerType = document.getElementById('adminAiProviderType')?.value || "gemini";
-    const baseUrl = document.getElementById('adminAiBaseUrl').value.trim() || (providerType === 'gemini' ? "https://generativelanguage.googleapis.com/v1beta/models/" : "https://api.openai.com/v1");
-    const apiKey = document.getElementById('adminAiApiKey').value.trim();
-    const modelName = document.getElementById('adminAiDefaultModel').value.trim() || (providerType === 'gemini' ? "gemini-2.5-flash" : "gpt-4o-mini");
-    const displayName = document.getElementById('adminAiModelDisplayName').value.trim() || modelName;
-    const temp = parseFloat(document.getElementById('adminAiTemperature').value) || 0.7;
+    const preset = PROVIDER_PRESETS[currentSelectedPresetKey] || PROVIDER_PRESETS.gemini;
+    const providerType = document.getElementById('adminAiProviderType')?.value || preset.providerType;
+    const baseUrl = (document.getElementById('adminAiBaseUrl')?.value || preset.baseUrl).trim();
+    const apiKey = (document.getElementById('adminAiApiKey')?.value || '').trim();
+    const modelName = (document.getElementById('adminAiDefaultModel')?.value || 'gemini-3.6-flash').trim();
+    const displayName = (document.getElementById('adminAiModelDisplayName')?.value || modelName).trim();
+    const temp = parseFloat(document.getElementById('adminAiTemperature')?.value) || 0.7;
 
-    if(!apiKey) return alert("กรุณาใส่ API Key");
+    if(!apiKey) {
+        showToast("กรุณากรอกหรือวาง API Key ก่อนบันทึก", "warning");
+        document.getElementById('adminAiApiKey')?.focus();
+        return;
+    }
 
     const newModel = { id: 'm-' + Date.now(), providerType, baseUrl, apiKey, modelName, displayName, temperature: temp };
     adminModels.push(newModel);
     localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(adminModels));
     
-    if (!userGeminiPreference.selectedModelId) {
-        userGeminiPreference.selectedModelId = newModel.id;
-        localStorage.setItem(STORAGE_PREFIX + 'user_pref_v1_' + currentUser, JSON.stringify(userGeminiPreference));
-    }
+    userGeminiPreference.selectedModelId = newModel.id;
+    userGeminiPreference.temperature = temp;
+    localStorage.setItem(STORAGE_PREFIX + 'user_pref_v1_' + currentUser, JSON.stringify(userGeminiPreference));
 
     updateTopbarAiBadge();
     renderAdminModels();
-    showToast("บันทึกโมเดล AI เรียบร้อยแล้ว", "success");
+    document.getElementById('adminAiApiKey').value = '';
+    showToast(`บันทึกและเปิดใช้งาน ${displayName} เรียบร้อยแล้ว! 🎉`, "success");
 }
 
 async function testAdminAiConnection() {
     const statusDiv = document.getElementById('adminAiTestStatus');
     const btn = document.getElementById('btnAdminTestAi');
-    const providerType = document.getElementById('adminAiProviderType')?.value || "gemini";
-    const baseUrl = document.getElementById('adminAiBaseUrl').value.trim() || (providerType === 'gemini' ? "https://generativelanguage.googleapis.com/v1beta/models/" : "https://api.openai.com/v1");
-    const apiKey = document.getElementById('adminAiApiKey').value.trim();
-    const model = document.getElementById('adminAiDefaultModel').value.trim() || (providerType === 'gemini' ? "gemini-2.5-flash" : "gpt-4o-mini");
+    const preset = PROVIDER_PRESETS[currentSelectedPresetKey] || PROVIDER_PRESETS.gemini;
+    const providerType = document.getElementById('adminAiProviderType')?.value || preset.providerType;
+    const baseUrl = (document.getElementById('adminAiBaseUrl')?.value || preset.baseUrl).trim();
+    const apiKey = (document.getElementById('adminAiApiKey')?.value || '').trim();
+    const model = (document.getElementById('adminAiDefaultModel')?.value || 'gemini-3.6-flash').trim();
 
     if(!apiKey) {
         statusDiv.style.display = 'block';
         statusDiv.style.background = 'rgba(220,38,38,0.1)';
         statusDiv.style.color = '#DC2626';
-        statusDiv.textContent = '❌ กรุณากรอก API Key ก่อนทดสอบ';
+        statusDiv.innerHTML = '❌ <strong>กรุณากรอก API Key ก่อนทดสอบ</strong><br><small>สามารถกดลิงก์ด้านบนเพื่อรับ API Key ฟรี</small>';
+        document.getElementById('adminAiApiKey')?.focus();
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'กำลังทดสอบเชื่อมต่อ...';
+    btn.innerHTML = '<span>⏳ กำลังทดสอบ...</span>';
     statusDiv.style.display = 'block';
     statusDiv.style.background = 'rgba(59,130,246,0.1)';
-    statusDiv.style.color = '#3B82F6';
-    statusDiv.textContent = '⏳ กำลังส่งคำขอทดสอบไปยัง API...';
+    statusDiv.style.color = '#2563EB';
+    statusDiv.innerHTML = `⏳ <strong>กำลังส่งคำขอทดสอบไปยัง ${escapeHtml(preset.name)} (${escapeHtml(model)})...</strong>`;
 
+    const startTime = Date.now();
     try {
-        const testChar = { name: "ระบบทดสอบ", bio: "ผู้ช่วยทดสอบ", prompt: "คุณคือระบบทดสอบ ตอบกลับสั้นๆ ไม่เกิน 10 คำ" };
+        const testChar = { name: "ระบบทดสอบ", bio: "ผู้ช่วยทดสอบ", prompt: "คุณคือระบบทดสอบ ตอบกลับสั้นๆ ไม่เกิน 8 คำว่า 'ระบบ ET OPC พร้อมใช้งาน'" };
         const testProfile = { displayName: "Admin" };
         const testHistory = [{ r: 'user', t: 'สวัสดี ทดสอบระบบ' }];
         const testConf = { providerType, baseUrl, apiKey, modelName: model };
         
         const resultText = await callUniversalAiApi(testConf, testChar, testProfile, testHistory, 0.7);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 
         statusDiv.style.background = 'rgba(16,185,129,0.1)';
-        statusDiv.style.color = '#10B981';
-        statusDiv.innerHTML = `✅ เชื่อมต่อสำเร็จ! AI ตอบกลับมาว่า:<br><em>"${escapeHtml(resultText)}"</em>`;
+        statusDiv.style.color = '#059669';
+        statusDiv.innerHTML = `✅ <strong>เชื่อมต่อสำเร็จใน ${elapsed} วินาที!</strong><br><span style="font-size:12px;">AI ตอบกลับมาว่า: <em>"${escapeHtml(resultText)}"</em></span>`;
     } catch(err) {
         statusDiv.style.background = 'rgba(220,38,38,0.1)';
         statusDiv.style.color = '#DC2626';
-        statusDiv.innerHTML = `❌ เชื่อมต่อไม่สำเร็จ: ${escapeHtml(err.message)}<br><small>กรุณาตรวจสอบ URL, API Key และชื่อโมเดล</small>`;
+        statusDiv.innerHTML = `❌ <strong>เชื่อมต่อไม่สำเร็จ:</strong> ${escapeHtml(err.message)}<br><small style="color:var(--ink-soft);">คำแนะนำ: ตรวจสอบความถูกต้องของ API Key หรือโควตาการใช้งาน</small>`;
     } finally {
         btn.disabled = false;
-        btn.textContent = '🧪 ทดสอบเชื่อมต่อ';
+        btn.innerHTML = '<span>🧪 ทดสอบเชื่อมต่อ</span>';
     }
 }
+
 
 function openUserModelModal() {
     const modal = document.getElementById('userModelModal');
@@ -3480,3 +3650,19 @@ function deletePromptTemplate(id) {
         showToast("ลบแม่แบบคำสั่งเรียบร้อยแล้ว", "info");
     });
 };
+
+
+window.openAdminAiModal = openAdminAiModal;
+window.closeAdminAiModal = closeAdminAiModal;
+window.openUserModelModal = openUserModelModal;
+window.closeUserModelModal = closeUserModelModal;
+window.saveUserModelChoice = saveUserModelChoice;
+window.handleAiHeaderButtonClick = handleAiHeaderButtonClick;
+window.selectProviderPreset = selectProviderPreset;
+window.handleModelPresetChange = handleModelPresetChange;
+window.handleApiKeySmartDetection = handleApiKeySmartDetection;
+window.toggleAdminApiKeyVisibility = toggleAdminApiKeyVisibility;
+window.toggleAdminAdvancedSettings = toggleAdminAdvancedSettings;
+window.testAdminAiConnection = testAdminAiConnection;
+window.addAdminModel = addAdminModel;
+window.deleteAdminModel = deleteAdminModel;
