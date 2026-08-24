@@ -195,35 +195,33 @@ CREATE POLICY "Allow insert training data" ON public.training_datasets FOR INSER
 CREATE POLICY "Allow read training data" ON public.training_datasets FOR SELECT USING (true);
 ```
 
-### 5.2 สคริปต์ดึงข้อมูลเพื่อนำไป Train โมเดล (Export to JSONL Format)
-ใช้ Secret Key (`sb_secret_33ixbUHXn2NY2UxAkHsrsw_IxeHtzWE`) ในฝั่งเซิร์ฟเวอร์หลังบ้านเพื่อดึงชุดข้อมูลออกมาเป็นรูปแบบ **Prompt-Response Pairs (JSONL)** สำหรับป้อนเข้าสู่ Google AI Studio / HuggingFace / OpenAI Fine-Tuning:
+### 5.2 การเตรียมชุดข้อมูลสำหรับ Fine-Tuning (Export to JSONL Format)
+เมื่อระบบจัดเก็บประวัติการสนทนาและคะแนนความพึงพอใจในฐานข้อมูลแล้ว ฝ่ายพัฒนาสามารถสกัดชุดข้อมูล **Prompt-Response Pairs** ออกมาในรูปแบบ `.jsonl` เพื่อนำไปเทรนโมเดลเฉพาะทางขององค์กร:
 
 ```python
-# export_training_jsonl.py
-import json, requests
+# export_training_jsonl.py (ตัวอย่างแนวคิดการสกัดข้อมูล)
+import json
 
-SUPABASE_URL = "https://euqjuabbvxtckrlsmdfv.supabase.co/rest/v1/training_datasets?select=*"
-SECRET_KEY = "sb_secret_33ixbUHXn2NY2UxAkHsrsw_IxeHtzWE"
-
-headers = {
-    "apikey": SECRET_KEY,
-    "Authorization": f"Bearer {SECRET_KEY}"
-}
-
-res = requests.get(SUPABASE_URL, headers=headers)
-data = res.json()
+# ดึงข้อมูลจากฐานข้อมูลของระบบ
+training_records = [
+    {
+        "system_instruction": "คุณคือ HR Specialist...",
+        "user_prompt": "ช่วยประเมินเรซูเม่นี้...",
+        "ai_response": "ผลการประเมิน..."
+    }
+]
 
 with open("et_opc_training_dataset.jsonl", "w", encoding="utf-8") as f:
-    for item in data:
-        # ฟอร์แมตมาตรฐานสำหรับ Gemini & OpenAI Fine-tuning
+    for item in training_records:
         entry = {
             "messages": [
-                {"role": "system", "content": item.get("system_instruction", "")},
-                {"role": "user", "content": item.get("user_prompt", "")},
-                {"role": "assistant", "content": item.get("ai_response", "")}
+                {"role": "system", "content": item["system_instruction"]},
+                {"role": "user", "content": item["user_prompt"]},
+                {"role": "assistant", "content": item["ai_response"]}
             ]
         }
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        f.write(json.dumps(entry, ensure_ascii=False) + "
+")
 
-print(f"Exported {len(data)} training pairs to et_opc_training_dataset.jsonl")
+print("Exported dataset successfully!")
 ```
