@@ -2,84 +2,84 @@
    ET OPC COMPANY — VER 2 (PHASE 1: UNIVERSAL AI & RICH UX)
    =================================================== */
 :root {
-  /* Institutional Emerald & PIM Maroon Luxury Theme */
-  --bg: #FBFBFA;
-  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(6, 44, 34, 0.03) 0%, transparent 40%),
-                      radial-gradient(circle at 90% 90%, rgba(139, 0, 0, 0.03) 0%, transparent 40%),
-                      linear-gradient(135deg, #FAF9F7 0%, #F3F4F1 100%);
+  /* Official Faculty of Engineering & Technology (ET / PIM) Theme */
+  --bg: #FAFAFA;
+  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(139, 0, 0, 0.04) 0%, transparent 40%),
+                      radial-gradient(circle at 90% 90%, rgba(24, 24, 27, 0.03) 0%, transparent 40%),
+                      linear-gradient(135deg, #FAFAFA 0%, #F4F4F5 100%);
   --surface: #FFFFFF;
-  --surface-2: #F3F5F1;
-  --surface-3: #E3E7DF;
-  --ink: #14221D;
-  --ink-soft: #485C53;
-  --ink-faint: #7C9186;
-  --line: #E1E6DE;
+  --surface-2: #F4F4F5;
+  --surface-3: #E4E4E7;
+  --ink: #18181B;
+  --ink-soft: #52525B;
+  --ink-faint: #71717A;
+  --line: #E4E4E7;
   
-  --emerald: #062C22;
-  --emerald-dark: #031812;
-  --emerald-light: #0B3B2C;
-  --emerald-tint: rgba(6, 44, 34, 0.07);
+  --et-red: #8B0000;
+  --et-crimson: #990014;
+  --et-dark: #5A0005;
+  --et-bright: #C92A3E;
 
   --maroon: #8B0000;
-  --maroon-dark: #660000;
-  --maroon-light: #B91C1C;
-  --maroon-tint: rgba(139, 0, 0, 0.07);
+  --maroon-dark: #5A0005;
+  --maroon-light: #A30015;
+  --maroon-tint: rgba(139, 0, 0, 0.08);
 
   --gold: #D97706;
   --gold-light: #F59E0B;
   --gold-tint: #FEF3C7;
 
-  --navy: #0F172A;
-  --navy-light: #1E293B;
+  --navy: #18181B;
+  --navy-light: #27272A;
   
-  --sidebar-bg: #062C22;
-  --sidebar-text: #EAF2EE;
-  --sidebar-muted: #8CA498;
-  --sidebar-active: #0D4536;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: #6B0000;
+  --sidebar-text: #FFFFFF;
+  --sidebar-muted: #E2B6B6;
+  --sidebar-active: #8B0000;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
 
   --radius-xl: 24px;
   --radius-lg: 18px;
   --radius-md: 14px;
   --radius-sm: 8px;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow: 0 4px 16px -2px rgba(6, 44, 34, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
-  --shadow-hover: 0 14px 28px -4px rgba(6, 44, 34, 0.12), 0 6px 12px -2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 16px -2px rgba(107, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 14px 28px -4px rgba(107, 0, 0, 0.16), 0 6px 12px -2px rgba(0, 0, 0, 0.05);
 }
 
 html[data-theme="dark"] {
-  /* Dark Mode: Deep Forest Charcoal */
-  --bg: #08120E;
-  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.06) 0%, transparent 50%),
-                      radial-gradient(circle at 90% 90%, rgba(220, 38, 38, 0.06) 0%, transparent 50%),
-                      linear-gradient(135deg, #08120E 0%, #0D1C16 100%);
-  --surface: #11221B;
-  --surface-2: #162B23;
-  --surface-3: #1E3B30;
-  --ink: #EAF2EE;
-  --ink-soft: #9BB3A7;
-  --ink-faint: #6A8578;
-  --line: #223D32;
+  /* Dark Mode: Tech Engineering Carbon & Crimson */
+  --bg: #0F0F12;
+  --bg-gradient: radial-gradient(circle at 10% 10%, rgba(225, 29, 72, 0.08) 0%, transparent 50%),
+                      radial-gradient(circle at 90% 90%, rgba(24, 24, 27, 0.6) 0%, transparent 50%),
+                      linear-gradient(135deg, #0F0F12 0%, #18181B 100%);
+  --surface: #18181B;
+  --surface-2: #27272A;
+  --surface-3: #3F3F46;
+  --ink: #FAFAFA;
+  --ink-soft: #A1A1AA;
+  --ink-faint: #71717A;
+  --line: #27272A;
 
-  --emerald: #10B981;
-  --emerald-dark: #059669;
-  --emerald-light: #34D399;
-  --emerald-tint: rgba(16, 185, 129, 0.15);
+  --et-red: #E11D48;
+  --et-crimson: #EF4444;
+  --et-dark: #881337;
+  --et-bright: #FB7185;
 
-  --maroon: #DC2626;
-  --maroon-dark: #B91C1C;
-  --maroon-light: #EF4444;
-  --maroon-tint: rgba(220, 38, 38, 0.15);
+  --maroon: #E11D48;
+  --maroon-dark: #BE123C;
+  --maroon-light: #FB7185;
+  --maroon-tint: rgba(225, 29, 72, 0.15);
 
   --gold: #F59E0B;
   --gold-light: #FBBF24;
   --gold-tint: rgba(245, 158, 11, 0.15);
 
-  --sidebar-bg: #04100C;
-  --sidebar-text: #EAF2EE;
-  --sidebar-muted: #7E978C;
-  --sidebar-active: #0D261E;
-  --sidebar-border: #183329;
+  --sidebar-bg: #4C0509;
+  --sidebar-text: #FFFFFF;
+  --sidebar-muted: #D19CA0;
+  --sidebar-active: #7A0C13;
+  --sidebar-border: #5C141A;
 }
 
 * { box-sizing: border-box; }
