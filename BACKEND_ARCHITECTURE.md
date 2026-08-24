@@ -167,3 +167,63 @@ router.post('/generate', authenticateToken, async (req, res) => {
 
 module.exports = router;
 ```
+
+
+---
+
+## 🧠 5. ระบบจัดเก็บ Dataset สำหรับนำไป Fine-Tuning / Train AI ต่อ (Training Pipeline)
+
+### 5.1 โครงสร้างตาราง `training_datasets` ใน Supabase
+```sql
+CREATE TABLE IF NOT EXISTS public.training_datasets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id TEXT DEFAULT 'euqjuabbvxtckrlsmdfv',
+    agent_id TEXT NOT NULL,
+    agent_name TEXT NOT NULL,
+    system_instruction TEXT NOT NULL,
+    user_prompt TEXT NOT NULL,
+    ai_response TEXT NOT NULL,
+    feedback_score INT DEFAULT 5, -- 1 ถึง 5 ดาว
+    category TEXT DEFAULT 'HR_RECRUITMENT', -- 'HR_RECRUITMENT', 'EXECUTIVE_SUMMARY', 'OPERATIONS'
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- เปิด RLS และอนุญาตให้บันทึก Logs ได้
+ALTER TABLE public.training_datasets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow insert training data" ON public.training_datasets FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow read training data" ON public.training_datasets FOR SELECT USING (true);
+```
+
+### 5.2 สคริปต์ดึงข้อมูลเพื่อนำไป Train โมเดล (Export to JSONL Format)
+ใช้ Secret Key (`sb_secret_33ixbUHXn2NY2UxAkHsrsw_IxeHtzWE`) ในฝั่งเซิร์ฟเวอร์หลังบ้านเพื่อดึงชุดข้อมูลออกมาเป็นรูปแบบ **Prompt-Response Pairs (JSONL)** สำหรับป้อนเข้าสู่ Google AI Studio / HuggingFace / OpenAI Fine-Tuning:
+
+```python
+# export_training_jsonl.py
+import json, requests
+
+SUPABASE_URL = "https://euqjuabbvxtckrlsmdfv.supabase.co/rest/v1/training_datasets?select=*"
+SECRET_KEY = "sb_secret_33ixbUHXn2NY2UxAkHsrsw_IxeHtzWE"
+
+headers = {
+    "apikey": SECRET_KEY,
+    "Authorization": f"Bearer {SECRET_KEY}"
+}
+
+res = requests.get(SUPABASE_URL, headers=headers)
+data = res.json()
+
+with open("et_opc_training_dataset.jsonl", "w", encoding="utf-8") as f:
+    for item in data:
+        # ฟอร์แมตมาตรฐานสำหรับ Gemini & OpenAI Fine-tuning
+        entry = {
+            "messages": [
+                {"role": "system", "content": item.get("system_instruction", "")},
+                {"role": "user", "content": item.get("user_prompt", "")},
+                {"role": "assistant", "content": item.get("ai_response", "")}
+            ]
+        }
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+print(f"Exported {len(data)} training pairs to et_opc_training_dataset.jsonl")
+```

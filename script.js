@@ -1,103 +1,56 @@
-// --- SUPABASE CLOUD DATABASE INTEGRATION ---
-const SUPABASE_URL = 'https://euqjuabbvxtckrlsmdfv.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_jbaz1zO7GBGYjEnuKmsqeA_t4fBC5TH';
-let supabaseClient = null;
 
-try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
-} catch (err) {
-    console.warn("Supabase initialization error:", err);
-}
+// --- CUSTOM PROMISE-BASED CONFIRMATION MODAL ---
+function showConfirmDialog({
+    title = "ยืนยันการทำรายการ",
+    message = "ต้องการดำเนินการต่อใช่หรือไม่?",
+    confirmText = "ยืนยัน",
+    cancelText = "ยกเลิก",
+    type = "warning",
+    icon = "⚠️"
+}) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('customConfirmModal');
+        const titleElem = document.getElementById('customConfirmTitle');
+        const msgElem = document.getElementById('customConfirmMessage');
+        const iconElem = document.getElementById('customConfirmIcon');
+        const btnOk = document.getElementById('customConfirmOkBtn');
+        const btnCancel = document.getElementById('customConfirmCancelBtn');
 
-// Convert Supabase DB snake_case record to App Character object
-function mapDbToChar(row) {
-    if(!row) return null;
-    return {
-        id: row.id,
-        name: row.name,
-        creator: row.creator || '@ETPIM',
-        icon: row.icon || 'briefcase',
-        imageUrl: row.image_url || '',
-        color: row.color || 'linear-gradient(135deg,#8B0000,#0F172A)',
-        chatCount: row.chat_count || 0,
-        isPrivate: row.is_private || false,
-        role: (typeof row.role === 'string') ? JSON.parse(row.role) : (row.role || DEFAULT_ROLES[0]),
-        bio: row.bio || '',
-        requirements: row.requirements || '',
-        tags: (typeof row.tags === 'string') ? JSON.parse(row.tags) : (row.tags || []),
-        featured: row.featured || false,
-        badge: row.badge || (row.featured ? 'Agent แนะนำ' : ''),
-        prompt: row.prompt || '',
-        opener: row.opener || 'สวัสดีครับ มีอะไรให้ช่วยไหมครับ?'
-    };
-}
-
-// Convert App Character object to Supabase DB record
-function mapCharToDb(c) {
-    return {
-        id: c.id,
-        name: c.name,
-        creator: c.creator || '@ETPIM',
-        icon: c.icon || 'briefcase',
-        image_url: c.imageUrl || '',
-        color: c.color || 'linear-gradient(135deg,#8B0000,#0F172A)',
-        chat_count: c.chatCount || 0,
-        is_private: c.isPrivate || false,
-        role: c.role || {},
-        bio: c.bio || '',
-        requirements: c.requirements || '',
-        tags: c.tags || [],
-        featured: c.featured || false,
-        badge: c.badge || '',
-        prompt: c.prompt || '',
-        opener: c.opener || ''
-    };
-}
-
-async function syncFromSupabase() {
-    if (!supabaseClient) return;
-    try {
-        const { data, error } = await supabaseClient.from('agents').select('*').order('created_at', { ascending: false });
-        if (error) {
-            console.warn("Supabase fetch error:", error);
+        if (!modal || !btnOk || !btnCancel) {
+            resolve(window.confirm ? window.confirm(message) : true);
             return;
         }
 
-        if (data && data.length > 0) {
-            // Merge with local characters
-            const cloudChars = data.map(mapDbToChar).filter(Boolean);
-            appCharacters = cloudChars;
-            saveToStorage();
-            applyFilters();
-            renderSidebarStarred();
-        } else if (data && data.length === 0 && appCharacters.length > 0) {
-            // If Supabase table is empty on first setup, seed with current system characters
-            const seedData = appCharacters.map(mapCharToDb);
-            await supabaseClient.from('agents').upsert(seedData);
-            console.log("Seeded initial agents to Supabase.");
+        if (titleElem) titleElem.textContent = title;
+        if (msgElem) msgElem.innerHTML = message.replace(/\n/g, '<br>');
+        if (iconElem) iconElem.textContent = icon;
+        if (btnOk) {
+            btnOk.textContent = confirmText;
+            btnOk.className = 'btn-submit ' + (type === 'danger' ? 'btn-danger-action' : (type === 'warning' ? 'btn-warning-action' : 'btn-primary-action'));
         }
-    } catch(err) {
-        console.warn("Supabase sync error:", err);
-    }
-}
+        if (btnCancel) btnCancel.textContent = cancelText;
 
-// Real-time Cloud updates listener
-function initSupabaseRealtime() {
-    if (!supabaseClient) return;
-    try {
-        supabaseClient.channel('public:agents')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'agents' }, (payload) => {
-                syncFromSupabase();
-            })
-            .subscribe();
-    } catch (e) {
-        console.warn("Realtime listener error:", e);
-    }
-}
+        modal.classList.remove('hidden');
 
-// --- ET OPC COMPANY — PHASE 1: ENTERPRISE AI AGENT & WORKSPACE ENGINE ---
+        const cleanup = () => {
+            modal.classList.add('hidden');
+            btnOk.onclick = null;
+            btnCancel.onclick = null;
+        };
+
+        btnOk.onclick = () => {
+            cleanup();
+            resolve(true);
+        };
+
+        btnCancel.onclick = () => {
+            cleanup();
+            resolve(false);
+        };
+    });
+}
+window.showConfirmDialog = showConfirmDialog;
+
 const STORAGE_PREFIX = 'etopc_company_';
 
 // SVG Icons helper
@@ -121,7 +74,8 @@ function getAvatarHtml(c) {
     return iconSvg(c.icon || "spark");
 }
 
-// Pre-defined Roles for ET OPC Company
+const APP_DATA_VERSION = 'v3.5';
+
 const DEFAULT_ROLES = [
     {v:"role-hr", t:"HR & People Operations", color:"#EC4899"},
     {v:"role-opc", t:"Operations & Workflow", color:"#0284C7"},
@@ -131,7 +85,6 @@ const DEFAULT_ROLES = [
 ];
 let appRoles = [];
 
-// Pre-defined Tags for Enterprise Tasks
 const DEFAULT_TAGS = [
   {v:"tag-hr", t:"#HR_ET", color: "#EC4899", c:"tag-hr"},
   {v:"tag-resume", t:"#Resume_CV", color: "#F43F5E", c:"tag-resume"},
@@ -151,22 +104,20 @@ const DEFAULT_QUICK_REPLIES = [
 ];
 let appQuickReplies = [];
 
-// Pre-configured System Agents for ET OPC Company (HR ET Featured)
+// Pre-configured System Agents for ET OPC Company
 const SYSTEM_CHARACTERS = [
   { 
     id:"opc-secretary", 
     name:"เลขาส่วนตัว (Administration & Secretary)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "CoffeeGirl.jpg",
-    color:"linear-gradient(135deg,#8B0000,#450A0A)", 
+    imageUrl: "",
+    color:"linear-gradient(135deg,#EC4899,#831843)", 
     chatCount: 1540, 
     isPrivate: false,
     role: {v:"role-summary", t:"Executive Assistant", color:"#7C3AED"},
     bio:"ผู้ช่วยเลขาประจำตัว คอยดูแลจัดการตารางงาน สรุปการประชุม วิเคราะห์เอกสาร จัดการข้อมูลต่างๆ และช่วยอำนวยความสะดวกในการทำงานอย่างมืออาชีพ",
-    requirements: `1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร
-2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ
-3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร`,
+    requirements: "1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร\n2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ\n3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร",
     tags:[{v:"tag-summary", t:"#สรุปรายงาน", c:"tag-summary"},{v:"tag-meeting", t:"#การประชุม", c:"tag-meeting"}], 
     featured:true, 
     badge:"เลขาส่วนตัวประจำตัว",
@@ -182,16 +133,13 @@ const SYSTEM_CHARACTERS = [
     name:"HR ET — ฝ่ายทรัพยากรบุคคล (HR Specialist)", 
     creator:"@ETPIM", 
     icon:"users", 
-    imageUrl: "HRMAN.png",
+    imageUrl: "",
     color:"linear-gradient(135deg,#8B0000,#450A0A)", 
     chatCount: 2450, 
     isPrivate: false,
     role: {v:"role-hr", t:"HR & People Operations", color:"#EC4899"},
     bio:"ผู้เชี่ยวชาญด้านทรัพยากรบุคคล คัดกรองและประเมินเรซูเม่เทียบกับความต้องการของตำแหน่งงาน (CV Screening & Score) พร้อมช่วยปรับปรุงประวัติการทำงาน",
-    requirements: `1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี
-2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง
-3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง
-4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น`,
+    requirements: "1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี\n2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง\n3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง\n4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น",
     tags:[{v:"tag-hr", t:"#HR_ET", c:"tag-hr"},{v:"tag-resume", t:"#Resume_CV", c:"tag-resume"},{v:"tag-ops", t:"#Operations", c:"tag-ops"}], 
     featured:true, 
     badge:"ผู้เชี่ยวชาญฝ่ายบุคคล & CV",
@@ -222,7 +170,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ช่วยสรุปงาน & สรุปการประชุม (Executive Summary)", 
     creator:"@ETPIM", 
     icon:"filetext", 
-    imageUrl: "HelperGirl.png",
+    imageUrl: "",
     color:"linear-gradient(135deg,#7C3AED,#1E1B4B)", 
     chatCount: 1820, 
     isPrivate: false,
@@ -239,7 +187,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ประสานงานฝ่ายปฏิบัติการ (Operations Coordinator)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "CoPx.png",
+    imageUrl: "",
     color:"linear-gradient(135deg,#0284C7,#0F172A)", 
     chatCount: 2310, 
     isPrivate: false,
@@ -256,7 +204,7 @@ const SYSTEM_CHARACTERS = [
     name:"นักวิเคราะห์เอกสารและข้อมูล (Data Analyst Bot)", 
     creator:"@ETPIM", 
     icon:"chart", 
-    imageUrl: "CheckingGR.png",
+    imageUrl: "",
     color:"linear-gradient(135deg,#059669,#064E3B)", 
     chatCount: 1180, 
     isPrivate: false,
@@ -270,19 +218,20 @@ const SYSTEM_CHARACTERS = [
   }
 ];
 
+
 let appCharacters = [];
 let currentCharacter = null;
 let editingCharacterId = null; 
 let currentUploadedImage = ""; 
 let isImageRemoved = false; 
-let currentCropperTarget = "character"; // "character" or "profile"
+let currentCropperTarget = "character";
 let currentUploadedProfileImage = ""; 
 let isProfileImageRemoved = false; 
 let currentUser = "Guest";
 let currentUserRole = "user";
 
 let appUserData = {}; 
-let cropper;
+let cropper = null;
 
 let currentSearchQuery = "";
 let systemFilter = "all"; 
@@ -296,6 +245,8 @@ let userGeminiPreference = {
     temperature: 0.7
 };
 
+
+
 // --- INITIALIZATION ---
 function initApp() {
     const loggedIn = localStorage.getItem(STORAGE_PREFIX + 'logged_in') || sessionStorage.getItem(STORAGE_PREFIX + 'logged_in');
@@ -305,17 +256,11 @@ function initApp() {
         currentUserRole = localStorage.getItem(STORAGE_PREFIX + 'role') || sessionStorage.getItem(STORAGE_PREFIX + 'role') || "user";
         
         let users = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'users')) || {};
-        // Ensure ETPIM is Super Admin
         if(!users['ETPIM']) {
             users['ETPIM'] = { password: 'ET@PIMadminpass', role: 'admin' };
         } else {
             users['ETPIM'].role = 'admin';
         }
-        Object.keys(users).forEach(u => {
-            if(u !== 'ETPIM' && users[u].role === 'admin') {
-                users[u].role = 'user';
-            }
-        });
         localStorage.setItem(STORAGE_PREFIX + 'users', JSON.stringify(users));
 
         if(users[currentUser] && users[currentUser].role) {
@@ -346,11 +291,16 @@ function initApp() {
         }
         
         loadGeminiConfigs();
+        loadPromptTemplates();
+        loadAnnouncement();
+        updateCreateButtonVisibility();
         loadUserData(); 
         updateUIAfterProfileChange(); 
         loadData();     
         renderRecentChats(); 
         renderSidebarStarred(); 
+         
+         
         initDragAndDropAndPaste();
 
         // Browser history navigation
@@ -369,7 +319,6 @@ function initApp() {
             if (e.key === 'Escape') {
                 const anyModalOpen = document.querySelector('.modal-overlay:not(.hidden)');
                 if (anyModalOpen) {
-                    // Close top open modal
                     anyModalOpen.classList.add('hidden');
                 } else {
                     const chatView = document.getElementById('chatView');
@@ -399,46 +348,47 @@ function logout() {
     window.location.href = 'login.html';
 }
 
-const APP_DATA_VERSION = 'v3.0';
+// APP_DATA_VERSION already declared
 
 function loadData() {
-    const savedVersion = localStorage.getItem(STORAGE_PREFIX + 'app_version');
     const savedChars = localStorage.getItem(STORAGE_PREFIX + 'agents_v2') || localStorage.getItem(STORAGE_PREFIX + 'agents_v1');
-    
-    if (savedVersion !== APP_DATA_VERSION || !savedChars) {
-        let existing = [];
-        try { existing = JSON.parse(savedChars || '[]'); } catch(e) {}
-        
-        // Retain any user-created custom agents
-        const userCreated = existing.filter(c => c.creator !== '@ETPIM' && !SYSTEM_CHARACTERS.some(s => s.id === c.id));
-        appCharacters = [...SYSTEM_CHARACTERS, ...userCreated];
-        
-        saveToStorage();
-        localStorage.setItem(STORAGE_PREFIX + 'app_version', APP_DATA_VERSION);
+    let loaded = [];
+    if (!savedChars) {
+        loaded = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
     } else {
         try {
-            appCharacters = JSON.parse(savedChars);
+            loaded = JSON.parse(savedChars);
+            if (!Array.isArray(loaded) || loaded.length === 0) {
+                loaded = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
+            }
         } catch(e) {
-            appCharacters = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
+            loaded = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
         }
 
-        // Ensure all system characters exist, but NEVER overwrite user custom images or custom edits
+        // Ensure all system characters exist
         SYSTEM_CHARACTERS.forEach(sysChar => {
-            const existingIdx = appCharacters.findIndex(c => c.id === sysChar.id);
+            const existingIdx = loaded.findIndex(c => c.id === sysChar.id);
             if (existingIdx === -1) {
-                appCharacters.push(JSON.parse(JSON.stringify(sysChar)));
-            } else {
-                // Only fill in default values if the field is completely empty
-                if (!appCharacters[existingIdx].imageUrl || appCharacters[existingIdx].imageUrl === "") {
-                    appCharacters[existingIdx].imageUrl = sysChar.imageUrl;
-                }
-                if (!appCharacters[existingIdx].requirements) {
-                    appCharacters[existingIdx].requirements = sysChar.requirements || "";
-                }
+                loaded.push(JSON.parse(JSON.stringify(sysChar)));
+            } else if (loaded[existingIdx].creator === '@ETPIM') {
+                loaded[existingIdx].prompt = sysChar.prompt;
+                loaded[existingIdx].requirements = sysChar.requirements || '';
+                loaded[existingIdx].bio = sysChar.bio;
+                loaded[existingIdx].opener = sysChar.opener;
+                loaded[existingIdx].tags = sysChar.tags;
+                loaded[existingIdx].badge = sysChar.badge;
+                loaded[existingIdx].name = sysChar.name;
+                loaded[existingIdx].color = sysChar.color;
             }
         });
-        saveToStorage();
     }
+
+    if (!loaded || loaded.length === 0) {
+        loaded = JSON.parse(JSON.stringify(SYSTEM_CHARACTERS));
+    }
+
+    appCharacters = loaded;
+    saveToStorage();
     
     const savedTags = localStorage.getItem(STORAGE_PREFIX + 'tags_v1'); 
     appTags = savedTags ? JSON.parse(savedTags) : [...DEFAULT_TAGS];
@@ -729,9 +679,10 @@ ${character.requirements}` : ''}
 User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
 
 Guidelines:
-1. Provide highly structured, actionable, and clear responses in Thai.
-2. Use markdown headings, bullet points, and tables where appropriate.
-3. If files or documents (PDF, CSV, Image, Text) are provided, thoroughly summarize and analyze key takeaways.`;
+1. จัดรูปแบบข้อความให้อ่านง่าย สบายตา สวยงามระดับมืออาชีพ
+2. ใช้ **ตัวหนา** สำหรับเน้นหัวข้อหรือข้อความสำคัญ
+3. สำหรับข้อมูลเปรียบเทียบ คะแนน จุดเด่น-จุดอ่อน หรือตาราง Action Items ให้จัดเป็นตาราง Markdown Table เสมอ (เช่น | หัวข้อ | รายละเอียด | ผลประเมิน |) เพื่อความสวยงามและอ่านง่าย
+4. หลีกเลี่ยงการใช้เครื่องหมาย raw markdown header ซ้ำซ้อน เช่น ### หรือเครื่องหมายขีดคั่นที่ไม่จำเป็น ให้เน้นแบ่งหัวข้อด้วยตัวหนาและตาราง`;
 
     if (providerType === 'gemini') {
         // --- 1. GOOGLE GEMINI API FORMAT ---
@@ -982,6 +933,7 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
 
         saveUserData();
         renderChatMessages();
+        if (typeof logTrainingDataset === "function" && currentCharacter) { const lastUserMsg = historySubset.filter(m => m.r === "user").pop()?.t || ""; logTrainingDataset(currentCharacter, lastUserMsg, replyText); }
 
     } catch(err) {
         typingDiv.remove();
@@ -1007,6 +959,7 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
         }
         saveUserData();
         renderChatMessages();
+        if (typeof logTrainingDataset === "function" && currentCharacter) { const lastUserMsg = historySubset.filter(m => m.r === "user").pop()?.t || ""; logTrainingDataset(currentCharacter, lastUserMsg, replyText); }
     }
 }
 
@@ -1107,12 +1060,21 @@ function renderAdminModels() {
 }
 
 function deleteAdminModel(id) {
-    if(confirm("ต้องการลบโมเดลนี้ใช่หรือไม่?")) {
+    showConfirmDialog({
+        title: "ลบโมเดล AI",
+        message: "ต้องการลบโมเดล AI นี้ออกจากระบบใช่หรือไม่?",
+        confirmText: "ลบโมเดล",
+        cancelText: "ยกเลิก",
+        type: "danger",
+        icon: "🗑️"
+    }).then(confirmed => {
+        if (!confirmed) return;
         adminModels = adminModels.filter(m => m.id !== id);
         localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(adminModels));
         renderAdminModels();
         updateTopbarAiBadge();
-    }
+        showToast("ลบโมเดล AI เรียบร้อยแล้ว", "info");
+    });
 }
 
 function openAdminAiModal() {
@@ -1416,6 +1378,7 @@ window.deleteMessage = function(idx) {
         appUserData[currentUser].history[currentCharacter.id].splice(idx, 1);
         saveUserData();
         renderChatMessages();
+        if (typeof logTrainingDataset === "function" && currentCharacter) { const lastUserMsg = historySubset.filter(m => m.r === "user").pop()?.t || ""; logTrainingDataset(currentCharacter, lastUserMsg, replyText); }
     }
 };
 
@@ -1449,6 +1412,7 @@ window.swipeCandidate = function(msgIdx, delta) {
         msg.t = msg.candidates[nextIndex];
         saveUserData();
         renderChatMessages();
+        if (typeof logTrainingDataset === "function" && currentCharacter) { const lastUserMsg = historySubset.filter(m => m.r === "user").pop()?.t || ""; logTrainingDataset(currentCharacter, lastUserMsg, replyText); }
     }
 };
 
@@ -1468,7 +1432,7 @@ function formatRoleplayText(text) {
     if(!text) return "";
     let s = escapeHtml(text);
     
-    // Visual Scorecard detection (e.g. คะแนนรวม: 88/100, Match Score: 85/100)
+    // 1. Visual Scorecard detection (e.g. คะแนนรวม: 88/100, Match Score: 85/100)
     s = s.replace(/(?:คะแนนรวม|คะแนนความเหมาะสม|Match Score|Overall Score)[\s:*]+([0-9]{1,3})\s*(?:\/\s*100|%|คะแนน)/gi, (match, scoreStr) => {
         const score = parseInt(scoreStr, 10);
         if (isNaN(score) || score > 100) return match;
@@ -1490,53 +1454,86 @@ function formatRoleplayText(text) {
         </div>`;
     });
 
-    // Code blocks with Copy Button
+    // 2. Code blocks with Copy Button
     s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
         return `<div class="code-block-wrapper"><div class="code-block-header"><span>${lang || 'code'}</span><button class="btn-copy-code" onclick="copyCodeBlock(this)">📋 คัดลอก</button></div><pre><code>${code}</code></pre></div>`;
     });
 
-    // Parse Markdown tables
+    // 3. Robust Markdown Tables Parsing
     s = parseMarkdownTables(s);
 
+    // 4. Markdown Headings (Convert ###, ##, # to clean styled headers without raw #)
+    s = s.replace(/^###\s+(.+)$/gm, '<h4 class="chat-heading-3">$1</h4>');
+    s = s.replace(/^##\s+(.+)$/gm, '<h3 class="chat-heading-2">$1</h3>');
+    s = s.replace(/^#\s+(.+)$/gm, '<h2 class="chat-heading-1">$1</h2>');
+
+    // 5. Horizontal Dividers (---, ___, ***)
+    s = s.replace(/^(?:---|___|\*\*\*)\s*$/gm, '<hr class="chat-divider">');
+
+    // 6. Blockquotes (> text)
+    s = s.replace(/^>\s*(.+)$/gm, '<blockquote class="chat-quote">$1</blockquote>');
+
+    // 7. Bullet Lists (* item or - item)
+    s = s.replace(/^[*-]\s+(.+)$/gm, '<div class="chat-bullet-row"><span class="chat-bullet-dot">•</span><span class="chat-bullet-text">$1</span></div>');
+
+    // 8. Bold and Italic text
     s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    s = s.replace(/\*([^\*\n]+)\*/g, '<span style="font-style:italic; opacity:0.88;">*$1*</span>');
+    s = s.replace(/\*([^\*\n]+)\*/g, '<span style="font-style:italic; opacity:0.88;">$1</span>');
+
+    // 9. Newlines to <br> with cleanup around block elements
     s = s.replace(/\n/g, '<br>');
+    s = s.replace(/<br>\s*<(h[1-4]|hr|div|table|blockquote)/gi, '<$1');
+    s = s.replace(/<\/(h[1-4]|div|table|blockquote)>\s*<br>/gi, '</$1>');
+    s = s.replace(/<hr class="chat-divider">\s*<br>/gi, '<hr class="chat-divider">');
+
     return s;
 }
 
 function parseMarkdownTables(text) {
-    return text.replace(/((?:\|[^\n]+\|\n?)+)/g, (tableMatch) => {
-        const rows = tableMatch.trim().split('\n').map(r => r.trim()).filter(Boolean);
-        if (rows.length < 2) return tableMatch;
+    return text.replace(/(?:^|\n)((?:\|[^\n]+\|\n?)+)/g, (match, tableBlock) => {
+        const lines = tableBlock.trim().split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) return match;
 
-        // Check for header divider row (e.g. |---|---|)
-        const isTable = rows.some(r => r.includes('|-') || r.includes('| -'));
-        if (!isTable) return tableMatch;
+        let dividerIndex = -1;
+        for (let idx = 0; idx < lines.length; idx++) {
+            const l = lines[idx];
+            if (l.includes('---') || /^\|?\s*:?-+:?\s*(\|?\s*:?-+:?\s*)+\|?$/.test(l)) {
+                dividerIndex = idx;
+                break;
+            }
+        }
 
         let html = '<div class="table-responsive"><table class="rich-table">';
         let hasThead = false;
 
-        rows.forEach((row, rIdx) => {
-            if (row.replace(/[\s|:-]/g, '') === '') return; // Skip divider row
+        for (let idx = 0; idx < lines.length; idx++) {
+            const line = lines[idx];
+            if (line.includes('---') || /^\|?\s*:?-+:?\s*(\|?\s*:?-+:?\s*)+\|?$/.test(line) || line.replace(/[\s|:-]/g, '') === '') {
+                continue;
+            }
 
-            const cells = row.split('|').slice(1, -1);
-            if (cells.length === 0) return;
+            let rawCells = line.split('|');
+            if (line.startsWith('|')) rawCells.shift();
+            if (line.endsWith('|')) rawCells.pop();
+            const cells = rawCells.map(c => c.trim());
+            if (cells.length === 0) continue;
 
-            if (rIdx === 0) {
+            if (idx === 0 || (!hasThead && dividerIndex === 1)) {
                 html += '<thead><tr>';
-                cells.forEach(c => html += `<th>${c.trim()}</th>`);
+                cells.forEach(c => html += `<th>${c}</th>`);
                 html += '</tr></thead><tbody>';
                 hasThead = true;
             } else {
                 html += '<tr>';
-                cells.forEach(c => html += `<td>${c.trim()}</td>`);
+                cells.forEach(c => html += `<td>${c}</td>`);
                 html += '</tr>';
             }
-        });
+        }
 
         if (hasThead) html += '</tbody>';
         html += '</table></div>';
-        return html;
+        const prefix = match.startsWith('\n') ? '\n' : '';
+        return prefix + html;
     });
 }
 
@@ -1591,6 +1588,24 @@ window.openChat = function(id, pushHistory = true){
     }
     const cName = document.getElementById('chatName');
     if (cName) cName.textContent = c.name || '';
+
+    if (!appUserData[currentUser]) {
+        appUserData[currentUser] = { favs: [], history: {}, profile: { displayName: currentUser } };
+    }
+    if (!appUserData[currentUser].history) {
+        appUserData[currentUser].history = {};
+    }
+    if (!appUserData[currentUser].history[c.id] || appUserData[currentUser].history[c.id].length === 0) {
+        const initialOpener = c.opener || 'สวัสดีครับ มีอะไรให้ผมช่วยเหลือในวันนี้ไหมครับ?';
+        appUserData[currentUser].history[c.id] = [{
+            id: 'msg-' + Date.now(),
+            r: 'bot',
+            t: initialOpener,
+            candidates: [initialOpener],
+            cIndex: 0
+        }];
+        saveUserData();
+    }
 
     updateTopbarAiBadge();
     renderChatMessages();
@@ -1749,7 +1764,7 @@ function applyFilters() {
     if(!grid) return;
     grid.innerHTML = '';
     
-    let filteredChars = appCharacters.filter(c => !c.isPrivate || c.creator === "@" + currentUser);
+    let filteredChars = appCharacters.filter(c => !c.isPrivate || c.isPrivate === false || c.creator === "@" + currentUser);
     
     if(currentSearchQuery) {
         filteredChars = filteredChars.filter(c => c.name.toLowerCase().includes(currentSearchQuery) || (c.bio && c.bio.toLowerCase().includes(currentSearchQuery)));
@@ -1893,11 +1908,27 @@ window.toggleFavorite = function(id, e) {
 
 function clearCurrentChat() {
     if(!currentCharacter) return;
-    if(confirm("ล้างประวัติการสนทนานี้ใช่หรือไม่?")) {
-        appUserData[currentUser].history[currentCharacter.id] = [];
+    showConfirmDialog({
+        title: "ล้างประวัติการสนทนา",
+        message: "ต้องการล้างประวัติการสนทนาของ Agent นี้ทั้งหมดใช่หรือไม่?",
+        confirmText: "ล้างประวัติ",
+        cancelText: "ยกเลิก",
+        type: "danger",
+        icon: "🗑️"
+    }).then(confirmed => {
+        if (!confirmed) return;
+        const initialOpener = currentCharacter.opener || 'สวัสดีครับ มีอะไรให้ผมช่วยเหลือในวันนี้ไหมครับ?';
+        appUserData[currentUser].history[currentCharacter.id] = [{
+            id: 'msg-' + Date.now(),
+            r: 'bot',
+            t: initialOpener,
+            candidates: [initialOpener],
+            cIndex: 0
+        }];
         saveUserData();
-        openChat(currentCharacter.id, false);
-    }
+        renderChatMessages();
+        showToast("ล้างประวัติการสนทนาเรียบร้อยแล้ว", "info");
+    });
 }
 
 function setTheme(mode){
@@ -2212,13 +2243,18 @@ function saveCharacter() {
     showExplore();
     applyFilters();
 
-    // Supabase Cloud Upsert
+    // Supabase Cloud Upsert (Guaranteed Multi-User Sync)
     if (supabaseClient) {
         const charToSync = editingCharacterId ? appCharacters.find(c => c.id === editingCharacterId) : appCharacters[0];
         if (charToSync) {
             supabaseClient.from('agents').upsert(mapCharToDb(charToSync)).then(({ error }) => {
-                if (error) console.warn("Supabase save error:", error);
-                else if (typeof showToast === 'function') showToast("☁️ ซิงก์ Agent ขึ้น Cloud เรียบร้อยแล้ว", "success");
+                if (error) {
+                    console.warn("Supabase save error:", error);
+                    if (typeof showToast === 'function') showToast("⚠️ บันทึกในเครื่องแล้ว (แต่ส่งขึ้น Cloud ไม่สำเร็จ: " + error.message + ")", "warning");
+                } else {
+                    if (typeof showToast === 'function') showToast("☁️ บันทึกขึ้น Cloud สำเร็จ (ทุกคนจะเห็นทันที)", "success");
+                    
+                }
             });
         }
     }
@@ -2306,14 +2342,13 @@ function confirmDelete() {
         return;
     }
     
-        appCharacters = appCharacters.filter(c => c.id !== targetId);
+    appCharacters = appCharacters.filter(c => c.id !== targetId);
     saveToStorage();
 
-    // Supabase Cloud Delete
-    if (supabaseClient && targetId) {
-        supabaseClient.from('agents').delete().eq('id', targetId).then(({ error }) => {
-            if (error) console.warn("Supabase delete error:", error);
-        });
+    // Clean up favorites
+    if (appUserData[currentUser] && Array.isArray(appUserData[currentUser].favs)) {
+        appUserData[currentUser].favs = appUserData[currentUser].favs.filter(id => id !== targetId);
+        saveUserData();
     }
     
     closeDeleteModal();
@@ -2322,15 +2357,13 @@ function confirmDelete() {
     
     showExplore();
     applyFilters();
+    renderSidebarStarred();
     showToast("ลบ Agent เรียบร้อยแล้ว", "success");
 }
 
 // Admin Dashboard Management
 function showAdminDashboard() {
-    renderRoleList();
-    renderTagList();
-    renderAdminList();
-    renderUserAccountList();
+    switchAdminTab('stats');
     document.getElementById('adminModal').classList.remove('hidden');
 }
 function closeAdminDashboard() { document.getElementById('adminModal').classList.add('hidden'); }
@@ -2625,13 +2658,25 @@ function updateSidebarTabUI() {
 function renderSidebarStarred() {
     const list = document.getElementById('sidebarStarredList');
     const countBadge = document.getElementById('sidebarFavCount');
-    const favs = appUserData[currentUser]?.favs || [];
+    
+    // Auto cleanup orphan starred IDs that do not exist in appCharacters
+    if (appUserData[currentUser] && Array.isArray(appUserData[currentUser].favs)) {
+        const validFavs = appUserData[currentUser].favs.filter(favId => 
+            appCharacters.some(c => c.id === favId)
+        );
+        if (validFavs.length !== appUserData[currentUser].favs.length) {
+            appUserData[currentUser].favs = validFavs;
+            saveUserData();
+        }
+    }
 
-    if (countBadge) countBadge.textContent = favs.length;
+    const favs = appUserData[currentUser]?.favs || [];
+    const starredAgents = appCharacters.filter(c => favs.includes(c.id));
+
+    if (countBadge) countBadge.textContent = starredAgents.length;
     if (!list) return;
 
     list.innerHTML = '';
-    const starredAgents = appCharacters.filter(c => favs.includes(c.id));
 
     if (starredAgents.length === 0) {
         list.innerHTML = '<p style="font-size:12px; color:var(--ink-faint); padding:6px 12px; margin:0;">ยังไม่มี Agent ที่ติดดาว</p>';
@@ -2651,7 +2696,8 @@ function renderSidebarStarred() {
 
 
 // --- FILE EXPORT ENGINE (PDF, WORD, CSV, MARKDOWN) ---
-window.copyMessageText = function(idx, btn) {
+window.copyMessageText = copyMessageText;
+function copyMessageText(idx, btn) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
     if(history && history[idx]) {
         navigator.clipboard.writeText(history[idx].t).then(() => {
@@ -2664,7 +2710,8 @@ window.copyMessageText = function(idx, btn) {
     }
 };
 
-window.downloadMessageAsPdf = function(idx) {
+window.downloadMessageAsPdf = downloadMessageAsPdf;
+function downloadMessageAsPdf(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
     if(!history || !history[idx]) return;
     const rawText = history[idx].t;
@@ -2726,7 +2773,8 @@ function printFallback(html) {
     }
 }
 
-window.downloadMessageAsWord = function(idx) {
+window.downloadMessageAsWord = downloadMessageAsWord;
+function downloadMessageAsWord(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
     if(!history || !history[idx]) return;
     const rawText = history[idx].t;
@@ -2771,7 +2819,8 @@ window.downloadMessageAsWord = function(idx) {
     URL.revokeObjectURL(url);
 };
 
-window.downloadMessageAsCsv = function(idx) {
+window.downloadMessageAsCsv = downloadMessageAsCsv;
+function downloadMessageAsCsv(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
     if(!history || !history[idx]) return;
     const text = history[idx].t;
@@ -2806,7 +2855,8 @@ window.downloadMessageAsCsv = function(idx) {
     URL.revokeObjectURL(url);
 };
 
-window.downloadMessageAsMarkdown = function(idx) {
+window.downloadMessageAsMarkdown = downloadMessageAsMarkdown;
+function downloadMessageAsMarkdown(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
     if(!history || !history[idx]) return;
     const text = history[idx].t;
@@ -2830,7 +2880,8 @@ window.downloadMessageAsMarkdown = function(idx) {
 
 
 // --- TOAST NOTIFICATIONS ---
-window.showToast = function(message, type = 'info') {
+window.showToast = showToast;
+function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     if (!container) {
         alert(message);
@@ -2852,13 +2903,15 @@ window.showToast = function(message, type = 'info') {
 };
 
 // --- PROMPT LIBRARY ---
-window.togglePromptLibrary = function(e) {
+window.togglePromptLibrary = togglePromptLibrary;
+function togglePromptLibrary(e) {
     if (e) e.stopPropagation();
     const menu = document.getElementById('promptLibraryMenu');
     if (menu) menu.classList.toggle('hidden');
 };
 
-window.insertPromptTemplate = function(text) {
+window.insertPromptTemplate = insertPromptTemplate;
+function insertPromptTemplate(text) {
     const input = document.getElementById('msgInput');
     if (input) {
         input.value = text;
@@ -2876,7 +2929,8 @@ window.addEventListener('click', (e) => {
 });
 
 // --- FOCUS / FULLSCREEN MODE ---
-window.toggleFocusMode = function() {
+window.toggleFocusMode = toggleFocusMode;
+function toggleFocusMode() {
     const chatWindow = document.getElementById('chatWindowMain');
     const btn = document.getElementById('btnFocusMode');
     if (!chatWindow) return;
@@ -2893,37 +2947,52 @@ window.toggleFocusMode = function() {
 };
 
 // --- NEW CHAT SESSION ---
-window.startNewChatSession = function() {
+window.startNewChatSession = startNewChatSession;
+function startNewChatSession() {
+    window.startNewChatSession = startNewChatSession;
     if (!currentCharacter) return;
-    if (confirm("ต้องการเริ่มเซสชันการสนทนาใหม่ใช่หรือไม่? (ประวัติการคุยเดิมจะถูกล้างสำหรับเซสชันนี้)")) {
+    showConfirmDialog({
+        title: "เริ่มเซสชันการสนทนาใหม่",
+        message: "ต้องการเริ่มเซสชันการสนทนาใหม่ใช่หรือไม่? (ประวัติการคุยเดิมจะถูกล้างสำหรับเซสชันนี้)",
+        confirmText: "เริ่มแชทใหม่",
+        cancelText: "ยกเลิก",
+        type: "primary",
+        icon: "💬"
+    }).then(confirmed => {
+        if (!confirmed) return;
+        const initialOpener = currentCharacter.opener || 'สวัสดีครับ มีอะไรให้ผมช่วยเหลือในวันนี้ไหมครับ?';
         appUserData[currentUser].history[currentCharacter.id] = [{ 
             id: 'msg-' + Date.now(), 
             r: 'bot', 
-            t: currentCharacter.opener,
-            candidates: [currentCharacter.opener],
+            t: initialOpener,
+            candidates: [initialOpener],
             cIndex: 0
         }];
         saveUserData();
         renderChatMessages();
         showToast("เริ่มต้นเซสชันใหม่เรียบร้อยแล้ว", "success");
-    }
+    });
 };
 
 
 // --- QUICK GUIDE MODAL ---
-window.openQuickGuideModal = function() {
+window.openQuickGuideModal = openQuickGuideModal;
+function openQuickGuideModal() {
     document.getElementById('quickGuideModal')?.classList.remove('hidden');
 };
-window.closeQuickGuideModal = function() {
+window.closeQuickGuideModal = closeQuickGuideModal;
+function closeQuickGuideModal() {
     document.getElementById('quickGuideModal')?.classList.add('hidden');
 };
 
 
 // --- TERMS & PRIVACY MODAL ---
-window.openTermsModal = function() {
+window.openTermsModal = openTermsModal;
+function openTermsModal() {
     document.getElementById('termsModal')?.classList.remove('hidden');
 };
-window.closeTermsModal = function() {
+window.closeTermsModal = closeTermsModal;
+function closeTermsModal() {
     document.getElementById('termsModal')?.classList.add('hidden');
 };
 
@@ -2932,7 +3001,8 @@ window.closeTermsModal = function() {
 let speechRecognizer = null;
 let isRecordingVoice = false;
 
-window.toggleVoiceRecognition = function() {
+window.toggleVoiceRecognition = toggleVoiceRecognition;
+function toggleVoiceRecognition() {
     const btn = document.getElementById('btnVoiceInput');
     const input = document.getElementById('msgInput');
     
@@ -2990,15 +3060,18 @@ window.toggleVoiceRecognition = function() {
 };
 
 // --- INTERVIEW SCORECARD MODAL FUNCTIONS ---
-window.openScorecardModal = function() {
+window.openScorecardModal = openScorecardModal;
+function openScorecardModal() {
     document.getElementById('scorecardModal')?.classList.remove('hidden');
     updateTotalScorecard();
 };
-window.closeScorecardModal = function() {
+window.closeScorecardModal = closeScorecardModal;
+function closeScorecardModal() {
     document.getElementById('scorecardModal')?.classList.add('hidden');
 };
 
-window.updateTotalScorecard = function() {
+window.updateTotalScorecard = updateTotalScorecard;
+function updateTotalScorecard() {
     const tech = parseInt(document.getElementById('scoreTech')?.value || 30, 10);
     const comm = parseInt(document.getElementById('scoreComm')?.value || 22, 10);
     const prob = parseInt(document.getElementById('scoreProblem')?.value || 17, 10);
@@ -3028,7 +3101,8 @@ window.updateTotalScorecard = function() {
     }
 };
 
-window.submitScorecardToChat = function() {
+window.submitScorecardToChat = submitScorecardToChat;
+function submitScorecardToChat() {
     const name = document.getElementById('scoreCandidateName')?.value.trim() || 'ผู้สมัคร';
     const pos = document.getElementById('scorePosition')?.value.trim() || 'ตำแหน่งงาน';
     const tech = document.getElementById('scoreTech')?.value || 30;
@@ -3061,7 +3135,8 @@ window.submitScorecardToChat = function() {
 };
 
 // --- DOWNLOAD MESSAGE AS PRESENTATION SLIDES ---
-window.downloadMessageAsSlides = function(idx) {
+window.downloadMessageAsSlides = downloadMessageAsSlides;
+function downloadMessageAsSlides(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
     if(!history || !history[idx]) return;
     const rawText = history[idx].t;
@@ -3116,197 +3191,272 @@ window.downloadMessageAsSlides = function(idx) {
 };
 
 
-// --- WORKSPACE BACKUP & RESTORE (DATA MIGRATION ACROSS DOMAINS) ---
-window.exportWorkspaceBackup = function() {
-    try {
-        const backupData = {
-            version: "2.5",
-            timestamp: new Date().toISOString(),
-            exportedBy: currentUser,
-            agents: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'agents_v2')) || appCharacters,
-            adminModels: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'admin_models_v1')) || adminModels,
-            userData: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'userdata_v1')) || appUserData,
-            roles: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'roles_v1')) || appRoles,
-            tags: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'tags_v1')) || appTags,
-            users: JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'users')) || {}
-        };
 
-        const jsonStr = JSON.stringify(backupData, null, 2);
-        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ETOPC_Workspace_Backup_${Date.now()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast("💾 ส่งออกไฟล์สำรองข้อมูล (.json) เรียบร้อยแล้ว", "success");
-    } catch(err) {
-        console.error("Backup export error:", err);
-        showToast("ไม่สามารถส่งออกข้อมูลสำรองได้: " + err.message, "error");
+
+
+
+
+// --- DEFAULT PROMPT TEMPLATES & DYNAMIC LIBRARY ---
+const DEFAULT_PROMPT_TEMPLATES = [
+  { id: "p-1", category: "🎯 HR & ประเมินเรซูเม่ (CV)", title: "คัดกรอง CV เทียบความต้องการ", prompt: "ช่วยคัดกรองเรซูเม่นี้เทียบกับความต้องการของตำแหน่งงาน พร้อมประเมินคะแนน 100 คะแนนและวิเคราะห์จุดแข็ง-จุดอ่อน" },
+  { id: "p-2", category: "🎯 HR & ประเมินเรซูเม่ (CV)", title: "เปรียบเทียบผู้สมัครหลายคน (Matrix)", prompt: "ช่วยเปรียบเทียบผู้สมัครทั้งหมดในข้อมูลข้างต้นแบบ Head-to-Head Matrix พร้อมตารางคะแนนและจัดอันดับความเหมาะสม" },
+  { id: "p-3", category: "🎯 HR & ประเมินเรซูเม่ (CV)", title: "ร่างอีเมลนัดสัมภาษณ์งาน", prompt: "ช่วยร่างอีเมลนัดหมายสัมภาษณ์งานภาษาไทยอย่างเป็นทางการ โดยระบุวันเวลา ลิงก์ออนไลน์ และสิ่งที่ต้องเตรียมตัว" },
+  { id: "p-4", category: "🎯 HR & ประเมินเรซูเม่ (CV)", title: "ร่างอีเมลปฏิเสธอย่างสุภาพ", prompt: "ช่วยร่างอีเมลปฏิเสธผู้สมัครงานอย่างสุภาพ อบอุ่น และรักษาภาพลักษณ์ที่ดีขององค์กร" },
+  { id: "p-5", category: "🎯 HR & ประเมินเรซูเม่ (CV)", title: "ปรับปรุง CV เป็น ATS-Friendly", prompt: "ช่วยปรับปรุงประวัติการทำงานในเรซูเม่นี้ให้กระชับ โดดเด่น และเป็นมาตรฐาน ATS-Friendly" },
+  { id: "p-6", category: "🎯 HR & ประเมินเรซูเม่ (CV)", title: "ร่างคำถามสัมภาษณ์งาน 5 ข้อ", prompt: "ช่วยร่างคำถามสัมภาษณ์งานเชิงลึก 5 ข้อ พร้อมแนวทางการประเมินคำตอบ โดยอิงจากประวัติการทำงานใน CV นี้" },
+  { id: "p-7", category: "📌 สรุปงาน & สกัดประเด็น", title: "สรุปใจความและ Action Items", prompt: "กรุณาสรุปประเด็นสำคัญของเอกสารนี้อย่างกระชับ พร้อมแยกเป็นหัวข้อและ Action Items" },
+  { id: "p-8", category: "📌 สรุปงาน & สกัดประเด็น", title: "ร่างอีเมลสรุปงานทางการ", prompt: "ช่วยร่างอีเมลภาษาไทยทางการเพื่อรายงานผลสรุปนี้ส่งต่อให้ทีมงานและผู้บริหาร" },
+  { id: "p-9", category: "📊 ข้อมูล & เปรียบเทียบ", title: "จัดระเบียบเป็นตารางเปรียบเทียบ", prompt: "ช่วยแปลงข้อมูลข้างต้นให้อยู่ในรูปแบบตาราง Markdown เพื่อเปรียบเทียบข้อดี ข้อเสีย และสถิติสำคัญ" }
+];
+let appPromptTemplates = [];
+
+function loadPromptTemplates() {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'prompts_v1');
+    if (saved) {
+        try { appPromptTemplates = JSON.parse(saved); } catch(e) { appPromptTemplates = [...DEFAULT_PROMPT_TEMPLATES]; }
+    } else {
+        appPromptTemplates = [...DEFAULT_PROMPT_TEMPLATES];
     }
-};
+    renderPromptLibrary();
+}
 
-window.importWorkspaceBackup = function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (!data || (!data.agents && !data.adminModels)) {
-                throw new Error("รูปแบบไฟล์สำรองข้อมูลไม่ถูกต้อง");
-            }
-
-            if (data.agents && Array.isArray(data.agents)) {
-                localStorage.setItem(STORAGE_PREFIX + 'agents_v2', JSON.stringify(data.agents));
-                appCharacters = data.agents;
-            }
-            if (data.adminModels && Array.isArray(data.adminModels)) {
-                localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(data.adminModels));
-                adminModels = data.adminModels;
-            }
-            if (data.userData) {
-                localStorage.setItem(STORAGE_PREFIX + 'userdata_v1', JSON.stringify(data.userData));
-                appUserData = data.userData;
-            }
-            if (data.roles) {
-                localStorage.setItem(STORAGE_PREFIX + 'roles_v1', JSON.stringify(data.roles));
-                appRoles = data.roles;
-            }
-            if (data.tags) {
-                localStorage.setItem(STORAGE_PREFIX + 'tags_v1', JSON.stringify(data.tags));
-                appTags = data.tags;
-            }
-            if (data.users) {
-                let currentUsers = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'users')) || {};
-                let mergedUsers = { ...currentUsers, ...data.users };
-                mergedUsers['ETPIM'] = { password: 'ET@PIMadminpass', role: 'admin' };
-                localStorage.setItem(STORAGE_PREFIX + 'users', JSON.stringify(mergedUsers));
-            }
-
-            loadGeminiConfigs();
-            loadUserData();
-            loadData();
-            updateUIAfterProfileChange();
-            renderSidebarStarred();
-            applyFilters();
-
-            showToast("🎉 กู้คืนข้อมูลสำเร็จ! ข้อมูลทั้งหมดพร้อมใช้งานแล้ว", "success");
-        } catch(err) {
-            console.error("Restore error:", err);
-            showToast("❌ กู้คืนข้อมูลไม่สำเร็จ: " + err.message, "error");
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-};
-
-
-// --- CLOUD DATABASE CONTROL CENTER FUNCTIONS ---
-window.openSupabaseModal = function() {
-    document.getElementById('supabaseModal')?.classList.remove('hidden');
-    const savedUrl = localStorage.getItem(STORAGE_PREFIX + 'supabase_url') || SUPABASE_URL;
-    const savedKey = localStorage.getItem(STORAGE_PREFIX + 'supabase_key') || SUPABASE_ANON_KEY;
-    if (document.getElementById('supabaseUrlInput')) document.getElementById('supabaseUrlInput').value = savedUrl;
-    if (document.getElementById('supabaseKeyInput')) document.getElementById('supabaseKeyInput').value = savedKey;
-};
-
-window.closeSupabaseModal = function() {
-    document.getElementById('supabaseModal')?.classList.add('hidden');
-};
-
-window.saveSupabaseSettings = function() {
-    const url = document.getElementById('supabaseUrlInput')?.value.trim();
-    const key = document.getElementById('supabaseKeyInput')?.value.trim();
-    if (!url || !key) {
-        showToast("กรุณากรอก URL และ API Key ให้ครบถ้วน", "warning");
-        return;
-    }
-    localStorage.setItem(STORAGE_PREFIX + 'supabase_url', url);
-    localStorage.setItem(STORAGE_PREFIX + 'supabase_key', key);
+function renderPromptLibrary() {
+    const menu = document.getElementById('promptLibraryMenu');
+    if (!menu) return;
     
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        supabaseClient = window.supabase.createClient(url, key);
-    }
-    showToast("💾 บันทึกการตั้งค่า Cloud เรียบร้อยแล้ว", "success");
-    testSupabaseConnection();
+    // Group templates by category
+    const categories = {};
+    appPromptTemplates.forEach(t => {
+        const cat = t.category || '💡 ทั่วไป';
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(t);
+    });
+
+    let html = `
+    <div class="prompt-lib-header">
+      <span class="prompt-lib-title">
+        💡 คลังคำสั่งด่วน (Prompt Library)
+      </span>
+      <button class="btn-icon" onclick="togglePromptLibrary()" style="width:24px; height:24px; border:none; background:transparent;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="prompt-lib-list">`;
+
+    Object.keys(categories).forEach(catName => {
+        html += `<div class="prompt-lib-category">${escapeHtml(catName)}</div>`;
+        categories[catName].forEach(p => {
+            const escapedPrompt = escapeHtml(p.prompt).replace(/'/g, "\'");
+            html += `
+            <div class="prompt-lib-item" onclick="insertPromptTemplate('${escapedPrompt}')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span>${escapeHtml(p.title)}</span>
+            </div>`;
+        });
+    });
+
+    html += `</div>`;
+    menu.innerHTML = html;
+}
+
+// --- ADMIN DASHBOARD TABS & ADVANCED FEATURES ---
+function switchAdminTab(tabName) {
+window.switchAdminTab = switchAdminTab;
+    const tabs = ['stats', 'prompts', 'roles', 'users'];
+    tabs.forEach(t => {
+        const btn = document.getElementById('btnAdminTab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const content = document.getElementById('adminTabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) btn.classList.toggle('active', t === tabName);
+        if (content) content.classList.toggle('hidden', t !== tabName);
+    });
+
+    if (tabName === 'stats') renderAdminStats();
+    if (tabName === 'prompts') renderAdminPromptList();
+    if (tabName === 'roles') { renderRoleList(); renderTagList(); }
+    if (tabName === 'users') { renderAdminList(); renderUserAccountList(); }
 };
 
-window.testSupabaseConnection = async function() {
-    const statusDiv = document.getElementById('supabaseTestStatus');
-    if (!statusDiv) return;
+function renderAdminStats() {
+    const users = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'users')) || {};
+    const totalUsers = Object.keys(users).length;
+    const totalAgents = appCharacters.length;
+
+    let totalChats = 0;
+    let topAgent = null;
+    let maxChats = -1;
+
+    appCharacters.forEach(c => {
+        const count = c.chatCount || 0;
+        totalChats += count;
+        if (count > maxChats) {
+            maxChats = count;
+            topAgent = c;
+        }
+    });
+
+    const statUsers = document.getElementById('statTotalUsers');
+    const statAgents = document.getElementById('statTotalAgents');
+    const statChats = document.getElementById('statTotalChats');
+    const statTop = document.getElementById('statTopAgent');
+
+    if (statUsers) statUsers.textContent = totalUsers;
+    if (statAgents) statAgents.textContent = totalAgents;
+    if (statChats) statChats.textContent = totalChats.toLocaleString();
+    if (statTop) statTop.textContent = topAgent ? topAgent.name : '-';
+
+    // Allow user create agent policy toggle state
+    const allowUserCreate = localStorage.getItem(STORAGE_PREFIX + 'allow_user_create') !== 'false';
+    const toggleAllow = document.getElementById('toggleAllowUserCreate');
+    if (toggleAllow) toggleAllow.checked = allowUserCreate;
+
+    // Announcement state
+    const isAnnounceActive = localStorage.getItem(STORAGE_PREFIX + 'announcement_active') === 'true';
+    const announceText = localStorage.getItem(STORAGE_PREFIX + 'announcement_text') || 'ยินดีต้อนรับสู่ระบบ Enterprise AI Workspace คณะวิศวกรรมศาสตร์และเทคโนโลยี';
     
-    statusDiv.style.display = 'block';
-    statusDiv.style.background = 'rgba(59,130,246,0.1)';
-    statusDiv.style.color = '#3B82F6';
-    statusDiv.textContent = '⏳ กำลังทดสอบเชื่อมต่อกับ Supabase...';
+    const toggleAnnounce = document.getElementById('toggleAnnouncementActive');
+    const announceInput = document.getElementById('announcementInput');
+    if (toggleAnnounce) toggleAnnounce.checked = isAnnounceActive;
+    if (announceInput) announceInput.value = announceText;
+}
 
-    const url = document.getElementById('supabaseUrlInput')?.value.trim() || SUPABASE_URL;
-    const key = document.getElementById('supabaseKeyInput')?.value.trim() || SUPABASE_ANON_KEY;
-
-    try {
-        if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-            throw new Error("ไม่พบไลบรารี Supabase ในระบบ");
-        }
-        const client = window.supabase.createClient(url, key);
-        const { data, error } = await client.from('agents').select('count', { count: 'exact', head: true });
-
-        if (error) {
-            throw new Error(error.message || JSON.stringify(error));
-        }
-
-        statusDiv.style.background = 'rgba(16,185,129,0.1)';
-        statusDiv.style.color = '#10B981';
-        statusDiv.innerHTML = `✅ เชื่อมต่อ Supabase สำเร็จ! (พบตาราง agents พร้อมใช้งาน)`;
-    } catch(err) {
-        statusDiv.style.background = 'rgba(239,68,68,0.1)';
-        statusDiv.style.color = '#EF4444';
-        statusDiv.innerHTML = `❌ เชื่อมต่อไม่สำเร็จ: ${escapeHtml(err.message)}<br><small>*โปรดตรวจสอบว่าได้รันคำสั่ง SQL สร้างตาราง agents และใช้ anon key ที่ถูกต้อง</small>`;
-    }
+function toggleAgentCreationPolicy() {
+window.toggleAgentCreationPolicy = toggleAgentCreationPolicy;
+    const toggle = document.getElementById('toggleAllowUserCreate');
+    const allowed = toggle ? toggle.checked : true;
+    localStorage.setItem(STORAGE_PREFIX + 'allow_user_create', allowed ? 'true' : 'false');
+    updateCreateButtonVisibility();
+    showToast(allowed ? "อนุญาตให้ผู้ใช้ทุกคนสร้าง Agent ได้" : "จำกัดสิทธิ์ให้เฉพาะ Admin เท่านั้นที่สร้าง Agent ได้", "info");
 };
 
-window.forcePushAllToSupabase = async function() {
-    if (!supabaseClient) {
-        showToast("ยังไม่ได้เชื่อมต่อ Supabase", "error");
-        return;
-    }
-    showToast("⏳ กำลังอัปโหลดข้อมูล Agent ทั้งหมดขึ้น Cloud...", "info");
-    try {
-        const payload = appCharacters.map(mapCharToDb);
-        const { data, error } = await supabaseClient.from('agents').upsert(payload);
-        if (error) throw error;
+function updateCreateButtonVisibility() {
+    const allowUserCreate = localStorage.getItem(STORAGE_PREFIX + 'allow_user_create') !== 'false';
+    const btnCreateChar = document.getElementById('btnCreateChar');
+    const sidebarBtnCreate = document.getElementById('sidebarBtnCreate');
 
-        showToast("🎉 อัปโหลด Agent และรูปภาพทั้งหมดขึ้น Cloud สำเร็จแล้ว!", "success");
-        closeSupabaseModal();
-    } catch(err) {
-        console.error("Force push error:", err);
-        showToast("อัปโหลดไม่สำเร็จ: " + err.message, "error");
-    }
+    const shouldShow = (currentUserRole === 'admin') || allowUserCreate;
+    if (btnCreateChar) btnCreateChar.style.display = shouldShow ? 'inline-flex' : 'none';
+    if (sidebarBtnCreate) sidebarBtnCreate.style.display = shouldShow ? 'flex' : 'none';
+}
+
+function toggleAnnouncementState() {
+window.toggleAnnouncementState = toggleAnnouncementState;
+    const toggle = document.getElementById('toggleAnnouncementActive');
+    const active = toggle ? toggle.checked : false;
+    localStorage.setItem(STORAGE_PREFIX + 'announcement_active', active ? 'true' : 'false');
+    loadAnnouncement();
+    showToast(active ? "เปิดการแสดงแถบประกาศแล้ว" : "ปิดแถบประกาศแล้ว", "info");
 };
 
-window.forcePullAllFromSupabase = async function() {
-    if (!supabaseClient) {
-        showToast("ยังไม่ได้เชื่อมต่อ Supabase", "error");
-        return;
-    }
-    showToast("⏳ กำลังดึงข้อมูลล่าสุดจาก Cloud...", "info");
-    try {
-        const { data, error } = await supabaseClient.from('agents').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
+function saveAnnouncementSettings() {
+window.saveAnnouncementSettings = saveAnnouncementSettings;
+    const input = document.getElementById('announcementInput');
+    const text = input ? input.value.trim() : '';
+    if (!text) return alert("กรุณาพิมพ์ข้อความประกาศ");
 
-        if (data && data.length > 0) {
-            appCharacters = data.map(mapDbToChar).filter(Boolean);
-            saveToStorage();
-            applyFilters();
-            renderSidebarStarred();
-            showToast(`🎉 ดึงข้อมูลสำเร็จ! โหลด Agent ทั้งหมด ${data.length} รายการ`, "success");
-            closeSupabaseModal();
+    localStorage.setItem(STORAGE_PREFIX + 'announcement_text', text);
+    localStorage.setItem(STORAGE_PREFIX + 'announcement_active', 'true');
+    
+    const toggle = document.getElementById('toggleAnnouncementActive');
+    if (toggle) toggle.checked = true;
+
+    loadAnnouncement();
+    showToast("บันทึกและแสดงแถบประกาศเรียบร้อยแล้ว", "success");
+};
+
+function loadAnnouncement() {
+    const banner = document.getElementById('globalAnnouncementBanner');
+    const textSpan = document.getElementById('announcementText');
+    const isActive = localStorage.getItem(STORAGE_PREFIX + 'announcement_active') === 'true';
+    const text = localStorage.getItem(STORAGE_PREFIX + 'announcement_text') || 'ยินดีต้อนรับสู่ระบบ Enterprise AI Workspace คณะวิศวกรรมศาสตร์และเทคโนโลยี';
+
+    if (banner && textSpan) {
+        if (isActive) {
+            textSpan.textContent = text;
+            banner.style.display = 'flex';
         } else {
-            showToast("ไม่พบข้อมูล Agent บน Cloud", "warning");
+            banner.style.display = 'none';
         }
-    } catch(err) {
-        console.error("Force pull error:", err);
-        showToast("ดึงข้อมูลไม่สำเร็จ: " + err.message, "error");
     }
+}
+
+function dismissAnnouncement() {
+window.dismissAnnouncement = dismissAnnouncement;
+    const banner = document.getElementById('globalAnnouncementBanner');
+    if (banner) banner.style.display = 'none';
+};
+
+// Prompt Library Admin Functions
+function renderAdminPromptList() {
+    const container = document.getElementById('adminPromptListContainer');
+    const countLabel = document.getElementById('promptCountLabel');
+    if (!container) return;
+    container.innerHTML = '';
+    if (countLabel) countLabel.textContent = appPromptTemplates.length;
+
+    if (appPromptTemplates.length === 0) {
+        container.innerHTML = '<p style="font-size:12px; color:var(--ink-faint); padding:8px;">ยังไม่มีแม่แบบคำสั่งในระบบ</p>';
+        return;
+    }
+
+    appPromptTemplates.forEach((p, idx) => {
+        container.innerHTML += `
+        <div class="admin-list-item" style="flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:11px; background:var(--surface-3); padding:1px 6px; border-radius:4px; font-weight:700; color:var(--ink-soft);">${escapeHtml(p.category || 'ทั่วไป')}</span>
+              <strong style="font-size:13px; color:var(--ink);">${escapeHtml(p.title)}</strong>
+            </div>
+            <button class="btn-delete" style="padding:3px 8px; font-size:11px;" onclick="deletePromptTemplate('${p.id}')">ลบ</button>
+          </div>
+          <p style="margin:2px 0 0; font-size:11.5px; color:var(--ink-soft); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(p.prompt)}</p>
+        </div>`;
+    });
+}
+
+function addNewPromptTemplate() {
+window.addNewPromptTemplate = addNewPromptTemplate;
+    const cat = document.getElementById('newPromptCategory')?.value || '🎯 HR & ประเมินเรซูเม่ (CV)';
+    const title = document.getElementById('newPromptTitle')?.value.trim();
+    const prompt = document.getElementById('newPromptText')?.value.trim();
+
+    if (!title || !prompt) {
+        alert("กรุณากรอกชื่อเรียกคำสั่งและข้อความคำสั่งให้ครบถ้วน");
+        return;
+    }
+
+    const newTemplate = {
+        id: 'p-' + Date.now(),
+        category: cat,
+        title: title,
+        prompt: prompt
+    };
+
+    appPromptTemplates.push(newTemplate);
+    localStorage.setItem(STORAGE_PREFIX + 'prompts_v1', JSON.stringify(appPromptTemplates));
+
+    if (document.getElementById('newPromptTitle')) document.getElementById('newPromptTitle').value = '';
+    if (document.getElementById('newPromptText')) document.getElementById('newPromptText').value = '';
+
+    renderAdminPromptList();
+    renderPromptLibrary();
+    showToast("เพิ่มแม่แบบคำสั่งใหม่ลงในคลังเรียบร้อยแล้ว", "success");
+};
+
+function deletePromptTemplate(id) {
+    window.deletePromptTemplate = deletePromptTemplate;
+    showConfirmDialog({
+        title: "ลบแม่แบบคำสั่ง",
+        message: "ต้องการลบแม่แบบคำสั่งนี้ออกจากคลังด่วนใช่หรือไม่?",
+        confirmText: "ลบคำสั่ง",
+        cancelText: "ยกเลิก",
+        type: "danger",
+        icon: "🗑️"
+    }).then(confirmed => {
+        if (!confirmed) return;
+        appPromptTemplates = appPromptTemplates.filter(p => p.id !== id);
+        localStorage.setItem(STORAGE_PREFIX + 'prompts_v1', JSON.stringify(appPromptTemplates));
+        renderAdminPromptList();
+        renderPromptLibrary();
+        showToast("ลบแม่แบบคำสั่งเรียบร้อยแล้ว", "info");
+    });
 };
