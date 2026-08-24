@@ -183,9 +183,7 @@
           <span class="sidebar-tab-text">ตั้งค่า AI & Model</span>
         </button>
       </div>
-      <div style="font-size:10.5px; color:var(--sidebar-muted); padding:10px 12px 4px; text-align:center; letter-spacing:0.04em; white-space: nowrap; overflow: hidden;">
-        ET OPC Workspace • <strong style="color:#FFFFFF;">MR.ST</strong>
-      </div>
+      <div class="sidebar-watermark-text">ET OPC Workspace • MR.ST</div>
     </aside>
 
     <!-- ================= MAIN CONTENT AREA ================= -->
@@ -405,7 +403,7 @@
           </div>
 
           <!-- Quick Action Automation Bar -->
-          <div class="automation-bar">
+          <div class="automation-bar" id="chatAutomationBar">
              <button class="btn-auto-action" onclick="triggerAutomation('cv_screen')" title="วิเคราะห์ ประเมินคะแนน และร่างคำถามสัมภาษณ์จากเรซูเม่">🎯 ประเมินเรซูเม่ (CV Screening)</button>
              <button class="btn-auto-action" onclick="triggerAutomation('cv_compare')" title="เปรียบเทียบผู้สมัครหลายคนในตาราง Head-to-Head">📊 เปรียบเทียบผู้สมัคร</button>
              <button class="btn-auto-action" onclick="triggerAutomation('cv_optimize')" title="ปรับปรุงประวัติการทำงานให้เป็นแบบมืออาชีพ ATS-Friendly">✨ ปรับปรุง CV ให้โดดเด่น</button>
@@ -426,23 +424,48 @@
           <div class="quick-replies" id="quickReplies" style="display:none;"></div>
 
           <!-- Enhanced Pending File Preview Badge -->
-          <div id="fileAttachmentPreview" class="file-attachment-preview" style="display:none;">
-              <div class="file-preview-icon" id="attachedFileIcon">📄</div>
-              <div class="file-preview-details">
-                  <div class="file-preview-name" id="attachedFileName">document.pdf</div>
-                  <div class="file-preview-meta">
-                      <span id="attachedFileSize">0 KB</span> • <span id="attachedFileTypeTag" class="file-type-pill">PDF</span>
+          <!-- Enhanced Pending File Preview Badge with 1-Click Action Buttons -->
+          <div id="fileAttachmentPreview" class="file-attachment-preview" style="display:none; flex-direction:column; gap:8px; padding:12px 14px; background:var(--surface-2); border:1.5px solid var(--maroon); border-radius:14px; margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                      <div class="file-preview-icon" id="attachedFileIcon" style="font-size:24px;">📄</div>
+                      <div class="file-preview-details">
+                          <div class="file-preview-name" id="attachedFileName" style="font-size:13.5px; font-weight:800; color:var(--ink);">document.pdf</div>
+                          <div class="file-preview-meta" style="font-size:11px; color:var(--ink-faint);">
+                              <span id="attachedFileSize">0 KB</span> • <span id="attachedFileTypeTag" class="file-type-pill">PDF</span>
+                          </div>
+                      </div>
                   </div>
+                  <button type="button" class="btn-delete" style="padding:4px 10px; font-size:11px; border-radius:8px;" onclick="clearPendingFile()">✕ ยกเลิกไฟล์</button>
               </div>
-              <button class="btn-delete" style="padding:5px 10px; font-size:11.5px; border-radius:6px;" onclick="clearPendingFile()">ยกเลิกไฟล์</button>
+
+              <!-- Quick 1-Click Action Buttons for Attached File -->
+              <div style="display:flex; gap:8px; flex-wrap:wrap; border-top:1px solid var(--line); padding-top:8px;">
+                  <button type="button" class="btn-submit" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-radius:8px;" onclick="triggerAttachedFileAction('evaluate')">
+                      🎯 ตรวจประเมินเรซูเม่ (CV Score)
+                  </button>
+                  <button type="button" class="btn-cancel" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-radius:8px; color:var(--maroon); border-color:var(--maroon);" onclick="triggerAttachedFileAction('summary')">
+                      📑 สรุปสาระสำคัญ & Action Items
+                  </button>
+                  <button type="button" class="btn-cancel" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-radius:8px; color:var(--maroon); border-color:var(--maroon);" onclick="triggerAttachedFileAction('table')">
+                      📊 แปลงข้อมูลเป็นตาราง
+                  </button>
+              </div>
           </div>
 
           <!-- Composer with File Upload, Drag-Drop, Prompt Library, and Paste Support -->
+                    <!-- Prompt Library Popover Menu -->
+          <div id="promptLibraryMenu" class="prompt-library-menu hidden"></div>
+
           <div class="composer">
             <input type="file" id="chatFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.json,.md,.tsv,.doc,.docx,.html,.js,.py,.xml" class="hidden" onchange="handleFileSelection(event)">
             
             <button type="button" class="btn-icon" onclick="document.getElementById('chatFileInput').click()" title="แนบไฟล์ PDF, รูปภาพ, CSV หรือเอกสาร (รองรับลากวาง / Ctrl+V)" style="width:40px; height:40px; border-radius:50%;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+
+                                    <button type="button" class="btn-icon" id="btnCandidateHub" onclick="openCandidateHubModal()" title="🎓 ศูนย์คัดกรองเรซูเม่ นศ. (Candidate Screening Hub)" style="width:40px; height:40px; border-radius:50%; margin-right:2px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </button>
 
             <button type="button" class="btn-icon" id="btnPromptLib" onclick="togglePromptLibrary(event)" title="💡 คลังคำสั่งด่วน (Prompt Library)" style="width:40px; height:40px; border-radius:50%; margin-right:2px;">
@@ -770,7 +793,7 @@
       <button class="admin-tab-btn" id="btnAdminTabPrompts" onclick="switchAdminTab('prompts')">💡 คลังคำสั่งด่วน</button>
       <button class="admin-tab-btn" id="btnAdminTabRoles" onclick="switchAdminTab('roles')">🏢 แผนก & แท็ก</button>
       <button class="admin-tab-btn" id="btnAdminTabUsers" onclick="switchAdminTab('users')">👥 สิทธิ์ & บัญชีผู้ใช้</button>
-      <button class="admin-tab-btn" id="btnAdminTabIntegrations" onclick="switchAdminTab('integrations')">🔗 เชื่อมต่อ Drive & Email</button>
+      <button class="admin-tab-btn" id="btnAdminTabIntegrations" onclick="switchAdminTab('integrations')">📧 ระบบส่งอีเมลแจ้งเตือน (Gmail)</button>
     </div>
 
     <!-- TAB 1: STATS & ANNOUNCEMENTS -->
@@ -830,35 +853,58 @@
     </div>
 
     <!-- TAB 2: GLOBAL PROMPT LIBRARY -->
+        <!-- TAB 2: PROMPTS & ACTIONS (คลังคำสั่งด่วน: คำสั่งงาน & คำสั่งลัดช่วยพิมพ์) -->
     <div id="adminTabContentPrompts" class="admin-tab-content hidden">
-      <h4 class="admin-section-heading">➕ เพิ่มแม่แบบคำสั่งด่วนใหม่ (Prompt Template)</h4>
-      <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
-        <div class="form-group" style="margin-bottom:8px;">
-          <label style="font-size:12px;">หมวดหมู่คำสั่ง</label>
-          <select id="newPromptCategory" class="admin-field-input">
-            <option value="🎯 HR & ประเมินเรซูเม่ (CV)">🎯 HR & ประเมินเรซูเม่ (CV)</option>
-            <option value="📌 สรุปงาน & สกัดประเด็น">📌 สรุปงาน & สกัดประเด็น</option>
-            <option value="📊 ข้อมูล & เปรียบเทียบ">📊 ข้อมูล & เปรียบเทียบ</option>
-            <option value="💼 ธุรการ & หนังสือทางการ">💼 ธุรการ & หนังสือทางการ</option>
-            <option value="💡 ไอเดีย & กลยุทธ์">💡 ไอเดีย & กลยุทธ์</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin-bottom:8px;">
-          <label style="font-size:12px;">ชื่อเรียกคำสั่ง (Title)</label>
-          <input type="text" id="newPromptTitle" class="admin-field-input" placeholder="เช่น ร่างหนังสือขออนุมัติโครงการ">
-        </div>
-        <div class="form-group" style="margin-bottom:12px;">
-          <label style="font-size:12px;">ข้อความคำสั่งเต็ม (Prompt Text)</label>
-          <textarea id="newPromptText" class="admin-field-input" rows="2" placeholder="ใส่คำสั่งที่ต้องการให้ AI ปฏิบัติ เช่น ช่วยร่างหนังสือขออนุมัติ..."></textarea>
-        </div>
-        <button class="btn-submit" style="width:100%; padding:9px;" onclick="addNewPromptTemplate()">เพิ่มคำสั่งลงคลังด่วน</button>
+      <!-- Sub Tabs within Prompts -->
+      <div style="display:flex; gap:8px; margin-bottom:14px; background:var(--surface-3); padding:4px; border-radius:10px;">
+        <button type="button" class="admin-subtab-btn active" id="subtabQaTop" onclick="switchPromptSubtab('top')" style="flex:1; padding:7px 10px; border-radius:8px; border:none; background:var(--surface); color:var(--maroon); font-weight:800; font-size:12px; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+          📑 คลังคำสั่งงาน (แถบบนห้องแชท)
+        </button>
+        <button type="button" class="admin-subtab-btn" id="subtabQaLib" onclick="switchPromptSubtab('lib')" style="flex:1; padding:7px 10px; border-radius:8px; border:none; background:transparent; color:var(--ink-soft); font-weight:700; font-size:12px; cursor:pointer;">
+          💡 คลังคำสั่งลัดช่วยพิมพ์ (เมนูหลอดไฟ)
+        </button>
       </div>
 
-      <h4 class="admin-section-heading">คลังคำสั่งด่วนที่มีในระบบ (<span id="promptCountLabel">0</span>)</h4>
-      <div id="adminPromptListContainer" style="max-height: 180px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+      <!-- SECTION 1: คลังคำสั่งงาน (Top Bar Actions) -->
+      <div id="secPromptTopActions">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <h4 class="admin-section-heading" style="margin:0;">📑 จัดการปุ่มคำสั่งงานบนแถบแชท (<span id="qaActionCountLabel">0</span>)</h4>
+          <button type="button" class="btn-submit" style="padding:4px 10px; font-size:11.5px; border-radius:8px;" onclick="openNewQuickActionModal()">➕ เพิ่มปุ่มใหม่</button>
+        </div>
+        <p style="font-size:11.5px; color:var(--ink-soft); margin:0 0 10px 0;">ปุ่มเหล่านี้จะแสดงที่แถบด้านบนของห้องแชทเพื่อให้ผู้ใช้กดสั่งงานด่วนได้ทันที</p>
+        <div id="adminQuickActionsContainer" style="max-height: 230px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:14px;"></div>
+      </div>
+
+      <!-- SECTION 2: คลังคำสั่งลัดช่วยพิมพ์ (Lightbulb Prompt Templates) -->
+      <div id="secPromptLibTemplates" style="display:none;">
+        <h4 class="admin-section-heading">➕ เพิ่มคำสั่งลัดช่วยพิมพ์ใหม่ (เมนูหลอดไฟ)</h4>
+        <div style="background:var(--surface-2); padding:12px 14px; border-radius:12px; border:1px solid var(--line); margin-bottom:14px;">
+          <div class="form-group" style="margin-bottom:8px;">
+            <label style="font-size:11.5px;">หมวดหมู่คำสั่ง</label>
+            <select id="newPromptCategory" class="admin-field-input">
+              <option value="🎯 HR & ประเมินเรซูเม่ (CV)">🎯 HR & ประเมินเรซูเม่ (CV)</option>
+              <option value="📌 สรุปงาน & สกัดประเด็น">📌 สรุปงาน & สกัดประเด็น</option>
+              <option value="📊 ข้อมูล & เปรียบเทียบ">📊 ข้อมูล & เปรียบเทียบ</option>
+              <option value="💼 ธุรการ & หนังสือทางการ">💼 ธุรการ & หนังสือทางการ</option>
+              <option value="💡 ไอเดีย & กลยุทธ์">💡 ไอเดีย & กลยุทธ์</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <label style="font-size:11.5px;">ชื่อเรียกคำสั่ง (Title)</label>
+            <input type="text" id="newPromptTitle" class="admin-field-input" placeholder="เช่น ร่างหนังสือขออนุมัติโครงการ">
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label style="font-size:11.5px;">ข้อความคำสั่งเต็ม (Prompt Text)</label>
+            <textarea id="newPromptText" class="admin-field-input" rows="2" placeholder="ใส่คำสั่งที่ต้องการให้ AI ปฏิบัติ..."></textarea>
+          </div>
+          <button type="button" class="btn-submit" style="width:100%; padding:8px; font-size:12px;" onclick="addNewPromptTemplate()">เพิ่มลงคลังคำสั่งลัดช่วยพิมพ์</button>
+        </div>
+
+        <h4 class="admin-section-heading">รายการคำสั่งลัดในเมนูหลอดไฟ (<span id="promptCountLabel">0</span>)</h4>
+        <div id="adminPromptListContainer" style="max-height: 180px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
     </div>
 
-    <!-- TAB 3: ROLES & TAGS -->
     <div id="adminTabContentRoles" class="admin-tab-content hidden">
       <!-- 1. Roles -->
       <h4 class="admin-section-heading">1. จัดการแผนก / ฝ่ายงาน (Roles)</h4>
@@ -898,27 +944,14 @@
     </div>
 
     <!-- TAB 5: GOOGLE DRIVE & EMAIL AUTOMATION INTEGRATIONS -->
+        <!-- TAB 5: GMAIL EVALUATION AUTOMATION -->
     <div id="adminTabContentIntegrations" class="admin-tab-content hidden">
-      <!-- 1. Google Drive Settings -->
-      <h4 class="admin-section-heading">📂 1. การเชื่อมต่อ Google Drive ประจำองค์กร</h4>
-      <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:12px;">ลิงก์หรือ ID โฟลเดอร์ Google Drive (สำหรับเก็บและอ่านไฟล์)</label>
-          <input type="text" id="adminDriveFolderUrl" class="admin-field-input" placeholder="เช่น https://drive.google.com/drive/folders/1ABCxyz... หรือ ID โฟลเดอร์">
-        </div>
-        <div class="form-group" style="margin-bottom:4px;">
-          <label style="font-size:12px;">Google Apps Script Webhook URL (สำหรับรับไฟล์และส่งอีเมลอัตโนมัติ)</label>
-          <input type="text" id="adminDriveWebhookUrl" class="admin-field-input" placeholder="https://script.google.com/macros/s/AKfycbx.../exec">
-        </div>
-        <p style="font-size:11px; color:var(--ink-faint); margin:4px 0 0 0;">*รองรับทั้งการวางลิงก์ไฟล์ Google Docs/PDF ในแชท และส่งไฟล์เข้า Drive ของ Admin โดยตรง</p>
-      </div>
-
-      <!-- 2. Automated Email Evaluation Trigger Settings -->
-      <h4 class="admin-section-heading">📧 2. การตั้งค่าอีเมลแจ้งเตือนอัตโนมัติเมื่อผ่านเกณฑ์</h4>
+      <!-- Automated Email Evaluation Trigger Settings -->
+      <h4 class="admin-section-heading">📧 การตั้งค่าอีเมลแจ้งเตือนอัตโนมัติเมื่อผ่านเกณฑ์</h4>
       <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
           <div>
-            <strong style="font-size:13px; color:var(--ink);">เปิดใช้งานระบบส่งอีเมลแจ้งเตือนอัตโนมัติ</strong>
+            <strong style="font-size:13px; color:var(--ink);">เปิดใช้งานระบบส่งอีเมลแจ้งเตือน</strong>
             <p style="font-size:11.5px; color:var(--ink-soft); margin:2px 0 0 0;">เมื่อคะแนนการประเมินถึงเกณฑ์ที่กำหนด</p>
           </div>
           <label class="switch-toggle">
@@ -929,38 +962,48 @@
 
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:12px;">อีเมลผู้รับแจ้งเตือน (Admin / อาจารย์ / หัวหน้าฝ่าย HR)</label>
-          <input type="email" id="adminNotifyEmail" class="admin-field-input" placeholder="เช่น hr.etopc@pim.ac.th, siraphop.tha@pim.ac.th">
+          <input type="email" id="adminNotifyEmail" class="admin-field-input" placeholder="เช่น ai.yoshi2006@gmail.com">
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:12px;">Google Apps Script Webhook URL (สำหรับส่งอีเมลพร้อมแนบไฟล์)</label>
+          <input type="text" id="adminDriveWebhookUrl" class="admin-field-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
         </div>
 
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:12px; display:flex; justify-content:space-between;">
             <span>เกณฑ์คะแนนขั้นต่ำสำหรับ "ผ่านการคัดเลือก" (Passing Threshold)</span>
-            <strong id="passingScoreDisplay" style="color:var(--maroon); font-size:13px;">80 / 100 คะแนน</strong>
+            <strong id="passingScoreDisplay" style="color:var(--maroon); font-size:13px;">70 / 100 คะแนน</strong>
           </label>
-          <input type="range" id="adminPassingScore" min="50" max="100" step="5" value="80" oninput="document.getElementById('passingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
+          <input type="range" id="adminPassingScore" min="50" max="100" step="5" value="70" oninput="document.getElementById('passingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
           <label style="font-size:12px;">รูปแบบการส่งแจ้งเตือน</label>
           <select id="adminEmailSendMode" class="admin-field-input">
-            <option value="manual">👆 Manual: แสดงปุ่มในการ์ดแชทให้ Admin/กรรมการ กดส่งอีเมลหรือตรวจสอบก่อน</option>
-            <option value="auto">⚡ Auto-Trigger: ส่งอีเมลแจ้งเตือนไปยังผู้รับทันทีที่ประเมินผ่านเกณฑ์</option>
+            <option value="manual">👆 Manual: แสดงปุ่มในการ์ดแชทให้กดส่งอีเมลพร้อมแนบไฟล์</option>
+            <option value="auto">⚡ Auto-Trigger: ส่งอีเมลแจ้งเตือนไปยัง Gmail ทันทีที่ประเมินผ่านเกณฑ์</option>
           </select>
         </div>
       </div>
 
-      <!-- 3. Google Apps Script Helper & Code Template -->
-      <h4 class="admin-section-heading">📜 3. โค้ด Google Apps Script ฟรี (สำหรับเชื่อมต่อ Gmail & Drive)</h4>
+      <!-- Google Apps Script Helper -->
+      <h4 class="admin-section-heading">📜 โค้ด Google Apps Script (สำหรับส่งเข้า Gmail พร้อมแนบไฟล์)</h4>
       <div style="background:var(--surface-2); padding:12px 14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
-        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 8px 0;">นำโค้ดนี้ไปวางใน <strong>Google Apps Script</strong> ของคุณเพื่อรับ Webhook ส่งอีเมลและบันทึกไฟล์ลง Drive อัตโนมัติ:</p>
+        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 8px 0;">คัดลอกโค้ดนี้ไปวางใน <strong>Google Apps Script (script.google.com)</strong> เพื่อเปิดใช้งาน Webhook:</p>
         <button type="button" class="btn-cancel" style="width:100%; padding:8px; font-size:12px; font-weight:800; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px;" onclick="copyGoogleAppsScriptCode()">
-          📋 คัดลอกโค้ด Google Apps Script ตัวอย่าง
+          📋 คัดลอกโค้ด Google Apps Script (พร้อมระบบแนบไฟล์)
         </button>
       </div>
 
-      <button type="button" class="btn-submit" style="width:100%; padding:11px; font-weight:800;" onclick="saveIntegrationSettings()">
-        💾 บันทึกการตั้งค่า Drive & Email
-      </button>
+      <div style="display:flex; gap:10px; margin-bottom:10px;">
+        <button type="button" class="btn-cancel" style="flex:1; padding:11px; font-weight:800; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px;" onclick="testSendWebhookEmail(this)">
+          🧪 ทดสอบส่งอีเมลทันที
+        </button>
+        <button type="button" class="btn-submit" style="flex:1.2; padding:11px; font-weight:800;" onclick="saveIntegrationSettings()">
+          💾 บันทึกการตั้งค่า
+        </button>
+      </div>
     </div>
 
     <button class="btn-cancel" style="width:100%; font-weight:800; margin-top:14px;" onclick="closeAdminDashboard()">ปิดหน้าต่าง</button>
@@ -1231,6 +1274,87 @@
       <button class="btn-cancel" id="customConfirmCancelBtn">ยกเลิก</button>
       <button class="btn-submit" id="customConfirmOkBtn">ยืนยัน</button>
     </div>
+  </div>
+</div>
+<!-- Google Drive File Fetcher Modal -->
+<!-- Google Drive File Fetcher & Preview Modal -->
+<!-- Google Drive File Fetcher & Preview Modal -->
+
+<!-- Edit Quick Action Button Modal (For Admin) -->
+<!-- Edit Quick Action Button Modal (Clean Anatomy) -->
+<div id="editQuickActionModal" class="modal-overlay hidden" style="z-index: 2200;">
+  <div class="modal-box" style="max-width: 480px; text-align:left; padding: 24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:8px;">
+      <h3 class="modal-title heading" id="qaModalTitle" style="margin:0; font-size: 17px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+        ✏️ แก้ไขปุ่มคำสั่งงาน (Quick Action)
+      </h3>
+      <button class="btn-icon" onclick="closeEditQuickActionModal()" style="width:28px; height:28px; border:none; background:transparent;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    
+    <input type="hidden" id="editQaId" value="">
+
+    <div style="display: grid; grid-template-columns: 75px 1fr; gap: 12px; margin-bottom: 14px;">
+      <div>
+        <label style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:5px; display:block;">ไอคอน</label>
+        <input type="text" id="editQaIcon" class="admin-field-input" style="text-align:center; font-size:18px; height:42px; width:100%; border-radius:10px;" placeholder="🎯">
+      </div>
+      <div>
+        <label style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:5px; display:block;">ชื่อปุ่มที่แสดงบนแถบ (Display Label)</label>
+        <input type="text" id="editQaLabel" class="admin-field-input" style="height:42px; width:100%; border-radius:10px;" placeholder="เช่น ประเมินเรซูเม่">
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label style="font-size:12px; font-weight:700; color:var(--ink); margin-bottom:5px; display:block;">ข้อความคำสั่งที่จะส่งให้ AI (Prompt Text)</label>
+      <textarea id="editQaPrompt" class="admin-field-input" rows="4" placeholder="พิมพ์ข้อความคำสั่ง..." style="width:100%; border-radius:10px; line-height:1.5;"></textarea>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button type="button" class="btn-cancel" style="flex:1; padding:10px; border-radius:10px;" onclick="closeEditQuickActionModal()">ยกเลิก</button>
+      <button type="button" class="btn-submit" style="flex:1.2; padding:10px; border-radius:10px;" onclick="saveQuickActionItem()">💾 บันทึกปุ่มคำสั่ง</button>
+    </div>
+  </div>
+</div>
+<!-- Candidate Screening Hub Modal (ตรวจเรซูเม่ นศ. จำนวนมาก & ส่ง Gmail) -->
+<div id="candidateHubModal" class="modal-overlay hidden" style="z-index: 2100;">
+  <div class="modal-box" style="max-width: 680px; text-align:left; max-height: 88vh; overflow-y: auto; padding: 24px 26px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 class="modal-title heading" style="margin:0; font-size: 19px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+        🎓 ศูนย์คัดกรองเรซูเม่ นศ. (Candidate Screening Hub)
+      </h3>
+      <button class="btn-icon" onclick="closeCandidateHubModal()" style="width:32px; height:32px; border:none; background:transparent;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 14px 0;">ศูนย์กลางรวบรวมไฟล์เรซูเม่ของนักศึกษา ตรวจประเมินแบบรายบุคคล/กลุ่ม และส่งผลคะแนนเข้า Gmail อัตโนมัติ</p>
+
+    <!-- Upload Box: Multiple Files Support -->
+    <div class="form-group" style="margin-bottom:14px;">
+      <label style="font-size:12px; font-weight:800;">📥 อัปโหลดเรซูเม่ นศ. (เลือกทีละหลายไฟล์ได้):</label>
+      <input type="file" id="batchCvInput" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" multiple class="hidden" onchange="handleBatchCvUpload(event)">
+      <div onclick="document.getElementById('batchCvInput').click()" style="border:2px dashed var(--line); border-radius:12px; padding:16px; text-align:center; background:var(--surface-2); cursor:pointer; transition:border-color 0.2s ease;">
+        <span style="font-size:24px; display:block; margin-bottom:4px;">📄</span>
+        <strong style="font-size:13px; color:var(--ink);">คลิกเพื่อเลือกไฟล์เรซูเม่ หรือลากไฟล์ PDF มาวางที่นี่</strong>
+        <span style="font-size:11.5px; color:var(--ink-faint); display:block; margin-top:2px;">รองรับการอัปโหลดพร้อมกันหลายไฟล์ (Multiple PDFs)</span>
+      </div>
+    </div>
+
+    <!-- Candidate Queue Table / Cards -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h4 style="font-size:13px; font-weight:800; color:var(--maroon); margin:0;">📋 รายชื่อเรซูเม่ในคิวตรวจ (<span id="hubCandidateCount">2</span> คน)</h4>
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="btn-submit" style="padding:4px 10px; font-size:11.5px; border-radius:8px;" onclick="batchEvaluateAllCandidates()">⚡ ตรวจทั้งหมด</button>
+        <button type="button" class="btn-cancel" style="padding:4px 10px; font-size:11.5px; border-radius:8px;" onclick="exportCandidateMatrixCsv()">📊 ส่งออก CSV</button>
+      </div>
+    </div>
+
+    <div id="candidateQueueList" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; margin-bottom:16px;">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+    <button type="button" class="btn-cancel" style="width:100%; font-weight:800;" onclick="closeCandidateHubModal()">ปิดหน้าต่าง</button>
   </div>
 </div>
 </body>

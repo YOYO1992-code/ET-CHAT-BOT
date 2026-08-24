@@ -137,3 +137,18 @@
 
 ### 7.2 ตัวอย่างโค้ด Google Apps Script (ฟรี 100%)
 ในแท็บการเชื่อมต่อ Admin สามารถกดปุ่ม **"📋 คัดลอกโค้ด Google Apps Script"** แล้วนำไปวางใน [Google Apps Script (script.google.com)](https://script.google.com) ของตนเอง เพื่อสร้าง Webhook เชื่อมต่อกับ Gmail ส่งเมลหาอาจารย์หรือกรรมการคัดเลือกได้แบบไม่จำกัด!
+
+
+### 7.3 ขั้นตอนการ Deploy Google Apps Script เพื่อรับ Webhook URL (สำคัญมาก!)
+หากต้องการให้อีเมลส่งเข้า Gmail จริงอัตโนมัติ ต้องนำโค้ดไปเปิดใช้งานเป็น **Web App (Webhook)** ตามขั้นตอนดังนี้:
+1. ไปที่เว็บไซต์ [script.google.com](https://script.google.com) แล้วสร้างโปรเจกต์ใหม่ (หรือเปิดโปรเจกต์เดิม)
+2. วางโค้ด Google Apps Script ที่ได้จากระบบลงไปในไฟล์ `รหัส.gs` แล้วกดบันทึก 💾
+3. กดปุ่มสีน้ำเงินด้านขวาบน **"การทำให้ใช้งานได้ (Deploy)" ➔ "การทำให้ใช้งานได้ใหม่ (New deployment)"**
+4. ตรงรูปฟันเฟือง (Select type) ➔ เลือก **"เว็บแอป (Web app)"**
+5. ตั้งค่าดังนี้:
+   * **คำอธิบาย:** `ET OPC Chatbot Webhook`
+   * **ดำเนินการในฐานะ (Execute as):** `ฉัน (ai.yoshi2006@gmail.com)`
+   * **ผู้ที่มีสิทธิ์เข้าถึง (Who has access):** `ทุกคน (Anyone)` *(สำคัญมาก: ต้องเลือก Anyone เพื่อให้เว็บภายนอกส่งข้อมูลเข้าได้)*
+6. กดปุ่ม **"ทำให้ใช้งานได้ (Deploy)"** ➔ กดยืนยันสิทธิ์เข้าถึง (Authorize Access ➔ เลือกบัญชี ➔ กด Advanced ➔ Go to CHAT BOT (unsafe) ➔ Allow)
+7. คัดลอก **URL เว็บแอป (Web App URL)** ที่ลงท้ายด้วย `/exec` (เช่น `https://script.google.com/macros/s/AKfycb.../exec`)
+8. นำ URL `/exec` นี้มาวางในช่อง **"Google Apps Script Webhook URL"** ในหน้า Admin Dashboard ➔ กดปุ่ม **"🧪 ทดสอบส่งอีเมลทันที"**

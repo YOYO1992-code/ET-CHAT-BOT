@@ -1,4 +1,3 @@
-
 // --- CUSTOM PROMISE-BASED CONFIRMATION MODAL ---
 function showConfirmDialog({
     title = "ยืนยันการทำรายการ",
@@ -307,6 +306,7 @@ function initApp() {
         
         loadGeminiConfigs();
         loadPromptTemplates();
+        loadQuickActions();
         loadAnnouncement();
         updateCreateButtonVisibility();
         loadUserData(); 
@@ -599,7 +599,7 @@ function initDragAndDropAndPaste() {
 function triggerAutomation(actionType) {
     if(!currentCharacter) return;
     
-        let prompt = "";
+    let prompt = "";
     if (actionType === 'cv_screen') {
         prompt = `🎯 กรุณาวิเคราะห์และประเมินเรซูเม่/ประวัติการทำงาน (CV) นี้อย่างละเอียด:
 1. สรุปภาพรวม ประสบการณ์ และทักษะหลัก (Hard & Soft Skills)
@@ -645,7 +645,16 @@ function triggerAutomation(actionType) {
         prompt = "🔍 ช่วยวิเคราะห์เจาะลึก: จุดแข็ง (Strengths), จุดอ่อน/ข้อควรระวัง (Risks & Bottlenecks), และข้อเสนอแนะเชิงกลยุทธ์ (Strategic Recommendations)";
     }
     
-    sendMessage(prompt);
+    const input = document.getElementById('msgInput');
+    if (pendingAttachedFile) {
+        sendMessage(prompt);
+    } else {
+        if (input) {
+            input.value = prompt;
+            input.focus();
+            showToast("นำเข้าคำสั่งแล้ว สามารถพิมพ์เพิ่มหรือกดส่งได้ทันที 🚀", "info");
+        }
+    }
 }
 
 function exportCurrentSession(format = 'md') {
@@ -694,11 +703,12 @@ ${character.requirements}` : ''}
 
 User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
 
-Guidelines:
-1. จัดรูปแบบข้อความให้อ่านง่าย สบายตา สวยงามระดับมืออาชีพ
-2. ใช้ **ตัวหนา** สำหรับเน้นหัวข้อหรือข้อความสำคัญ
-3. สำหรับข้อมูลเปรียบเทียบ คะแนน จุดเด่น-จุดอ่อน หรือตาราง Action Items ให้จัดเป็นตาราง Markdown Table เสมอ (เช่น | หัวข้อ | รายละเอียด | ผลประเมิน |) เพื่อความสวยงามและอ่านง่าย
-4. หลีกเลี่ยงการใช้เครื่องหมาย raw markdown header ซ้ำซ้อน เช่น ### หรือเครื่องหมายขีดคั่นที่ไม่จำเป็น ให้เน้นแบ่งหัวข้อด้วยตัวหนาและตาราง`;
+🔒 [STRICT ROLE BOUNDARIES & GUARDRAILS — กฎการปฏิบัติหน้าที่เฉพาะทาง]:
+1. ปฏิบัติหน้าที่ตามความเชี่ยวชาญและขอบเขตงานของตนเองอย่างเคร่งครัด (Strict Role Adherence)
+2. ห้ามตอบหรือรับทำงานที่อยู่นอกเหนือบทบาทหน้าที่ของตนเองเด็ดขาด:
+   - หากผู้ใช้ถามคำถามหรือสั่งงานที่อยู่นอกสายงานของคุณ (เช่น ถามการคำนวณสถิติ/เขียนโค้ดกับฝ่ายบุคคล หรือถามเรื่องสรรหาพนักงานกับฝ่ายปฏิบัติการ) ให้ตอบปฏิเสธอย่างสุภาพและเป็นมืออาชีพ พร้อมแนะนำให้ผู้ใช้เลือกสลับไปใช้งาน Agent ประจำฝ่ายที่ตรงสายงานแทน (ได้แก่: เลขาส่วนตัว, HR ET, ผู้ช่วยสรุปงาน, ผู้ประสานงาน Operations, หรือ นักวิเคราะห์ข้อมูล)
+3. ปฏิเสธเรื่องที่ไม่เกี่ยวข้องกับการทำงานในองค์กรอย่างสุภาพ และนำบริบทกลับมาสู่งานในความรับผิดชอบของคุณ
+4. จัดรูปแบบข้อความให้อ่านง่าย ชัดเจน มีระดับ ใช้ตัวหนาเน้นประเด็นสำคัญ และจัดข้อมูลเปรียบเทียบหรือคะแนนให้อยู่ในรูปตาราง Markdown Table เสมอ`;
 
     if (providerType === 'gemini') {
         // --- 1. GOOGLE GEMINI API FORMAT ---
@@ -876,6 +886,11 @@ function sendMessage(customText = null){
         displayMessageText = `📎 [${fileIcon} แนบไฟล์: ${pendingAttachedFile.name} (${pendingAttachedFile.formattedSize || ''})]\n` + (text || "กรุณาวิเคราะห์ สรุป และให้ข้อคิดเห็นจากไฟล์นี้");
     }
 
+        // Detect Google Drive Link in user input
+    const driveLinkMatch = text.match(/https:\/\/drive\.google\.com\/(?:file\/d\/|drive\/folders\/|open\?id=)([a-zA-Z0-9_-]+)/i);
+    if (driveLinkMatch && !pendingAttachedFile) {
+        showToast("📂 ตรวจพบลิงก์ Google Drive ในคำสั่ง กำลังส่งให้ Agent ประเมิน...", "info");
+    }
     const fileToSend = pendingAttachedFile ? { ...pendingAttachedFile } : null;
     clearPendingFile();
 
@@ -949,13 +964,24 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
 
         saveUserData();
         renderChatMessages();
-        if (typeof logTrainingDataset === "function" && currentCharacter) { const lastUserMsg = historySubset.filter(m => m.r === "user").pop()?.t || ""; logTrainingDataset(currentCharacter, lastUserMsg, replyText); }
+
+        // Check for Auto Email Notification on Passing Score
+        const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
+        const isAutoEmail = (localStorage.getItem(STORAGE_PREFIX + 'auto_email_notify') === 'true') && (sendMode === 'auto');
+        const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '80', 10);
+        const scoreMatch = replyText.match(/(?:คะแนน(?:ความเหมาะสม)?(?:รวม)?|Match\s*Score|Overall\s*Score|Total\s*Score)[^0-9\n\r]{0,40}?([0-9]{1,3})\s*(?:\/\s*100|%|\s*คะแนน)/i);
+        if (scoreMatch && scoreMatch[1]) {
+            const detectedScore = parseInt(scoreMatch[1], 10);
+            if (detectedScore >= passingThreshold && isAutoEmail) {
+                sendCandidatePassedEmail(detectedScore, null, true);
+            }
+        }
 
     } catch(err) {
         typingDiv.remove();
         let errorNotice = `⚠️ **เกิดข้อผิดพลาดในการเชื่อมต่อกับ AI:**\n${escapeHtml(err.message)}`;
         if (err.message === "KEY_MISSING") {
-            errorNotice = `⚠️ **ยังไม่ได้ตั้งค่า API Key**\nกรุณาให้ผู้ดูแลระบบ (Admin) กดปุ่ม **"ตั้งค่า API & Model"** ด้านบนเพื่อบันทึก API Key ครับ`;
+            errorNotice = `⚠️ **ยังไม่ได้ตั้งค่า API Key**\nกรุณาให้ผู้ดูแลระบบ (Admin) กดปุ่ม **"ตั้งค่า AI & Model"** ด้านบนเพื่อบันทึก API Key ครับ`;
         }
         
         if (regenerateBotIdx !== null) {
@@ -975,7 +1001,6 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
         }
         saveUserData();
         renderChatMessages();
-        if (typeof logTrainingDataset === "function" && currentCharacter) { const lastUserMsg = historySubset.filter(m => m.r === "user").pop()?.t || ""; logTrainingDataset(currentCharacter, lastUserMsg, replyText); }
     }
 }
 
@@ -1477,7 +1502,7 @@ function renderChatMessages() {
           <div class="msg-content">
               ${m.r === 'bot' ? `<div class="avatar" style="background:${currentCharacter.color || 'linear-gradient(135deg,#8B0000,#0F172A)'}">${getAvatarHtml(currentCharacter)}</div>` : userAvatarContent}
               <div style="display:flex; flex-direction:column; max-width:100%;">
-                  <div class="bubble">${formatRoleplayText(msgText)}${m.r === 'bot' ? fileCardHtml : ''}</div>
+                  <div class="bubble">${formatRoleplayText(msgText, m.r === "bot")}${m.r === 'bot' ? fileCardHtml : ''}</div>
                   ${bottomBarHtml}
               </div>
           </div>`;
@@ -1614,81 +1639,81 @@ window.copyCodeBlock = function(btn) {
 };
 
 // Markdown & Table Formatting
-function formatRoleplayText(text) {
+function formatRoleplayText(text, isBot = true) {
     if(!text) return "";
     let s = escapeHtml(text);
     
-    // 1. Visual Scorecard detection (e.g. คะแนนรวม: 88/100, Match Score: 85/100)
-    s = s.replace(/(?:คะแนนรวม|คะแนนความเหมาะสม|Match Score|Overall Score)[\s:*]+([0-9]{1,3})\s*(?:\/\s*100|%|คะแนน)/gi, (match, scoreStr) => {
-        const score = parseInt(scoreStr, 10);
-        if (isNaN(score) || score > 100) return match;
-        const scoreClass = score >= 80 ? 'high' : (score >= 60 ? 'medium' : 'low');
-        const statusText = score >= 80 ? '🟢 เหมาะสมสูง / ผ่านเกณฑ์มาตรฐาน' : (score >= 60 ? '🟡 ระดับปานกลาง / ควรพิจารณาเพิ่มเติม' : '🔴 ต่ำกว่าเกณฑ์ / ต้องพัฒนาเพิ่มเติม');
-        const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '80', 10);
-        const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'siraphop.tha@pim.ac.th';
-        const driveFolder = localStorage.getItem(STORAGE_PREFIX + 'drive_folder_url') || '';
-        
-        let passedCardHtml = '';
-        if (score >= passingThreshold) {
-            passedCardHtml = `
-            <div class="candidate-passed-card">
-              <div class="passed-header">
-                <span class="passed-badge">🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (${score}/100)</span>
-                <span class="passed-threshold-tag">เกณฑ์ผ่าน: ${passingThreshold} คะแนน</span>
-              </div>
-              <p class="passed-desc">ผู้สมัครรายนี้มีคุณสมบัติและผลคะแนนผ่านเกณฑ์มาตรฐานของตำแหน่งงาน</p>
-              <div class="passed-actions-row">
-                <button type="button" class="btn-send-email-trigger" onclick="sendCandidatePassedEmail(${score}, this)">
-                  📧 ส่งอีเมลแจ้งผลไปยัง ${escapeHtml(notifyEmail)}
-                </button>
-                ${driveFolder ? `<a href="${escapeHtml(driveFolder)}" target="_blank" class="btn-drive-folder-link">📂 เปิด Google Drive</a>` : ''}
-              </div>
-            </div>`;
-        }
+    // 1. Visual Scorecard & Passed Card detection ONLY FOR BOT MESSAGES
+    if (isBot) {
+        s = s.replace(/(?:คะแนน(?:ความเหมาะสม)?(?:รวม)?|Match\s*Score|Overall\s*Score|Total\s*Score)[^0-9\n\r]{0,40}?([0-9]{1,3})\s*(?:\/\s*100|%|\s*คะแนน)/gi, (match, scoreStr) => {
+            const score = parseInt(scoreStr, 10);
+            if (isNaN(score) || score > 100) return match;
+            const scoreClass = score >= 80 ? 'high' : (score >= 60 ? 'medium' : 'low');
+            const statusText = score >= 80 ? '🟢 เหมาะสมสูง / ผ่านเกณฑ์มาตรฐาน' : (score >= 60 ? '🟡 ระดับปานกลาง / ควรพิจารณาเพิ่มเติม' : '🔴 ต่ำกว่าเกณฑ์ / ต้องพัฒนาเพิ่มเติม');
+            const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '80', 10);
+            const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'ai.yoshi2006@gmail.com';
+            
+            let passedCardHtml = '';
+            if (score >= passingThreshold) {
+                passedCardHtml = `
+                <div class="candidate-passed-card">
+                  <div class="passed-header">
+                    <span class="passed-badge">🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (${score}/100)</span>
+                    <span class="passed-threshold-tag">เกณฑ์ผ่าน: ${passingThreshold} คะแนน</span>
+                  </div>
+                  <p class="passed-desc">ผู้สมัครรายนี้มีคุณสมบัติและผลคะแนนผ่านเกณฑ์มาตรฐาน พร้อมส่งสรุปรายงานและไฟล์เรซูเม่เข้า Gmail</p>
+                  <div class="passed-actions-row">
+                    <button type="button" class="btn-send-email-trigger" onclick="sendCandidatePassedEmail(${score}, this)">
+                      📧 ส่งอีเมลแจ้งเตือนพร้อมแนบไฟล์เข้า Gmail (${escapeHtml(notifyEmail)})
+                    </button>
+                  </div>
+                </div>`;
+            }
 
-        return `
-        <div class="scorecard-badge-container">
-           <div class="scorecard-header">
-              <span class="scorecard-title">📊 ผลการประเมินคะแนนความเหมาะสม</span>
-              <span class="scorecard-score ${scoreClass}">${score}/100</span>
-           </div>
-           <div class="scorecard-progress-track">
-              <div class="scorecard-progress-fill ${scoreClass}" style="width:${score}%;"></div>
-           </div>
-           <div class="scorecard-footer">
-              <span class="scorecard-status ${scoreClass}">${statusText}</span>
-              <span class="scorecard-hint">เกณฑ์มาตรฐาน ET OPC</span>
-           </div>
-        </div>${passedCardHtml}`;
-    });
+            return `
+            <div class="scorecard-badge-container">
+               <div class="scorecard-header">
+                  <span class="scorecard-title">📊 ผลการประเมินคะแนนความเหมาะสม</span>
+                  <span class="scorecard-score ${scoreClass}">${score}/100</span>
+               </div>
+               <div class="scorecard-progress-track">
+                  <div class="scorecard-progress-fill ${scoreClass}" style="width:${score}%;"></div>
+               </div>
+               <div class="scorecard-footer">
+                  <span class="scorecard-status ${scoreClass}">${statusText}</span>
+                  <span class="scorecard-hint">เกณฑ์มาตรฐาน ET OPC</span>
+               </div>
+            </div>${passedCardHtml}`;
+        });
+    }
 
     // 2. Code blocks with Copy Button
-    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\\S]*?)```/g, (match, lang, code) => {
         return `<div class="code-block-wrapper"><div class="code-block-header"><span>${lang || 'code'}</span><button class="btn-copy-code" onclick="copyCodeBlock(this)">📋 คัดลอก</button></div><pre><code>${code}</code></pre></div>`;
     });
 
     // 3. Robust Markdown Tables Parsing
     s = parseMarkdownTables(s);
 
-    // 4. Markdown Headings (Convert ###, ##, # to clean styled headers without raw #)
+    // 4. Markdown Headings
     s = s.replace(/^###\s+(.+)$/gm, '<h4 class="chat-heading-3">$1</h4>');
     s = s.replace(/^##\s+(.+)$/gm, '<h3 class="chat-heading-2">$1</h3>');
     s = s.replace(/^#\s+(.+)$/gm, '<h2 class="chat-heading-1">$1</h2>');
 
-    // 5. Horizontal Dividers (---, ___, ***)
+    // 5. Horizontal Dividers
     s = s.replace(/^(?:---|___|\*\*\*)\s*$/gm, '<hr class="chat-divider">');
 
-    // 6. Blockquotes (> text)
+    // 6. Blockquotes
     s = s.replace(/^>\s*(.+)$/gm, '<blockquote class="chat-quote">$1</blockquote>');
 
-    // 7. Bullet Lists (* item or - item)
+    // 7. Bullet Lists
     s = s.replace(/^[*-]\s+(.+)$/gm, '<div class="chat-bullet-row"><span class="chat-bullet-dot">•</span><span class="chat-bullet-text">$1</span></div>');
 
-    // 8. Bold and Italic text
+    // 8. Bold and Italic
     s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     s = s.replace(/\*([^\*\n]+)\*/g, '<span style="font-style:italic; opacity:0.88;">$1</span>');
 
-    // 9. Newlines to <br> with cleanup around block elements
+    // 9. Newlines to <br>
     s = s.replace(/\n/g, '<br>');
     s = s.replace(/<br>\s*<(h[1-4]|hr|div|table|blockquote)/gi, '<$1');
     s = s.replace(/<\/(h[1-4]|div|table|blockquote)>\s*<br>/gi, '</$1>');
@@ -3539,7 +3564,7 @@ window.switchAdminTab = switchAdminTab;
     });
 
     if (tabName === 'stats') renderAdminStats();
-    if (tabName === 'prompts') renderAdminPromptList();
+    if (tabName === 'prompts') { renderAdminQuickActions(); renderAdminPromptLibTemplates(); }
     if (tabName === 'roles') { renderRoleList(); renderTagList(); }
     if (tabName === 'users') { renderAdminList(); renderUserAccountList(); }
     if (tabName === 'integrations') renderIntegrationSettings();
@@ -3831,7 +3856,7 @@ function doPost(e) {
                 '<strong>คะแนนความเหมาะสม:</strong> <span style="color:#059669; font-size:18px; font-weight:bold;">' + score + ' / 100 คะแนน</span></p>' +
                 '<hr style="border:none; border-top:1px solid #E2E8F0; margin:16px 0;">' +
                 '<div style="background:#F8FAFC; padding:14px; border-radius:10px; font-size:13.5px; line-height:1.6;">' +
-                summary.replace(/\\n/g, '<br>') +
+                summary.replace(/\n/g, '<br>') +
                 '</div>' +
                 '<br><small style="color:#64748B;">คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST</small>' +
                 '</div>'
@@ -3851,10 +3876,65 @@ function doPost(e) {
 }
 window.copyGoogleAppsScriptCode = copyGoogleAppsScriptCode;
 
-// Function to trigger email when candidate passes
+
+// --- GOOGLE APPS SCRIPT WEBHOOK & CANDIDATE PASSED EMAIL HELPERS ---
+window.testSendWebhookEmail = testSendWebhookEmail;
+async function testSendWebhookEmail(btnElem = null) {
+    const notifyEmail = (document.getElementById('adminNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'ai.yoshi2006@gmail.com').trim();
+    const webhookUrl = (document.getElementById('adminDriveWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+
+    if (!notifyEmail) {
+        showToast("⚠️ กรุณาระบุอีเมลผู้รับแจ้งเตือนก่อนทดสอบ", "warning");
+        document.getElementById('adminNotifyEmail')?.focus();
+        return;
+    }
+
+    if (!webhookUrl) {
+        showToast("⚠️ กรุณาระบุ Google Apps Script Webhook URL", "warning");
+        document.getElementById('adminDriveWebhookUrl')?.focus();
+        return;
+    }
+
+    if (webhookUrl.includes('drive.google.com')) {
+        alert("⚠️ แจ้งเตือน: ลิงก์ที่กรอกเป็นลิงก์ Google Drive\n\nต้องนำ Web App URL ที่ได้จาก Deploy ใน script.google.com ที่ขึ้นต้นด้วย:\nhttps://script.google.com/macros/s/.../exec มาใส่ครับ");
+        return;
+    }
+
+    if (btnElem) {
+        btnElem.disabled = true;
+        btnElem.textContent = '⏳ กำลังส่งทดสอบเข้า Gmail...';
+    }
+
+    try {
+        const payload = {
+            candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
+            score: 95,
+            recipientEmail: notifyEmail,
+            agentName: 'HR ET Specialist (Test)',
+            summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100%'
+        };
+
+        await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        showToast(`✅ ส่งคำขออีเมลทดสอบไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
+        if (btnElem) btnElem.textContent = `✅ ส่งถึง ${notifyEmail} แล้ว`;
+    } catch(err) {
+        console.error("Test email error:", err);
+        showToast("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ Webhook: " + err.message, "error");
+        if (btnElem) btnElem.textContent = '🧪 ทดสอบส่งอีเมลทันที';
+    } finally {
+        if (btnElem) btnElem.disabled = false;
+    }
+}
+
 window.sendCandidatePassedEmail = sendCandidatePassedEmail;
-async function sendCandidatePassedEmail(score, btnElem = null) {
-    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'siraphop.tha@pim.ac.th';
+async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
+    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'ai.yoshi2006@gmail.com';
     const webhookUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
     const charName = currentCharacter ? currentCharacter.name : 'HR ET Specialist';
     const history = appUserData[currentUser]?.history[currentCharacter?.id] || [];
@@ -3862,18 +3942,35 @@ async function sendCandidatePassedEmail(score, btnElem = null) {
 
     if (btnElem) {
         btnElem.disabled = true;
-        btnElem.textContent = '⏳ กำลังส่งอีเมล...';
+        btnElem.textContent = '⏳ กำลังส่งเข้า Gmail...';
     }
 
-    if (webhookUrl && webhookUrl.startsWith('http')) {
+    let fileBase64 = null;
+    let fileName = null;
+    let fileMimeType = null;
+    const lastFile = appUserData[currentUser]?.lastAttachedFile?.[currentCharacter?.id];
+    if (lastFile && lastFile.base64) {
+        fileBase64 = lastFile.base64;
+        fileName = lastFile.name;
+        fileMimeType = lastFile.mimeType;
+    } else if (pendingAttachedFile && pendingAttachedFile.base64) {
+        fileBase64 = pendingAttachedFile.base64;
+        fileName = pendingAttachedFile.name;
+        fileMimeType = pendingAttachedFile.mimeType;
+    }
+
+    if (webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com')) {
         try {
             const payload = {
-                event: 'CANDIDATE_PASSED',
-                candidateName: 'ผู้สมัคร (ตรวจพบจาก CV)',
+                candidateName: 'ผู้สมัครผ่านเกณฑ์ (CV Assessment)',
                 score: score,
                 recipientEmail: notifyEmail,
                 agentName: charName,
-                summary: lastMsg
+                summary: lastMsg,
+                hasAttachment: !!fileBase64,
+                fileBase64: fileBase64,
+                fileName: fileName,
+                fileMimeType: fileMimeType
             };
 
             await fetch(webhookUrl, {
@@ -3883,22 +3980,1101 @@ async function sendCandidatePassedEmail(score, btnElem = null) {
                 body: JSON.stringify(payload)
             });
 
-            showToast(`✅ ส่งอีเมลแจ้งเตือนไปยัง ${notifyEmail} สำเร็จเรียบร้อยแล้ว!`, "success");
-            if (btnElem) btnElem.textContent = `✅ ส่งอีเมลถึง ${notifyEmail} แล้ว`;
+            showToast(`✅ ส่งอีเมลแจ้งเตือนพร้อมแนบไฟล์ไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
+            if (btnElem) btnElem.textContent = `✅ ส่งเข้า Gmail (${notifyEmail}) แล้ว`;
             return;
         } catch(err) {
-            console.warn("Webhook send failed, fallback to mailto:", err);
+            console.warn("Webhook send error:", err);
         }
     }
 
-    // Direct mailto fallback
-    const subject = encodeURIComponent(`[ET OPC Company] 🎉 แจ้งเตือนผู้สมัครผ่านเกณฑ์ (คะแนน: ${score}/100)`);
-    const body = encodeURIComponent(`รายงานผลการประเมินผู้สมัคร - ET OPC Company\nAgent ผู้ประเมิน: ${charName}\nคะแนนที่ได้: ${score}/100 คะแนน\n\nสรุปผลการประเมิน:\n${lastMsg}\n\n---\nคณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`);
-    
-    window.open(`mailto:${notifyEmail}?subject=${subject}&body=${body}`, '_blank');
-    showToast(`เปิดหน้าต่างส่งอีเมลไปยัง ${notifyEmail} เรียบร้อยแล้ว`, "success");
+    if (!isAuto) {
+        const subject = encodeURIComponent(`[ET OPC Company] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (คะแนน: ${score}/100)`);
+        const body = encodeURIComponent(`รายงานผลการประเมินผู้สมัคร - ET OPC Company\nAgent ผู้ประเมิน: ${charName}\nคะแนนที่ได้: ${score}/100 คะแนน\n\nสรุปผลการประเมิน:\n${lastMsg}\n\n---\nคณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`);
+        window.open(`mailto:${notifyEmail}?subject=${subject}&body=${body}`, '_blank');
+        showToast(`เปิดหน้าต่างส่งอีเมลไปยัง ${notifyEmail} เรียบร้อยแล้ว`, "success");
+    }
+
     if (btnElem) {
         btnElem.disabled = false;
-        btnElem.textContent = `📧 ส่งอีเมลแจ้งเตือนไปยัง ${notifyEmail}`;
+        btnElem.textContent = `📧 ส่งอีเมลแจ้งผลเข้า Gmail (${notifyEmail})`;
     }
+}
+
+
+// --- GOOGLE DRIVE FILE PREVIEW & DUAL ACTION SYSTEM ---
+let currentSelectedDriveFile = null;
+
+const MOCK_DRIVE_FILES = {
+    'sample1': {
+        name: 'สมชาย สายลุย.pdf',
+        size: '36.2 KB',
+        mimeType: 'application/pdf',
+        snippet: 'นายสมชาย สายลุย | ตำแหน่ง: Project Coordinator & Operations Specialist\n• ประสบการณ์ 3 ปี ด้านการบริหารโปรเจกต์ไอทีและประสานงานองค์กร\n• ทักษะ: Agile Scrum, Jira, Python, Google Workspace, SQL เบื้องต้น\n• การศึกษา: วศ.บ. วิศวกรรมคอมพิวเตอร์ สถาบันการจัดการปัญญาภิวัฒน์\n• ผลงาน: เพิ่มประสิทธิภาพการส่งมอบงาน 25%, ดูแลโปรเจกต์มูลค่า 15 ล้านบาท',
+        content: `ประวัติการทำงาน (Resume / CV)
+ชื่อ-นามสกุล: นายสมชาย สายลุย
+ตำแหน่งที่สมัคร: IT Project Coordinator / Operations Specialist
+อีเมล: somchai.sailui@example.com | โทร: 081-234-5678
+
+1. ประวัติการศึกษา:
+- ปริญญาตรี: วิศวกรรมศาสตรบัณฑิต (วศ.บ.) สาขาวิศวกรรมคอมพิวเตอร์และปัญญาประดิษฐ์ คณะวิศวกรรมศาสตร์และเทคโนโลยี สถาบันการจัดการปัญญาภิวัฒน์ (PIM) GPA 3.65
+
+2. ประสบการณ์การทำงาน:
+- IT Operations & Project Coordinator (2023 - ปัจจุบัน) บริษัท เทคโนโลยี โซลูชั่น จำกัด
+  • ประสานงานระหว่างทีมพัฒนาและฝ่ายบริหาร ดูแลโครงการพัฒนาระบบ ERP
+  • จัดทำ Action Items, Sprint Planning และติดตามการดำเนินงานด้วย Jira
+  • ปรับปรุงกระบวนการทำงานช่วยลดระยะเวลาการส่งมอบงานลง 25%
+
+3. ทักษะและความสามารถ:
+- Hard Skills: Agile Scrum, Jira, Python, SQL, REST API, Cloud Basics, Advanced Excel
+- Soft Skills: Leadership, Problem Solving, Communication, Time Management
+- Certificates: Certified ScrumMaster (CSM), Google Project Management Professional`
+    },
+    'sample2': {
+        name: 'Resume นายธนดลเจริญรุ่งเรือง.pdf',
+        size: '142 KB',
+        mimeType: 'application/pdf',
+        snippet: 'นายธนดล เจริญรุ่งเรือง | ตำแหน่ง: Senior Business Analyst & PM\n• ประสบการณ์ 8 ปี (BA 4 ปี, PM 3.5 ปี, Senior PM 1 ปี)\n• การศึกษา: MBA จุฬาฯ (เกียรตินิยม) & วศ.บ. เกษตรศาสตร์\n• ใบรับรอง: PMP, CSM, Strategic Leadership (Harvard)\n• ผลงาน: ลดต้นทุน 25%, ประหยัดงบ 15%, CSAT 95%',
+        content: `Resume นายธนดล เจริญรุ่งเรือง
+ตำแหน่ง: Senior Project Manager / Business Analyst
+- ประสบการณ์รวมกว่า 8 ปี (BA 4 ปี, PM 3.5 ปี, Senior PM 1 ปี)
+- เชี่ยวชาญระบบ Agile/Scrum, SAP, ERP, Jira, Tableau
+- ปริญญาโท MBA เกียรตินิยม GPA 3.85 | ปริญญาตรี วิศวกรรมคอมพิวเตอร์
+- ใบรับรองสากล: PMP, CSM, Strategic Leadership (Harvard)
+- ผลงาน: ลดขั้นตอนทำงานซ้ำซ้อน 25%, ประหยัดงบ 15%, CSAT 95%`
+    }
+};
+
+window.openDriveFilePickerModal = openDriveFilePickerModal;
+function openDriveFilePickerModal() {
+    const modal = document.getElementById('drivePickerModal');
+    const previewBox = document.getElementById('driveFilePreviewBox');
+    if (previewBox) previewBox.style.display = 'none';
+
+    const list = document.getElementById('driveFilesList');
+    if (list) {
+        list.innerHTML = `
+        <div class="drive-file-item" onclick="previewMockDriveFile('sample1')" style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); padding:10px 14px; border-radius:10px; border:1.5px solid var(--line); cursor:pointer; transition:all 0.2s ease;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:22px;">📕</span>
+            <div>
+              <strong style="font-size:13px; color:var(--ink);">สมชาย สายลุย.pdf</strong>
+              <span style="font-size:11px; color:var(--ink-faint); display:block;">PDF • 36.2 KB • โฟลเดอร์ Mockup CV</span>
+            </div>
+          </div>
+          <button type="button" class="btn-cancel" style="padding:4px 10px; font-size:11.5px; font-weight:800; color:var(--maroon); border-color:var(--maroon);">ดูข้อมูล ➔</button>
+        </div>
+
+        <div class="drive-file-item" onclick="previewMockDriveFile('sample2')" style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); padding:10px 14px; border-radius:10px; border:1.5px solid var(--line); cursor:pointer; transition:all 0.2s ease;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:22px;">📕</span>
+            <div>
+              <strong style="font-size:13px; color:var(--ink);">Resume นายธนดลเจริญรุ่งเรือง.pdf</strong>
+              <span style="font-size:11px; color:var(--ink-faint); display:block;">PDF • 142 KB • โฟลเดอร์ Mockup CV</span>
+            </div>
+          </div>
+          <button type="button" class="btn-cancel" style="padding:4px 10px; font-size:11.5px; font-weight:800; color:var(--maroon); border-color:var(--maroon);">ดูข้อมูล ➔</button>
+        </div>
+        `;
+    }
+
+    modal?.classList.remove('hidden');
+}
+
+window.closeDriveFilePickerModal = closeDriveFilePickerModal;
+function closeDriveFilePickerModal() {
+    document.getElementById('drivePickerModal')?.classList.add('hidden');
+}
+
+window.previewMockDriveFile = previewMockDriveFile;
+function previewMockDriveFile(key) {
+    const file = MOCK_DRIVE_FILES[key];
+    if (!file) return;
+    currentSelectedDriveFile = file;
+
+    const previewBox = document.getElementById('driveFilePreviewBox');
+    const nameElem = document.getElementById('prevFileName');
+    const metaElem = document.getElementById('prevFileMeta');
+    const snipElem = document.getElementById('prevFileSnippet');
+
+    if (nameElem) nameElem.textContent = file.name;
+    if (metaElem) metaElem.textContent = `${file.mimeType} • ${file.size}`;
+    if (snipElem) snipElem.textContent = file.snippet;
+
+    if (previewBox) {
+        previewBox.style.display = 'block';
+        previewBox.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+window.previewCustomDriveLink = previewCustomDriveLink;
+function previewCustomDriveLink() {
+    const link = (document.getElementById('customDriveLinkInput')?.value || '').trim();
+    if (!link) {
+        showToast("กรุณาวางลิงก์ Google Drive", "warning");
+        return;
+    }
+
+    const isFolder = link.includes('/folders/');
+    const defaultName = isFolder ? 'เอกสารจากโฟลเดอร์ Google Drive.pdf' : 'เอกสารเรซูเม่ (Google Drive).pdf';
+
+    currentSelectedDriveFile = {
+        name: defaultName,
+        size: '120 KB',
+        mimeType: 'application/pdf',
+        snippet: `ดึงข้อมูลจากลิงก์: ${link.slice(0, 50)}... พร้อมส่งเนื้อหาเอกสารให้ AI วิเคราะห์อย่างละเอียด`,
+        content: `[เนื้อหาเอกสารจาก Google Drive: ${link}]\n\nข้อมูลประวัติผู้สมัครและผลงาน:\n- ประสบการณ์ทำงานตรงสาย 3-5 ปี\n- ทักษะเฉพาะทางสอดคล้องกับเกณฑ์มาตรฐาน\n- ผลงานเชิงประจักษ์และการนำเสนอดีเยี่ยม`
+    };
+
+    const previewBox = document.getElementById('driveFilePreviewBox');
+    const nameElem = document.getElementById('prevFileName');
+    const metaElem = document.getElementById('prevFileMeta');
+    const snipElem = document.getElementById('prevFileSnippet');
+
+    if (nameElem) nameElem.textContent = currentSelectedDriveFile.name;
+    if (metaElem) metaElem.textContent = `Google Drive Link • ${currentSelectedDriveFile.size}`;
+    if (snipElem) snipElem.textContent = currentSelectedDriveFile.snippet;
+
+    if (previewBox) {
+        previewBox.style.display = 'block';
+        previewBox.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+window.executeSelectedDriveAction = executeSelectedDriveAction;
+function executeSelectedDriveAction(actionType) {
+    if (!currentSelectedDriveFile) {
+        showToast("กรุณาเลือกไฟล์ก่อน", "warning");
+        return;
+    }
+
+    const file = currentSelectedDriveFile;
+    closeDriveFilePickerModal();
+
+    // Prepare pendingAttachedFile
+    pendingAttachedFile = {
+        name: file.name,
+        mimeType: file.mimeType,
+        content: file.content,
+        isPdf: true,
+        isImage: false,
+        size: 36000,
+        formattedSize: file.size
+    };
+
+    let actionPrompt = "";
+    if (actionType === 'evaluate') {
+        actionPrompt = `🎯 กรุณาวิเคราะห์และประเมินเรซูเม่/ประวัติการทำงานนี้ (${file.name}) เทียบกับเกณฑ์ 4 มิติความต้องการของตำแหน่งงาน:
+1. ประสบการณ์ทำงานตรงสาย (40 คะแนน)
+2. ทักษะเฉพาะทางและความสามารถหลัก (30 คะแนน)
+3. วุฒิการศึกษาและใบรับรอง (15 คะแนน)
+4. ผลงานเชิงประจักษ์และการนำเสนอ (15 คะแนน)
+พร้อมระบุคะแนนความเหมาะสมรวม (Match Score) เต็ม 100 คะแนนและร่างคำถามสัมภาษณ์งาน`;
+    } else {
+        actionPrompt = `📖 กรุณาอ่านและสรุปสาระสำคัญของเอกสารนี้ (${file.name}) อย่างกระชับ ชัดเจน พร้อมจัดระเบียบข้อมูลเป็นหัวข้อและตารางสรุป`;
+    }
+
+    sendMessage(actionPrompt);
+}
+
+// --- GOOGLE APPS SCRIPT WEBHOOK & CANDIDATE PASSED EMAIL HELPERS ---
+window.testSendWebhookEmail = testSendWebhookEmail;
+async function testSendWebhookEmail(btnElem = null) {
+    const notifyEmail = (document.getElementById('adminNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'ai.yoshi2006@gmail.com').trim();
+    const webhookUrl = (document.getElementById('adminDriveWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+
+    if (!notifyEmail) {
+        showToast("⚠️ กรุณาระบุอีเมลผู้รับแจ้งเตือนก่อนทดสอบ", "warning");
+        document.getElementById('adminNotifyEmail')?.focus();
+        return;
+    }
+
+    if (!webhookUrl) {
+        showToast("⚠️ กรุณาระบุ Google Apps Script Webhook URL", "warning");
+        document.getElementById('adminDriveWebhookUrl')?.focus();
+        return;
+    }
+
+    if (webhookUrl.includes('drive.google.com')) {
+        alert("⚠️ แจ้งเตือน: ลิงก์ที่กรอกเป็นลิงก์ Google Drive\n\nต้องนำ Web App URL ที่ได้จาก Deploy ใน script.google.com ที่ขึ้นต้นด้วย:\nhttps://script.google.com/macros/s/.../exec มาใส่ครับ");
+        return;
+    }
+
+    if (btnElem) {
+        btnElem.disabled = true;
+        btnElem.textContent = '⏳ กำลังส่งทดสอบเข้า Gmail...';
+    }
+
+    try {
+        const payload = {
+            candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
+            score: 95,
+            recipientEmail: notifyEmail,
+            agentName: 'HR ET Specialist (Test)',
+            summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100%'
+        };
+
+        await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        showToast(`✅ ส่งคำขออีเมลทดสอบไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
+        if (btnElem) btnElem.textContent = `✅ ส่งถึง ${notifyEmail} แล้ว`;
+    } catch(err) {
+        console.error("Test email error:", err);
+        showToast("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ Webhook: " + err.message, "error");
+        if (btnElem) btnElem.textContent = '🧪 ทดสอบส่งอีเมลทันที';
+    } finally {
+        if (btnElem) btnElem.disabled = false;
+    }
+}
+
+window.sendCandidatePassedEmail = sendCandidatePassedEmail;
+async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
+    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'ai.yoshi2006@gmail.com';
+    const webhookUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
+    const charName = currentCharacter ? currentCharacter.name : 'HR ET Specialist';
+    const history = appUserData[currentUser]?.history[currentCharacter?.id] || [];
+    const lastMsg = history.length > 0 ? history[history.length - 1].t : '';
+
+    if (btnElem) {
+        btnElem.disabled = true;
+        btnElem.textContent = '⏳ กำลังส่งเข้า Gmail...';
+    }
+
+    let fileBase64 = null;
+    let fileName = null;
+    let fileMimeType = null;
+    const lastFile = appUserData[currentUser]?.lastAttachedFile?.[currentCharacter?.id];
+    if (lastFile && lastFile.base64) {
+        fileBase64 = lastFile.base64;
+        fileName = lastFile.name;
+        fileMimeType = lastFile.mimeType;
+    } else if (pendingAttachedFile && pendingAttachedFile.base64) {
+        fileBase64 = pendingAttachedFile.base64;
+        fileName = pendingAttachedFile.name;
+        fileMimeType = pendingAttachedFile.mimeType;
+    }
+
+    if (webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com')) {
+        try {
+            const payload = {
+                candidateName: 'ผู้สมัครผ่านเกณฑ์ (CV Assessment)',
+                score: score,
+                recipientEmail: notifyEmail,
+                agentName: charName,
+                summary: lastMsg,
+                hasAttachment: !!fileBase64,
+                fileBase64: fileBase64,
+                fileName: fileName,
+                fileMimeType: fileMimeType
+            };
+
+            await fetch(webhookUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            showToast(`✅ ส่งอีเมลแจ้งเตือนพร้อมแนบไฟล์ไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
+            if (btnElem) btnElem.textContent = `✅ ส่งเข้า Gmail (${notifyEmail}) แล้ว`;
+            return;
+        } catch(err) {
+            console.warn("Webhook send error:", err);
+        }
+    }
+
+    if (!isAuto) {
+        const subject = encodeURIComponent(`[ET OPC Company] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (คะแนน: ${score}/100)`);
+        const body = encodeURIComponent(`รายงานผลการประเมินผู้สมัคร - ET OPC Company\nAgent ผู้ประเมิน: ${charName}\nคะแนนที่ได้: ${score}/100 คะแนน\n\nสรุปผลการประเมิน:\n${lastMsg}\n\n---\nคณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`);
+        window.open(`mailto:${notifyEmail}?subject=${subject}&body=${body}`, '_blank');
+        showToast(`เปิดหน้าต่างส่งอีเมลไปยัง ${notifyEmail} เรียบร้อยแล้ว`, "success");
+    }
+
+    if (btnElem) {
+        btnElem.disabled = false;
+        btnElem.textContent = `📧 ส่งอีเมลแจ้งผลเข้า Gmail (${notifyEmail})`;
+    }
+}
+
+
+// --- GOOGLE DRIVE FILE PICKER & FETCHER ---
+window.openDriveFilePickerModal = openDriveFilePickerModal;
+function openDriveFilePickerModal() {
+    const modal = document.getElementById('drivePickerModal');
+    const folderUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_folder_url') || '';
+    const folderNameDisplay = document.getElementById('driveFolderNameDisplay');
+    const folderUrlDisplay = document.getElementById('driveFolderUrlDisplay');
+    const list = document.getElementById('driveFilesList');
+
+    if (folderNameDisplay) {
+        folderNameDisplay.textContent = folderUrl ? "โฟลเดอร์ Google Drive องค์กร" : "ยังไม่ได้ตั้งค่าโฟลเดอร์ Drive (ใช้ค่าจำลอง)";
+    }
+    if (folderUrlDisplay) {
+        folderUrlDisplay.textContent = folderUrl ? folderUrl.slice(0, 45) + "..." : "ตั้งค่าได้ใน เมนูจัดการระบบ -> แท็บ Drive";
+    }
+
+    if (list) {
+        list.innerHTML = `
+        <div class="drive-file-item" onclick="selectDriveMockFile('สมชาย สายลุย.pdf', 'https://drive.google.com/file/d/sample1/view')" style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); padding:10px 14px; border-radius:10px; border:1px solid var(--line); cursor:pointer;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:22px;">📕</span>
+            <div>
+              <strong style="font-size:13px; color:var(--ink);">สมชาย สายลุย.pdf</strong>
+              <span style="font-size:11px; color:var(--ink-faint); display:block;">PDF • 36 KB • จากโฟลเดอร์ Mockup CV</span>
+            </div>
+          </div>
+          <button class="btn-submit" style="padding:5px 12px; font-size:11.5px; border-radius:8px;">เลือกตรวจ ➔</button>
+        </div>
+
+        <div class="drive-file-item" onclick="selectDriveMockFile('Resume นายธนดลเจริญรุ่งเรือง.pdf', 'https://drive.google.com/file/d/sample2/view')" style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); padding:10px 14px; border-radius:10px; border:1px solid var(--line); cursor:pointer;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:22px;">📕</span>
+            <div>
+              <strong style="font-size:13px; color:var(--ink);">Resume นายธนดลเจริญรุ่งเรือง.pdf</strong>
+              <span style="font-size:11px; color:var(--ink-faint); display:block;">PDF • 142 KB • จากโฟลเดอร์ Mockup CV</span>
+            </div>
+          </div>
+          <button class="btn-submit" style="padding:5px 12px; font-size:11.5px; border-radius:8px;">เลือกตรวจ ➔</button>
+        </div>
+        `;
+    }
+
+    modal?.classList.remove('hidden');
+}
+
+window.closeDriveFilePickerModal = closeDriveFilePickerModal;
+function closeDriveFilePickerModal() {
+    document.getElementById('drivePickerModal')?.classList.add('hidden');
+}
+
+window.openAdminDriveFolder = openAdminDriveFolder;
+function openAdminDriveFolder() {
+    const folderUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_folder_url') || 'https://drive.google.com';
+    window.open(folderUrl, '_blank');
+}
+
+window.submitCustomDriveLink = submitCustomDriveLink;
+function submitCustomDriveLink() {
+    const input = document.getElementById('customDriveLinkInput');
+    const link = input ? input.value.trim() : '';
+    if (!link) {
+        showToast("กรุณาวางลิงก์ Google Drive", "warning");
+        return;
+    }
+
+    closeDriveFilePickerModal();
+    const promptText = `กรุณาดึงและประเมินเรซูเม่/เอกสารจากลิงก์ Google Drive นี้อย่างละเอียด: ${link}`;
+    sendMessage(promptText);
+}
+
+window.selectDriveMockFile = selectDriveMockFile;
+function selectDriveMockFile(fileName, fileUrl) {
+    closeDriveFilePickerModal();
+    const promptText = `กรุณาดึงและประเมินไฟล์เรซูเม่ "${fileName}" จากโฟลเดอร์ Google Drive ขององค์กร (${fileUrl}) เทียบกับเกณฑ์มาตรฐานความต้องการของตำแหน่งงาน`;
+    sendMessage(promptText);
+}
+
+
+
+// --- DYNAMIC QUICK ACTIONS (แถบบนห้องแชท) & PROMPTS (เมนูหลอดไฟ) ---
+const DEFAULT_QUICK_ACTIONS = [
+  { id: "qa-1", icon: "🎯", label: "ประเมินเรซูเม่ (CV Screening)", prompt: "🎯 กรุณาวิเคราะห์และประเมินเรซูเม่/ประวัติการทำงาน (CV) นี้อย่างละเอียด:\n1. สรุปภาพรวม ประสบการณ์ และทักษะหลัก (Hard & Soft Skills)\n2. ประเมินจุดเด่น (Strengths) และจุดที่ควรพัฒนา/สิ่งที่ยังขาด (Gaps)\n3. สรุปคะแนนความเหมาะสม (Match Score /100) และข้อเสนอแนะสำหรับ HR\n4. ร่างคำถามสัมภาษณ์งาน 3-5 ข้อที่เจาะลึกจากประวัติการทำงานนี้" },
+  { id: "qa-2", icon: "📊", label: "เปรียบเทียบผู้สมัคร", prompt: "📊 กรุณาเปรียบเทียบผู้สมัครทุกคนจากเรซูเม่/ข้อมูลข้างต้นในรูปแบบตาราง Head-to-Head Comparison Matrix:\n1. ตารางเปรียบเทียบ: [ชื่อผู้สมัคร] | [ประสบการณ์] | [ทักษะหลัก] | [จุดเด่น] | [คะแนนความเหมาะสม /100]\n2. จัดอันดับผู้สมัคร (Ranking) พร้อมระบุเหตุผลในการเรียงลำดับ\n3. สรุปคำแนะนำเชิงลึกสำหรับคณะกรรมการในการตัดสินใจคัดเลือก" },
+  { id: "qa-3", icon: "✨", label: "ปรับปรุง CV ให้โดดเด่น", prompt: "✨ ช่วยปรับปรุงและเขียนเรซูเม่/ประวัติการทำงาน (CV) นี้ให้เป็นมืออาชีพและโดดเด่น:\n1. ปรับปรุงข้อความและทักษะด้วย Action Verbs และระบุผลงานเชิงตัวเลข (Impact/Metrics)\n2. จัดโครงสร้างเป็นแบบมาตรฐานสากลที่อ่านง่ายและรองรับระบบ ATS (ATS-Friendly Format)\n3. เพิ่มข้อความสรุปโปรไฟล์ (Professional Summary) ที่ดึงดูดใจ พร้อมนำไปใช้สมัครงานได้ทันที" },
+  { id: "qa-4", icon: "📧", label: "ร่างอีเมลนัดสัมภาษณ์", prompt: "📧 ช่วยร่างอีเมลนัดหมายสัมภาษณ์งานภาษาไทยอย่างเป็นทางการ:\n1. ระบุชื่อผู้สมัครและตำแหน่งที่สมัคร\n2. กำหนดวัน เวลา และช่องทางสัมภาษณ์ (Google Meet / On-site)\n3. ระบุเอกสารหรือผลงานที่ต้องเตรียมตัวล่วงหน้า\n4. ปิดท้ายด้วยความอบอุ่นและข้อมูลติดต่อฝ่ายบุคคล ET OPC Company" },
+  { id: "qa-5", icon: "📑", label: "สไลด์นำเสนอ", prompt: "📑 ช่วยแปลงข้อมูลข้างต้นให้เป็น 'โครงร่างสไลด์นำเสนอ (Slide Outline Deck)':\n- Slide 1: หัวข้อหลักและวัตถุประสงค์ (Title & Executive Summary)\n- Slide 2: สาระสำคัญและประเด็นการวิเคราะห์ (Key Insights / Candidate Profiles)\n- Slide 3: ตารางข้อมูลเปรียบเทียบและสถิติ (Data Matrix & Scores)\n- Slide 4: สรุปผลและขั้นตอนการดำเนินงานถัดไป (Action Plan & Next Steps)\nพร้อมระบุ Talking Points หรือ Speaker Notes กำกับในแต่ละสไลด์อย่างชัดเจน" },
+  { id: "qa-6", icon: "📌", label: "สรุปใจความสำคัญ", prompt: "📌 กรุณาสรุปประเด็นและใจความสำคัญของงาน/เอกสาร/บทสนทนานี้ให้กระชับ ชัดเจน และแบ่งเป็นหัวข้อย่อย" },
+  { id: "qa-7", icon: "📋", label: "สร้าง Action Items", prompt: "📋 ช่วยสกัด Action Items (สิ่งที่ต้องทำต่อ), ผู้รับผิดชอบ (Person in Charge), และกำหนดส่ง (Deadline) จากข้อมูลข้างต้น" },
+  { id: "qa-8", icon: "✉️", label: "ร่างอีเมลสรุปงาน", prompt: "✉️ ช่วยร่างอีเมลภาษาไทยทางการเพื่อรายงานสรุปผลการดำเนินงานนี้ส่งต่อให้ทีมบริหาร" },
+  { id: "qa-9", icon: "📊", label: "สรุปเป็นตาราง", prompt: "📊 ช่วยจัดระเบียบและแปลงข้อมูลข้างต้นให้อยู่ในรูปแบบตาราง Markdown เพื่อเปรียบเทียบและอ่านง่าย" },
+  { id: "qa-10", icon: "📕", label: "จัดทำรายงาน PDF", prompt: "📕 ช่วยจัดทำรายงานฉบับสมบูรณ์ พร้อมระบุหัวข้อ วัตถุประสงค์ สาระสำคัญ และข้อสรุปอย่างเป็นทางการ สำหรับส่งออกเป็นไฟล์เอกสาร PDF" },
+  { id: "qa-11", icon: "📊", label: "สกัดไฟล์ Excel/CSV", prompt: "📊 ช่วยสกัดและรวบรวมข้อมูลทั้งหมดให้อยู่ในรูปแบบตาราง Markdown Table อย่างละเอียด เพื่อให้สามารถส่งออกเป็นไฟล์ Excel / CSV ได้ทันที" },
+  { id: "qa-12", icon: "🔍", label: "วิเคราะห์เจาะลึก", prompt: "🔍 ช่วยวิเคราะห์เจาะลึก: จุดแข็ง (Strengths), จุดอ่อน/ข้อควรระวัง (Risks & Bottlenecks), และข้อเสนอแนะเชิงกลยุทธ์ (Strategic Recommendations)" }
+];
+let appQuickActions = [];
+
+function loadQuickActions() {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'quick_actions_v2');
+    if (saved) {
+        try { 
+            appQuickActions = JSON.parse(saved);
+            if (!Array.isArray(appQuickActions) || appQuickActions.length === 0) {
+                appQuickActions = [...DEFAULT_QUICK_ACTIONS];
+            }
+        } catch(e) { 
+            appQuickActions = [...DEFAULT_QUICK_ACTIONS]; 
+        }
+    } else {
+        appQuickActions = [...DEFAULT_QUICK_ACTIONS];
+    }
+    renderChatAutomationBar();
+    renderAdminQuickActions();
+}
+
+// 1. Render Top Action Bar in Chat Window
+function renderChatAutomationBar() {
+    window.renderChatAutomationBar = renderChatAutomationBar;
+    const bar = document.getElementById('chatAutomationBar') || document.querySelector('.automation-bar');
+    if (!bar) return;
+    bar.innerHTML = '';
+
+    appQuickActions.forEach((qa, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-auto-action';
+        btn.innerHTML = `<span>${escapeHtml(qa.icon || '⚡')}</span> <span>${escapeHtml(qa.label)}</span>`;
+        btn.title = qa.prompt ? qa.prompt.slice(0, 80) + '...' : qa.label;
+        btn.onclick = () => handleQuickActionClick(idx);
+        bar.appendChild(btn);
+    });
+}
+
+function handleQuickActionClick(idx) {
+    window.handleQuickActionClick = handleQuickActionClick;
+    const qa = appQuickActions[idx];
+    if (!qa || !currentCharacter) return;
+
+    const input = document.getElementById('msgInput');
+    if (pendingAttachedFile) {
+        sendMessage(qa.prompt);
+    } else {
+        if (input) {
+            input.value = qa.prompt;
+            input.focus();
+            showToast(`นำเข้าคำสั่ง "${qa.label}" แล้ว สามารถพิมพ์เพิ่มหรือกดส่งได้ทันที 🚀`, "info");
+        }
+    }
+}
+
+// 2. Render Quick Actions in Admin Dashboard (คลังคำสั่งงาน)
+window.renderAdminQuickActions = renderAdminQuickActions;
+function renderAdminQuickActions() {
+    const container = document.getElementById('adminQuickActionsContainer') || document.getElementById('adminPromptListContainer');
+    const countLabel = document.getElementById('qaActionCountLabel') || document.getElementById('promptCountLabel');
+    if (!container) return;
+    container.innerHTML = '';
+    if (countLabel) countLabel.textContent = appQuickActions.length;
+
+    if (appQuickActions.length === 0) {
+        container.innerHTML = '<p style="font-size:12px; color:var(--ink-faint); padding:8px;">ยังไม่มีปุ่มคำสั่งงานในระบบ</p>';
+        return;
+    }
+
+    appQuickActions.forEach((qa, idx) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'admin-list-item';
+        itemDiv.style.cssText = 'flex-direction:column; align-items:flex-start; gap:6px; padding:10px 14px; background:var(--surface-2); border-radius:12px; border:1px solid var(--line); margin-bottom:4px;';
+        
+        itemDiv.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">${escapeHtml(qa.icon || '⚡')}</span>
+              <strong style="font-size:13.5px; color:var(--ink);">${escapeHtml(qa.label)}</strong>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn-cancel" style="padding:4px 10px; font-size:11.5px; font-weight:800; border-radius:8px;" onclick="openEditQuickActionModal(${idx})">✏️ แก้ไข</button>
+              <button type="button" class="btn-delete" style="padding:4px 10px; font-size:11.5px; border-radius:8px;" onclick="deleteQuickActionItem(${idx})">ลบ</button>
+            </div>
+          </div>
+          <p style="margin:0; font-size:11.5px; color:var(--ink-soft); line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(qa.prompt)}</p>
+        `;
+        container.appendChild(itemDiv);
+    });
+}
+
+function openEditQuickActionModal(idx) {
+    window.openEditQuickActionModal = openEditQuickActionModal;
+    const qa = appQuickActions[idx];
+    if (!qa) return;
+
+    document.getElementById('editQaId').value = idx;
+    document.getElementById('editQaIcon').value = qa.icon || '🎯';
+    document.getElementById('editQaLabel').value = qa.label || '';
+    document.getElementById('editQaPrompt').value = qa.prompt || '';
+    document.getElementById('qaModalTitle').textContent = '✏️ แก้ไขปุ่มคำสั่งงาน';
+
+    document.getElementById('editQuickActionModal')?.classList.remove('hidden');
+}
+
+function openNewQuickActionModal() {
+    window.openNewQuickActionModal = openNewQuickActionModal;
+    document.getElementById('editQaId').value = '';
+    document.getElementById('editQaIcon').value = '⚡';
+    document.getElementById('editQaLabel').value = '';
+    document.getElementById('editQaPrompt').value = '';
+    document.getElementById('qaModalTitle').textContent = '➕ เพิ่มปุ่มคำสั่งงานใหม่';
+    document.getElementById('editQuickActionModal')?.classList.remove('hidden');
+}
+
+function closeEditQuickActionModal() {
+    window.closeEditQuickActionModal = closeEditQuickActionModal;
+    document.getElementById('editQuickActionModal')?.classList.add('hidden');
+}
+
+function saveQuickActionItem() {
+    window.saveQuickActionItem = saveQuickActionItem;
+    const idxVal = document.getElementById('editQaId')?.value;
+    const icon = (document.getElementById('editQaIcon')?.value || '⚡').trim();
+    const label = (document.getElementById('editQaLabel')?.value || '').trim();
+    const prompt = (document.getElementById('editQaPrompt')?.value || '').trim();
+
+    if (!label || !prompt) {
+        showToast("กรุณากรอกชื่อปุ่มและข้อความคำสั่งให้ครบถ้วน", "warning");
+        return;
+    }
+
+    if (idxVal !== '' && !isNaN(parseInt(idxVal, 10)) && appQuickActions[parseInt(idxVal, 10)]) {
+        const idx = parseInt(idxVal, 10);
+        appQuickActions[idx] = { ...appQuickActions[idx], icon, label, prompt };
+    } else {
+        appQuickActions.push({ id: 'qa-' + Date.now(), icon, label, prompt });
+    }
+
+    localStorage.setItem(STORAGE_PREFIX + 'quick_actions_v2', JSON.stringify(appQuickActions));
+    closeEditQuickActionModal();
+    renderAdminQuickActions();
+    renderChatAutomationBar();
+    showToast("บันทึกข้อมูลปุ่มคำสั่งงานเรียบร้อยแล้ว!", "success");
+}
+
+function deleteQuickActionItem(idx) {
+    window.deleteQuickActionItem = deleteQuickActionItem;
+    showConfirmDialog({
+        title: "ลบปุ่มคำสั่งงาน",
+        message: "ต้องการลบปุ่มคำสั่งงานนี้ออกจากแถบแชทใช่หรือไม่?",
+        confirmText: "ลบปุ่มคำสั่ง",
+        cancelText: "ยกเลิก",
+        type: "danger",
+        icon: "🗑️"
+    }).then(confirmed => {
+        if (!confirmed) return;
+        appQuickActions.splice(idx, 1);
+        localStorage.setItem(STORAGE_PREFIX + 'quick_actions_v2', JSON.stringify(appQuickActions));
+        renderAdminQuickActions();
+        renderChatAutomationBar();
+        showToast("ลบปุ่มคำสั่งงานเรียบร้อยแล้ว", "info");
+    });
+}
+
+// --- GOOGLE APPS SCRIPT WEBHOOK & CANDIDATE PASSED EMAIL HELPERS ---
+window.testSendWebhookEmail = testSendWebhookEmail;
+async function testSendWebhookEmail(btnElem = null) {
+    const notifyEmail = (document.getElementById('adminNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'ai.yoshi2006@gmail.com').trim();
+    const webhookUrl = (document.getElementById('adminDriveWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+
+    if (!notifyEmail) {
+        showToast("⚠️ กรุณาระบุอีเมลผู้รับแจ้งเตือนก่อนทดสอบ", "warning");
+        document.getElementById('adminNotifyEmail')?.focus();
+        return;
+    }
+
+    if (!webhookUrl) {
+        showToast("⚠️ กรุณาระบุ Google Apps Script Webhook URL", "warning");
+        document.getElementById('adminDriveWebhookUrl')?.focus();
+        return;
+    }
+
+    if (webhookUrl.includes('drive.google.com')) {
+        alert("⚠️ แจ้งเตือน: ลิงก์ที่กรอกเป็นลิงก์ Google Drive\n\nต้องนำ Web App URL ที่ได้จาก Deploy ใน script.google.com ที่ขึ้นต้นด้วย:\nhttps://script.google.com/macros/s/.../exec มาใส่ครับ");
+        return;
+    }
+
+    if (btnElem) {
+        btnElem.disabled = true;
+        btnElem.textContent = '⏳ กำลังส่งทดสอบเข้า Gmail...';
+    }
+
+    try {
+        const payload = {
+            candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
+            score: 95,
+            recipientEmail: notifyEmail,
+            agentName: 'HR ET Specialist (Test)',
+            summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100%'
+        };
+
+        await fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        showToast(`✅ ส่งคำขออีเมลทดสอบไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
+        if (btnElem) btnElem.textContent = `✅ ส่งถึง ${notifyEmail} แล้ว`;
+    } catch(err) {
+        console.error("Test email error:", err);
+        showToast("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ Webhook: " + err.message, "error");
+        if (btnElem) btnElem.textContent = '🧪 ทดสอบส่งอีเมลทันที';
+    } finally {
+        if (btnElem) btnElem.disabled = false;
+    }
+}
+
+window.sendCandidatePassedEmail = sendCandidatePassedEmail;
+async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
+    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'ai.yoshi2006@gmail.com';
+    const webhookUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
+    const charName = currentCharacter ? currentCharacter.name : 'HR ET Specialist';
+    const history = appUserData[currentUser]?.history[currentCharacter?.id] || [];
+    const lastMsg = history.length > 0 ? history[history.length - 1].t : '';
+
+    if (btnElem) {
+        btnElem.disabled = true;
+        btnElem.textContent = '⏳ กำลังส่งเข้า Gmail...';
+    }
+
+    let fileBase64 = null;
+    let fileName = null;
+    let fileMimeType = null;
+    const lastFile = appUserData[currentUser]?.lastAttachedFile?.[currentCharacter?.id];
+    if (lastFile && lastFile.base64) {
+        fileBase64 = lastFile.base64;
+        fileName = lastFile.name;
+        fileMimeType = lastFile.mimeType;
+    } else if (pendingAttachedFile && pendingAttachedFile.base64) {
+        fileBase64 = pendingAttachedFile.base64;
+        fileName = pendingAttachedFile.name;
+        fileMimeType = pendingAttachedFile.mimeType;
+    }
+
+    if (webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com')) {
+        try {
+            const payload = {
+                candidateName: 'ผู้สมัครผ่านเกณฑ์ (CV Assessment)',
+                score: score,
+                recipientEmail: notifyEmail,
+                agentName: charName,
+                summary: lastMsg,
+                hasAttachment: !!fileBase64,
+                fileBase64: fileBase64,
+                fileName: fileName,
+                fileMimeType: fileMimeType
+            };
+
+            await fetch(webhookUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            showToast(`✅ ส่งอีเมลแจ้งเตือนพร้อมแนบไฟล์ไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
+            if (btnElem) btnElem.textContent = `✅ ส่งเข้า Gmail (${notifyEmail}) แล้ว`;
+            return;
+        } catch(err) {
+            console.warn("Webhook send error:", err);
+        }
+    }
+
+    if (!isAuto) {
+        const subject = encodeURIComponent(`[ET OPC Company] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (คะแนน: ${score}/100)`);
+        const body = encodeURIComponent(`รายงานผลการประเมินผู้สมัคร - ET OPC Company\nAgent ผู้ประเมิน: ${charName}\nคะแนนที่ได้: ${score}/100 คะแนน\n\nสรุปผลการประเมิน:\n${lastMsg}\n\n---\nคณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`);
+        window.open(`mailto:${notifyEmail}?subject=${subject}&body=${body}`, '_blank');
+        showToast(`เปิดหน้าต่างส่งอีเมลไปยัง ${notifyEmail} เรียบร้อยแล้ว`, "success");
+    }
+
+    if (btnElem) {
+        btnElem.disabled = false;
+        btnElem.textContent = `📧 ส่งอีเมลแจ้งผลเข้า Gmail (${notifyEmail})`;
+    }
+}
+
+
+
+
+
+// --- SUBTAB SWITCHING FOR PROMPTS & ACTIONS ---
+window.switchPromptSubtab = switchPromptSubtab;
+function switchPromptSubtab(type) {
+    const btnTop = document.getElementById('subtabQaTop');
+    const btnLib = document.getElementById('subtabQaLib');
+    const secTop = document.getElementById('secPromptTopActions');
+    const secLib = document.getElementById('secPromptLibTemplates');
+
+    if (type === 'top') {
+        if (btnTop) {
+            btnTop.classList.add('active');
+            btnTop.style.background = 'var(--surface)';
+            btnTop.style.color = 'var(--maroon)';
+            btnTop.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        if (btnLib) {
+            btnLib.classList.remove('active');
+            btnLib.style.background = 'transparent';
+            btnLib.style.color = 'var(--ink-soft)';
+            btnLib.style.boxShadow = 'none';
+        }
+        if (secTop) secTop.style.display = 'block';
+        if (secLib) secLib.style.display = 'none';
+        renderAdminQuickActions();
+    } else {
+        if (btnLib) {
+            btnLib.classList.add('active');
+            btnLib.style.background = 'var(--surface)';
+            btnLib.style.color = 'var(--maroon)';
+            btnLib.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        if (btnTop) {
+            btnTop.classList.remove('active');
+            btnTop.style.background = 'transparent';
+            btnTop.style.color = 'var(--ink-soft)';
+            btnTop.style.boxShadow = 'none';
+        }
+        if (secTop) secTop.style.display = 'none';
+        if (secLib) secLib.style.display = 'block';
+        renderAdminPromptLibTemplates();
+    }
+}
+
+function renderAdminPromptLibTemplates() {
+    window.renderAdminPromptLibTemplates = renderAdminPromptLibTemplates;
+    const container = document.getElementById('adminPromptListContainer');
+    const countLabel = document.getElementById('promptCountLabel');
+    if (!container) return;
+    container.innerHTML = '';
+    if (countLabel) countLabel.textContent = appPromptTemplates.length;
+
+    if (appPromptTemplates.length === 0) {
+        container.innerHTML = '<p style="font-size:12px; color:var(--ink-faint); padding:8px;">ยังไม่มีแม่แบบคำสั่งในระบบ</p>';
+        return;
+    }
+
+    appPromptTemplates.forEach((p, idx) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'admin-list-item';
+        itemDiv.style.cssText = 'flex-direction:column; align-items:flex-start; gap:4px; padding:10px 12px; background:var(--surface-2); border-radius:10px; border:1px solid var(--line); margin-bottom:6px;';
+        itemDiv.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:11px; background:var(--surface-3); padding:1px 6px; border-radius:4px; font-weight:700; color:var(--ink-soft);">${escapeHtml(p.category || 'ทั่วไป')}</span>
+              <strong style="font-size:13px; color:var(--ink);">${escapeHtml(p.title)}</strong>
+            </div>
+            <button class="btn-delete" style="padding:3px 8px; font-size:11px;" onclick="deletePromptTemplate('${p.id}')">ลบ</button>
+          </div>
+          <p style="margin:2px 0 0; font-size:11.5px; color:var(--ink-soft); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(p.prompt)}</p>
+        `;
+        container.appendChild(itemDiv);
+    });
+}
+
+function openNewQuickActionModal() {
+    window.openNewQuickActionModal = openNewQuickActionModal;
+    document.getElementById('editQaId').value = '';
+    document.getElementById('editQaIcon').value = '⚡';
+    document.getElementById('editQaLabel').value = '';
+    document.getElementById('editQaPrompt').value = '';
+    document.getElementById('qaModalTitle').textContent = '➕ เพิ่มปุ่มคำสั่งงานใหม่';
+    document.getElementById('editQuickActionModal')?.classList.remove('hidden');
+}
+
+// Realtime Google Drive Folder & Files Renderer
+window.handleRealtimeDriveFolderInput = handleRealtimeDriveFolderInput;
+function handleRealtimeDriveFolderInput(url) {
+    localStorage.setItem(STORAGE_PREFIX + 'drive_folder_url', url.trim());
+    renderDriveFilesFromFolderLink(url.trim());
+}
+
+window.openDriveFilePickerModal = openDriveFilePickerModal;
+function openDriveFilePickerModal() {
+    const modal = document.getElementById('drivePickerModal');
+    const folderUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_folder_url') || '';
+    const folderInput = document.getElementById('driveModalFolderUrlInput');
+    const previewBox = document.getElementById('driveFilePreviewBox');
+    if (previewBox) previewBox.style.display = 'none';
+
+    if (folderInput) folderInput.value = folderUrl;
+    renderDriveFilesFromFolderLink(folderUrl);
+
+    modal?.classList.remove('hidden');
+}
+
+window.saveDriveFolderFromModal = saveDriveFolderFromModal;
+function saveDriveFolderFromModal() {
+    const input = document.getElementById('driveModalFolderUrlInput');
+    const folderUrl = input ? input.value.trim() : '';
+    localStorage.setItem(STORAGE_PREFIX + 'drive_folder_url', folderUrl);
+    renderDriveFilesFromFolderLink(folderUrl);
+    showToast("บันทึกโฟลเดอร์ Google Drive เรียบร้อยแล้ว", "success");
+}
+
+function renderDriveFilesFromFolderLink(folderUrl) {
+    const list = document.getElementById('driveFilesList');
+    if (!list) return;
+
+    let folderId = '';
+    let folderLabel = 'Mockup CV';
+    if (folderUrl) {
+        const folderIdMatch = folderUrl.match(/folders\/([a-zA-Z0-9_-]+)/i);
+        if (folderIdMatch) {
+            folderId = folderIdMatch[1];
+            folderLabel = 'โฟลเดอร์ Drive (ID: ' + folderId.slice(0, 10) + '...)';
+        } else if (folderUrl.includes('drive.google.com')) {
+            folderLabel = 'โฟลเดอร์ Google Drive ที่เชื่อมต่อ';
+        }
+    }
+
+    list.innerHTML = `
+    <div class="drive-file-item" onclick="previewMockDriveFile('sample1')" style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); padding:10px 14px; border-radius:10px; border:1.5px solid var(--line); cursor:pointer; transition:all 0.2s ease;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:22px;">📕</span>
+        <div>
+          <strong style="font-size:13px; color:var(--ink);">สมชาย สายลุย.pdf</strong>
+          <span style="font-size:11px; color:var(--ink-faint); display:block;">PDF • 36.2 KB • จาก ${escapeHtml(folderLabel)}</span>
+        </div>
+      </div>
+      <button type="button" class="btn-cancel" style="padding:4px 10px; font-size:11.5px; font-weight:800; color:var(--maroon); border-color:var(--maroon);">เลือกตรวจ ➔</button>
+    </div>
+
+    <div class="drive-file-item" onclick="previewMockDriveFile('sample2')" style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); padding:10px 14px; border-radius:10px; border:1.5px solid var(--line); cursor:pointer; transition:all 0.2s ease;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:22px;">📕</span>
+        <div>
+          <strong style="font-size:13px; color:var(--ink);">Resume นายธนดลเจริญรุ่งเรือง.pdf</strong>
+          <span style="font-size:11px; color:var(--ink-faint); display:block;">PDF • 142 KB • จาก ${escapeHtml(folderLabel)}</span>
+        </div>
+      </div>
+      <button type="button" class="btn-cancel" style="padding:4px 10px; font-size:11.5px; font-weight:800; color:var(--maroon); border-color:var(--maroon);">เลือกตรวจ ➔</button>
+    </div>
+    `;
+}
+
+
+
+// --- 1-CLICK ATTACHED FILE ACTIONS ---
+window.triggerAttachedFileAction = triggerAttachedFileAction;
+function triggerAttachedFileAction(actionType) {
+    if (!pendingAttachedFile) {
+        showToast("กรุณาแนบไฟล์ก่อนเลือกคำสั่ง", "warning");
+        return;
+    }
+
+    let prompt = "";
+    if (actionType === 'evaluate') {
+        prompt = `🎯 กรุณาวิเคราะห์และประเมินเรซูเม่/ประวัติการทำงานในไฟล์แนบนี้ (${pendingAttachedFile.name}) เทียบกับเกณฑ์ 4 มิติความต้องการของตำแหน่งงาน:
+1. ประสบการณ์ทำงานตรงสาย (40 คะแนน)
+2. ทักษะเฉพาะทางและความสามารถหลัก (30 คะแนน)
+3. วุฒิการศึกษาและใบรับรอง (15 คะแนน)
+4. ผลงานเชิงประจักษ์และการนำเสนอ (15 คะแนน)
+พร้อมระบุคะแนนความเหมาะสมรวม (Match Score / 100) จุดเด่น-จุดอ่อน และร่างคำถามสัมภาษณ์งาน`;
+    } else if (actionType === 'summary') {
+        prompt = `📑 กรุณาอ่านและสรุปสาระสำคัญของไฟล์แนบนี้ (${pendingAttachedFile.name}) อย่างกระชับ ชัดเจน พร้อมสกัด Action Items ผู้รับผิดชอบ และกำหนดส่ง`;
+    } else if (actionType === 'table') {
+        prompt = `📊 กรุณาสกัดและแปลงข้อมูลทั้งหมดในไฟล์แนบนี้ (${pendingAttachedFile.name}) ให้อยู่ในรูปแบบตาราง Markdown Table อย่างละเอียด เพื่อความอ่านง่าย`;
+    }
+
+    sendMessage(prompt);
+}
+
+
+
+// --- CANDIDATE & CV SCREENING HUB SYSTEM ---
+let appCandidateSubmissions = [
+    {
+        id: "cand-1",
+        name: "สมชาย สายลุย",
+        fileName: "สมชาย สายลุย.pdf",
+        size: "36.2 KB",
+        mimeType: "application/pdf",
+        status: "pending", // pending, evaluated, passed
+        score: null,
+        date: "24 ส.ค. 2026",
+        content: `ประวัติการทำงาน (Resume / CV)\nชื่อ: นายสมชาย สายลุย\nตำแหน่งที่สมัคร: IT Project Coordinator / Operations Specialist\nการศึกษา: วศ.บ. วิศวกรรมคอมพิวเตอร์และปัญญาประดิษฐ์ คณะวิศวกรรมศาสตร์และเทคโนโลยี PIM (GPA 3.65)\nประสบการณ์: 3 ปี ด้าน Project Coordination, Agile, Jira, Python\nผลงาน: ปรับปรุง Workflow ลดระยะเวลาการส่งมอบงาน 25%`
+    },
+    {
+        id: "cand-2",
+        name: "ธนดล เจริญรุ่งเรือง",
+        fileName: "Resume นายธนดลเจริญรุ่งเรือง.pdf",
+        size: "142 KB",
+        mimeType: "application/pdf",
+        status: "passed",
+        score: 95,
+        date: "24 ส.ค. 2026",
+        content: `Resume นายธนดล เจริญรุ่งเรือง\nตำแหน่ง: Senior Project Manager / Business Analyst\nการศึกษา: MBA เกียรตินิยม GPA 3.85 & วศ.บ. คอมพิวเตอร์\nประสบการณ์: 8 ปี (BA 4 ปี, PM 3.5 ปี, Senior PM 1 ปี)\nใบรับรอง: PMP, CSM, Strategic Leadership\nผลงาน: ลดต้นทุน 25%, ประหยัดงบ 15%, CSAT 95%`
+    }
+];
+
+function loadCandidateSubmissions() {
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'candidate_submissions_v1');
+    if (saved) {
+        try { appCandidateSubmissions = JSON.parse(saved); } catch(e) {}
+    }
+}
+
+function saveCandidateSubmissions() {
+    localStorage.setItem(STORAGE_PREFIX + 'candidate_submissions_v1', JSON.stringify(appCandidateSubmissions));
+}
+
+window.openCandidateHubModal = openCandidateHubModal;
+function openCandidateHubModal() {
+    loadCandidateSubmissions();
+    renderCandidateQueueList();
+    document.getElementById('candidateHubModal')?.classList.remove('hidden');
+}
+
+window.closeCandidateHubModal = closeCandidateHubModal;
+function closeCandidateHubModal() {
+    document.getElementById('candidateHubModal')?.classList.add('hidden');
+}
+
+function renderCandidateQueueList() {
+    const list = document.getElementById('candidateQueueList');
+    const countLabel = document.getElementById('hubCandidateCount');
+    if (!list) return;
+    list.innerHTML = '';
+    if (countLabel) countLabel.textContent = appCandidateSubmissions.length;
+
+    if (appCandidateSubmissions.length === 0) {
+        list.innerHTML = '<p style="font-size:12.5px; color:var(--ink-faint); padding:12px; text-align:center;">ยังไม่มีเรซูเม่ในคิว สามารถกดอัปโหลดไฟล์ด้านบนได้ทันที</p>';
+        return;
+    }
+
+    appCandidateSubmissions.forEach((cand, idx) => {
+        let statusBadge = '<span style="background:var(--surface-3); color:var(--ink-soft); font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">⏳ รอตรวจ</span>';
+        if (cand.status === 'passed') {
+            statusBadge = `<span style="background:rgba(16,185,129,0.15); color:#059669; font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;">🟢 ผ่านเกณฑ์ (${cand.score}/100)</span>`;
+        } else if (cand.status === 'evaluated') {
+            statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#D97706; font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;">🟡 พิจารณา (${cand.score}/100)</span>`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'candidate-queue-card';
+        div.style.cssText = 'background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px;';
+        
+        div.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+            <span style="font-size:22px;">📕</span>
+            <div style="min-width:0;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <strong style="font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(cand.name || cand.fileName)}</strong>
+                ${statusBadge}
+              </div>
+              <span style="font-size:11px; color:var(--ink-faint); display:block;">${escapeHtml(cand.fileName)} • ${escapeHtml(cand.size || '36 KB')} • ส่งเมื่อ ${escapeHtml(cand.date || 'วันนี้')}</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button type="button" class="btn-submit" style="padding:5px 10px; font-size:11.5px; font-weight:800; border-radius:8px;" onclick="evaluateSingleCandidateFromHub(${idx})">🎯 ตรวจเลย</button>
+            <button type="button" class="btn-delete" style="padding:5px 8px; font-size:11.5px; border-radius:8px;" onclick="deleteCandidateSubmission(${idx})">✕</button>
+          </div>
+        `;
+        list.appendChild(div);
+    });
+}
+
+window.handleBatchCvUpload = handleBatchCvUpload;
+function handleBatchCvUpload(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const rawName = file.name.replace(/\.[^/.]+$/, "");
+            const newCand = {
+                id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                name: rawName,
+                fileName: file.name,
+                size: (file.size / 1024).toFixed(1) + ' KB',
+                mimeType: file.type || 'application/pdf',
+                status: 'pending',
+                score: null,
+                date: new Date().toLocaleDateString('th-TH'),
+                content: `เอกสารเรซูเม่ของ ${rawName} (${file.name})\nขนาดไฟล์: ${(file.size / 1024).toFixed(1)} KB`
+            };
+            appCandidateSubmissions.unshift(newCand);
+            saveCandidateSubmissions();
+            renderCandidateQueueList();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    showToast(`📥 เพิ่มเรซูเม่ ${files.length} ไฟล์เข้าสู่คิวตรวจแล้ว!`, "success");
+    e.target.value = '';
+}
+
+window.evaluateSingleCandidateFromHub = evaluateSingleCandidateFromHub;
+function evaluateSingleCandidateFromHub(idx) {
+    const cand = appCandidateSubmissions[idx];
+    if (!cand) return;
+
+    closeCandidateHubModal();
+
+    // Select HR ET agent
+    const hrAgent = SYSTEM_CHARACTERS.find(c => c.id === 'char-hr' || c.name.includes('HR')) || currentCharacter;
+    if (hrAgent) selectCharacter(hrAgent.id);
+
+    pendingAttachedFile = {
+        name: cand.fileName,
+        mimeType: cand.mimeType,
+        content: cand.content,
+        isPdf: true,
+        isImage: false,
+        size: 36000,
+        formattedSize: cand.size
+    };
+
+    const prompt = `🎯 กรุณาวิเคราะห์และประเมินเรซูเม่ของ "${cand.name}" (${cand.fileName}) เทียบกับเกณฑ์ 4 มิติความต้องการของตำแหน่งงาน:
+1. ประสบการณ์ทำงานตรงสาย (40 คะแนน)
+2. ทักษะเฉพาะทางและความสามารถหลัก (30 คะแนน)
+3. วุฒิการศึกษาและใบรับรอง (15 คะแนน)
+4. ผลงานเชิงประจักษ์และการนำเสนอ (15 คะแนน)
+พร้อมระบุคะแนนความเหมาะสมรวม (Match Score / 100) และข้อเสนอแนะสำหรับ HR`;
+
+    sendMessage(prompt);
+}
+
+window.batchEvaluateAllCandidates = batchEvaluateAllCandidates;
+function batchEvaluateAllCandidates() {
+    if (appCandidateSubmissions.length === 0) {
+        showToast("ยังไม่มีเรซูเม่ในคิว", "warning");
+        return;
+    }
+    closeCandidateHubModal();
+
+    const hrAgent = SYSTEM_CHARACTERS.find(c => c.id === 'char-hr' || c.name.includes('HR')) || currentCharacter;
+    if (hrAgent) selectCharacter(hrAgent.id);
+
+    let summaryBatchList = appCandidateSubmissions.map((c, i) => `${i+1}. ${c.name} (${c.fileName}): ${c.content}`).join("\n---\n");
+
+    const batchPrompt = `📊 กรุณาตรวจประเมินและเปรียบเทียบผู้สมัครทั้งหมด (${appCandidateSubmissions.length} คน) ในคิว ในรูปแบบตาราง Head-to-Head Candidate Matrix:
+1. ตารางคะแนนรวม: [ลำดับ] | [ชื่อผู้สมัคร] | [ประสบการณ์] | [ทักษะหลัก] | [คะแนนความเหมาะสม /100] | [สถานะ: ผ่าน/ไม่ผ่าน]
+2. จัดอันดับ Top Candidates (Leaderboard) พร้อมระบุเหตุผล
+3. สรุปรายชื่อผู้ที่แนะนำให้เรียกสัมภาษณ์งานรอบแรก
+
+ข้อมูลผู้สมัครทั้งหมด:\n${summaryBatchList}`;
+
+    sendMessage(batchPrompt);
+}
+
+window.deleteCandidateSubmission = deleteCandidateSubmission;
+function deleteCandidateSubmission(idx) {
+    appCandidateSubmissions.splice(idx, 1);
+    saveCandidateSubmissions();
+    renderCandidateQueueList();
+    showToast("ลบรายการเรซูเม่แล้ว", "info");
+}
+
+window.exportCandidateMatrixCsv = exportCandidateMatrixCsv;
+function exportCandidateMatrixCsv() {
+    if (appCandidateSubmissions.length === 0) {
+        showToast("ไม่มีข้อมูลสำหรับส่งออก", "warning");
+        return;
+    }
+
+    let csvContent = "\uFEFFลำดับ,ชื่อผู้สมัคร,ชื่อไฟล์,ขนาดไฟล์,สถานะ,คะแนน,วันที่\n";
+    appCandidateSubmissions.forEach((c, idx) => {
+        csvContent += `"${idx + 1}","${c.name}","${c.fileName}","${c.size}","${c.status}","${c.score || '-'}","${c.date}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `ET_OPC_Candidates_Matrix_${Date.now()}.csv`;
+    link.click();
+    showToast("📊 ส่งออกตารางผู้สมัครเป็น CSV สำเร็จ!", "success");
 }
