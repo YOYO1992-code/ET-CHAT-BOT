@@ -2287,8 +2287,9 @@ function updateUIAfterProfileChange() {
 
 // Character CRUD
 function showCreateForm(pushHistory = true) {
-    if (currentUserRole !== 'admin') {
-        showToast("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถสร้างหรือแก้ไข Agent ได้", "warning");
+    const allowUserCreate = localStorage.getItem(STORAGE_PREFIX + 'allow_user_create') === 'true';
+    if (currentUserRole !== 'admin' && !allowUserCreate) {
+        showToast("⚠️ ผู้ดูแลระบบปิดสิทธิ์การสร้าง Agent สำหรับผู้ใช้ทั่วไปชั่วคราว", "warning");
         showExplore();
         return;
     }
@@ -3494,7 +3495,7 @@ function renderAdminStats() {
     if (statTop) statTop.textContent = topAgent ? topAgent.name : '-';
 
     // Allow user create agent policy toggle state
-    const allowUserCreate = localStorage.getItem(STORAGE_PREFIX + 'allow_user_create') !== 'false';
+    const allowUserCreate = localStorage.getItem(STORAGE_PREFIX + 'allow_user_create') === 'true';
     const toggleAllow = document.getElementById('toggleAllowUserCreate');
     if (toggleAllow) toggleAllow.checked = allowUserCreate;
 
@@ -3509,22 +3510,25 @@ function renderAdminStats() {
 }
 
 function toggleAgentCreationPolicy() {
-window.toggleAgentCreationPolicy = toggleAgentCreationPolicy;
+    window.toggleAgentCreationPolicy = toggleAgentCreationPolicy;
     const toggle = document.getElementById('toggleAllowUserCreate');
-    const allowed = toggle ? toggle.checked : true;
+    const allowed = toggle ? toggle.checked : false;
     localStorage.setItem(STORAGE_PREFIX + 'allow_user_create', allowed ? 'true' : 'false');
     updateCreateButtonVisibility();
-    showToast(allowed ? "อนุญาตให้ผู้ใช้ทุกคนสร้าง Agent ได้" : "จำกัดสิทธิ์ให้เฉพาะ Admin เท่านั้นที่สร้าง Agent ได้", "info");
+    showToast(allowed ? "🟢 เปิดสิทธิ์: อนุญาตให้ User ทั่วไปสร้าง Agent ได้แล้ว" : "🔒 ปิดสิทธิ์: ซ่อนและจำกัดการสร้าง Agent เฉพาะ Admin เท่านั้น", "info");
 };
 
 function updateCreateButtonVisibility() {
+    const allowUserCreate = localStorage.getItem(STORAGE_PREFIX + 'allow_user_create') === 'true';
     const btnCreateChar = document.getElementById('btnCreateChar');
     const sidebarBtnCreate = document.getElementById('sidebarBtnCreate');
     const sidebarBtnAdmin = document.getElementById('sidebarBtnAdmin');
 
     const isAdmin = (currentUserRole === 'admin');
-    if (btnCreateChar) btnCreateChar.style.display = isAdmin ? 'inline-flex' : 'none';
-    if (sidebarBtnCreate) sidebarBtnCreate.style.display = isAdmin ? 'flex' : 'none';
+    const canCreate = isAdmin || allowUserCreate;
+
+    if (btnCreateChar) btnCreateChar.style.display = canCreate ? 'inline-flex' : 'none';
+    if (sidebarBtnCreate) sidebarBtnCreate.style.display = canCreate ? 'flex' : 'none';
     if (sidebarBtnAdmin) sidebarBtnAdmin.style.display = isAdmin ? 'flex' : 'none';
 }
 
