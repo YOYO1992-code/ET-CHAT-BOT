@@ -1612,6 +1612,11 @@ window.openChat = function(id, pushHistory = true){
         saveUserData();
     }
 
+    const btnEdit = document.getElementById('btnEditCharacter');
+    if (btnEdit) {
+        btnEdit.style.display = (currentUserRole === 'admin') ? 'inline-flex' : 'none';
+    }
+
     updateTopbarAiBadge();
     renderChatMessages();
 
@@ -2272,6 +2277,10 @@ function saveCharacter() {
 }
 
 function editCurrentCharacter() {
+    if (currentUserRole !== 'admin') {
+        showToast("เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถแก้ไขข้อมูล Agent ได้", "warning");
+        return;
+    }
     if(!currentCharacter) return;
     const targetChar = currentCharacter;
     
