@@ -814,9 +814,14 @@
       <h3 class="modal-title heading" style="margin:0; font-size: 20px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
         ⚙️ จัดการระบบ (Admin Dashboard)
       </h3>
-      <button class="btn-icon" onclick="closeAdminDashboard()" style="width:32px; height:32px; border:none; background:transparent;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="btn-cancel" style="padding:6px 12px; font-size:11.5px; font-weight:800; color:var(--maroon); border-color:var(--maroon); border-radius:8px;" onclick="openAdminGuideDirectly()" title="เปิดดูคู่มือการตั้งค่าและดูแลระบบฉบับเต็ม">
+          📖 คู่มือ Admin
+        </button>
+        <button class="btn-icon" onclick="closeAdminDashboard()" style="width:32px; height:32px; border:none; background:transparent;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
     </div>
     <p style="font-size:12.5px; color:var(--ink-soft); margin: 0 0 14px 0;">ศูนย์ควบคุมการทำงาน นโยบาย สถิติ และสิทธิ์ผู้ใช้งานประจำ ET OPC Company</p>
 
@@ -957,30 +962,71 @@
 </div>
 
 <!-- Quick Guide Modal -->
+<!-- Quick Guide Modal (User + Secret Admin Guide) -->
 <div id="quickGuideModal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width: 620px; text-align:left;">
+  <div class="modal-box" style="max-width: 650px; text-align:left; max-height: 88vh; overflow-y: auto;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-      <h3 class="modal-title heading" style="margin:0; font-size: 20px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> คู่มือการใช้งาน (Quick User Guide)
+      <h3 class="modal-title heading" id="quickGuideTitle" style="margin:0; font-size: 20px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> 
+        <span id="quickGuideTitleText">คู่มือการใช้งาน (Quick User Guide)</span>
       </h3>
       <button class="btn-icon" onclick="closeQuickGuideModal()" style="width:32px; height:32px; border:none; background:transparent;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
-    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px 0;">ยินดีต้อนรับสู่ ET OPC Company AI Workspace แพลตฟอร์มผู้ช่วยอัจฉริยะสำหรับองค์กร</p>
+    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px 0;">ยินดีต้อนรับสู่ ET OPC Company AI Workspace แพลตฟอร์มผู้ช่วยอัจฉริยะสำหรับองค์กร คณะวิศวกรรมศาสตร์และเทคโนโลยี PIM</p>
 
-    <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:14px;">
-      <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
-        🔑 วิธีการขอและตั้งค่า API Key (สำหรับ Admin)
-      </h4>
-      <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
-        1. ไปที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--maroon); font-weight:700; text-decoration:underline;">Google AI Studio ↗</a> แล้วกดสร้าง <strong>Create API Key</strong> ฟรี (ไม่ต้องผูกบัตรเครดิต)<br>
-        2. คัดลอก API Key ที่ได้ แล้วมาเปิดเมนู <strong>"ตั้งค่า AI & Model"</strong> ด้านล่างซ้าย<br>
-        3. เลือก <strong>Google Gemini (3.X)</strong> เลือกรุ่น <strong>Gemini 3.6 Flash</strong> แล้ววางคีย์ลงในช่อง<br>
-        4. กด <strong>"🧪 ทดสอบเชื่อมต่อ"</strong> และ <strong>"💾 บันทึกและเปิดใช้งาน"</strong> ระบบพร้อมทำงานทันที!
-      </p>
+    <!-- ================= ADMIN-ONLY SECTION (Hidden from Normal Users) ================= -->
+    <div id="adminGuideContent" style="display:none; margin-bottom: 20px;">
+      <div style="background: linear-gradient(135deg, rgba(139, 0, 0, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%); border: 1.5px solid rgba(139, 0, 0, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+          <span style="font-size:13px; font-weight:800; color:var(--maroon); text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+            👑 คู่มือการบริหารและดูแลระบบ (สำหรับ Admin)
+          </span>
+          <span style="font-size:11px; background:var(--maroon); color:#fff; padding:2px 8px; border-radius:999px; font-weight:800;">สิทธิ์เฉพาะแอดมิน</span>
+        </div>
+        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 10px 0;">ส่วนนี้จะแสดงผลเฉพาะบัญชีผู้ดูแลระบบ (Admin) เท่านั้น สมาชิกทั่วไปจะไม่สามารถมองเห็นได้</p>
+      </div>
+
+      <!-- Admin Guide Step 1: API Setup -->
+      <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
+        <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
+          🔑 1. วิธีการขอและตั้งค่า API Key (Google Gemini 3.X)
+        </h4>
+        <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
+          • ไปที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--maroon); font-weight:700; text-decoration:underline;">Google AI Studio ↗</a> แล้วกดสร้าง <strong>Create API Key</strong> ฟรี (ไม่ต้องผูกบัตรเครดิต)<br>
+          • เปิดเมนู <strong>"ตั้งค่า AI & Model"</strong> ด้านล่างซ้าย ➔ เลือก <strong>Google Gemini (3.X)</strong> เลือกรุ่น <strong>Gemini 3.6 Flash</strong> แล้ววางคีย์ลงในช่อง<br>
+          • กด <strong>"🧪 ทดสอบเชื่อมต่อ"</strong> และ <strong>"💾 บันทึกและเปิดใช้งาน"</strong> ระบบพร้อมทำงานทันที!
+        </p>
+      </div>
+
+      <!-- Admin Guide Step 2: Policy & User Management -->
+      <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
+        <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
+          🛡️ 2. การควบคุมสิทธิ์ & นโยบายความปลอดภัย
+        </h4>
+        <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
+          • <strong>สิทธิ์การสร้าง Agent:</strong> ในหน้า <em>"⚙️ จัดการระบบ"</em> สามารถเปิด/ปิดสวิตช์ <em>"อนุญาตให้ User ทั่วไปสร้าง Agent ได้"</em> เพื่อควบคุมความเรียบร้อย<br>
+          • <strong>การจัดการผู้ใช้:</strong> สามารถค้นหาชื่อผู้ใช้ ลบบัญชีผู้ใช้ที่ผิดระเบียบ หรือแต่งตั้ง Admin เพิ่มเติมได้ในแท็บ <em>"👥 สิทธิ์ & บัญชีผู้ใช้"</em><br>
+          • <strong>บัญชี Super Admin:</strong> บัญชี <code>@ETPIM</code> เป็นบัญชีหลักของสถาบัน ได้รับการป้องกันไม่ให้ถูกลบออกจากระบบ
+        </p>
+      </div>
+
+      <!-- Admin Guide Step 3: Announcement & Prompt Library -->
+      <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
+        <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
+          📢 3. การติดป้ายประกาศ & เพิ่มคำสั่งลงคลังด่วน
+        </h4>
+        <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
+          • <strong>ป้ายประกาศองค์กร:</strong> เปิดใช้งานและพิมพ์ข้อความในแท็บ <em>"สถิติ & ประกาศ"</em> เพื่อส่งข่าวสารสำคัญให้ทุกคนที่เข้าหน้าแรกเห็นทันที<br>
+          • <strong>คลังคำสั่งด่วน (Prompt Library):</strong> เพิ่มแม่แบบคำสั่งสำเร็จรูป เช่น <em>"คัดกรองเรซูเม่", "ร่างหนังสืออนุมัติ"</em> เพื่อให้ทีมงานกดเลือกใช้งานในแชทได้ทันที
+        </p>
+      </div>
+      <hr style="border:none; border-top:1.5px solid var(--line); margin: 16px 0;">
     </div>
 
+    <!-- ================= USER GENERAL SECTION ================= -->
+    <h4 style="font-size:13.5px; font-weight:800; color:var(--ink); margin: 0 0 10px;">👤 คู่มือการใช้งานสำหรับสมาชิกทั่วไป (User Guide)</h4>
     <div class="guide-step-grid">
       <div class="guide-step-card">
         <div class="guide-step-num">1</div>

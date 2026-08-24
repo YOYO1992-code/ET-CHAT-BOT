@@ -3199,15 +3199,37 @@ function startNewChatSession() {
 };
 
 
-// --- QUICK GUIDE MODAL ---
+// --- QUICK GUIDE MODAL & ROLE-GUARDED ADMIN GUIDE ---
 window.openQuickGuideModal = openQuickGuideModal;
 function openQuickGuideModal() {
+    const adminSection = document.getElementById('adminGuideContent');
+    const titleText = document.getElementById('quickGuideTitleText');
+    const isAdmin = (currentUserRole === 'admin');
+
+    if (adminSection) {
+        adminSection.style.display = isAdmin ? 'block' : 'none';
+    }
+    if (titleText) {
+        titleText.textContent = isAdmin ? 'คู่มือการใช้งาน & ดูแลระบบ (Admin & User Guide)' : 'คู่มือการใช้งาน (Quick User Guide)';
+    }
+
     document.getElementById('quickGuideModal')?.classList.remove('hidden');
 };
+
+window.openAdminGuideDirectly = openAdminGuideDirectly;
+function openAdminGuideDirectly() {
+    closeAdminDashboard();
+    openQuickGuideModal();
+    const adminSection = document.getElementById('adminGuideContent');
+    if (adminSection) {
+        adminSection.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
 window.closeQuickGuideModal = closeQuickGuideModal;
 function closeQuickGuideModal() {
     document.getElementById('quickGuideModal')?.classList.add('hidden');
-};
+};;
 
 
 // --- TERMS & PRIVACY MODAL ---
