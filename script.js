@@ -1624,6 +1624,28 @@ function formatRoleplayText(text) {
         if (isNaN(score) || score > 100) return match;
         const scoreClass = score >= 80 ? 'high' : (score >= 60 ? 'medium' : 'low');
         const statusText = score >= 80 ? '🟢 เหมาะสมสูง / ผ่านเกณฑ์มาตรฐาน' : (score >= 60 ? '🟡 ระดับปานกลาง / ควรพิจารณาเพิ่มเติม' : '🔴 ต่ำกว่าเกณฑ์ / ต้องพัฒนาเพิ่มเติม');
+        const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '80', 10);
+        const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'siraphop.tha@pim.ac.th';
+        const driveFolder = localStorage.getItem(STORAGE_PREFIX + 'drive_folder_url') || '';
+        
+        let passedCardHtml = '';
+        if (score >= passingThreshold) {
+            passedCardHtml = `
+            <div class="candidate-passed-card">
+              <div class="passed-header">
+                <span class="passed-badge">🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (${score}/100)</span>
+                <span class="passed-threshold-tag">เกณฑ์ผ่าน: ${passingThreshold} คะแนน</span>
+              </div>
+              <p class="passed-desc">ผู้สมัครรายนี้มีคุณสมบัติและผลคะแนนผ่านเกณฑ์มาตรฐานของตำแหน่งงาน</p>
+              <div class="passed-actions-row">
+                <button type="button" class="btn-send-email-trigger" onclick="sendCandidatePassedEmail(${score}, this)">
+                  📧 ส่งอีเมลแจ้งผลไปยัง ${escapeHtml(notifyEmail)}
+                </button>
+                ${driveFolder ? `<a href="${escapeHtml(driveFolder)}" target="_blank" class="btn-drive-folder-link">📂 เปิด Google Drive</a>` : ''}
+              </div>
+            </div>`;
+        }
+
         return `
         <div class="scorecard-badge-container">
            <div class="scorecard-header">
@@ -1637,7 +1659,7 @@ function formatRoleplayText(text) {
               <span class="scorecard-status ${scoreClass}">${statusText}</span>
               <span class="scorecard-hint">เกณฑ์มาตรฐาน ET OPC</span>
            </div>
-        </div>`;
+        </div>${passedCardHtml}`;
     });
 
     // 2. Code blocks with Copy Button
@@ -3508,7 +3530,7 @@ function renderPromptLibrary() {
 // --- ADMIN DASHBOARD TABS & ADVANCED FEATURES ---
 function switchAdminTab(tabName) {
 window.switchAdminTab = switchAdminTab;
-    const tabs = ['stats', 'prompts', 'roles', 'users'];
+    const tabs = ['stats', 'prompts', 'roles', 'users', 'integrations'];
     tabs.forEach(t => {
         const btn = document.getElementById('btnAdminTab' + t.charAt(0).toUpperCase() + t.slice(1));
         const content = document.getElementById('adminTabContent' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -3520,6 +3542,7 @@ window.switchAdminTab = switchAdminTab;
     if (tabName === 'prompts') renderAdminPromptList();
     if (tabName === 'roles') { renderRoleList(); renderTagList(); }
     if (tabName === 'users') { renderAdminList(); renderUserAccountList(); }
+    if (tabName === 'integrations') renderIntegrationSettings();
 };
 
 function renderAdminStats() {
@@ -3726,3 +3749,156 @@ window.toggleAdminAdvancedSettings = toggleAdminAdvancedSettings;
 window.testAdminAiConnection = testAdminAiConnection;
 window.addAdminModel = addAdminModel;
 window.deleteAdminModel = deleteAdminModel;
+
+
+// --- GOOGLE DRIVE & AUTOMATED EMAIL EVALUATION INTEGRATION ---
+function renderIntegrationSettings() {
+    window.renderIntegrationSettings = renderIntegrationSettings;
+    const folderInput = document.getElementById('adminDriveFolderUrl');
+    const webhookInput = document.getElementById('adminDriveWebhookUrl');
+    const emailInput = document.getElementById('adminNotifyEmail');
+    const scoreSlider = document.getElementById('adminPassingScore');
+    const scoreDisplay = document.getElementById('passingScoreDisplay');
+    const sendModeSelect = document.getElementById('adminEmailSendMode');
+    const autoToggle = document.getElementById('toggleAutoEmailNotify');
+
+    const folder = localStorage.getItem(STORAGE_PREFIX + 'drive_folder_url') || '';
+    const webhook = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
+    const email = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '';
+    const score = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '80', 10);
+    const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
+    const isAuto = localStorage.getItem(STORAGE_PREFIX + 'auto_email_notify') === 'true';
+
+    if (folderInput) folderInput.value = folder;
+    if (webhookInput) webhookInput.value = webhook;
+    if (emailInput) emailInput.value = email;
+    if (scoreSlider) scoreSlider.value = score;
+    if (scoreDisplay) scoreDisplay.textContent = score + ' / 100 คะแนน';
+    if (sendModeSelect) sendModeSelect.value = sendMode;
+    if (autoToggle) autoToggle.checked = isAuto;
+}
+window.renderIntegrationSettings = renderIntegrationSettings;
+
+function toggleAutoEmailState() {
+    window.toggleAutoEmailState = toggleAutoEmailState;
+    const toggle = document.getElementById('toggleAutoEmailNotify');
+    const active = toggle ? toggle.checked : false;
+    localStorage.setItem(STORAGE_PREFIX + 'auto_email_notify', active ? 'true' : 'false');
+    showToast(active ? "🟢 เปิดใช้งานระบบส่งอีเมลแจ้งเตือนอัตโนมัติแล้ว" : "⚪ ปิดระบบส่งอีเมลแจ้งเตือนอัตโนมัติ", "info");
+}
+window.toggleAutoEmailState = toggleAutoEmailState;
+
+function saveIntegrationSettings() {
+    window.saveIntegrationSettings = saveIntegrationSettings;
+    const folder = (document.getElementById('adminDriveFolderUrl')?.value || '').trim();
+    const webhook = (document.getElementById('adminDriveWebhookUrl')?.value || '').trim();
+    const email = (document.getElementById('adminNotifyEmail')?.value || '').trim();
+    const score = parseInt(document.getElementById('adminPassingScore')?.value || '80', 10);
+    const sendMode = document.getElementById('adminEmailSendMode')?.value || 'manual';
+
+    localStorage.setItem(STORAGE_PREFIX + 'drive_folder_url', folder);
+    localStorage.setItem(STORAGE_PREFIX + 'drive_webhook_url', webhook);
+    localStorage.setItem(STORAGE_PREFIX + 'notify_email', email);
+    localStorage.setItem(STORAGE_PREFIX + 'passing_score', score.toString());
+    localStorage.setItem(STORAGE_PREFIX + 'email_send_mode', sendMode);
+
+    showToast("💾 บันทึกการตั้งค่า Google Drive & Email สำเร็จแล้ว!", "success");
+}
+window.saveIntegrationSettings = saveIntegrationSettings;
+
+function copyGoogleAppsScriptCode() {
+    window.copyGoogleAppsScriptCode = copyGoogleAppsScriptCode;
+    const scriptCode = `// Google Apps Script Webhook (ET OPC Company - PIM Engineering)
+function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var candidateName = data.candidateName || 'ผู้สมัคร';
+    var score = data.score || 0;
+    var recipient = data.recipientEmail || 'your-email@pim.ac.th';
+    var summary = data.summary || 'ผลการประเมินผ่านเกณฑ์มาตรฐาน';
+    var agentName = data.agentName || 'HR ET Specialist';
+    var dateStr = new Date().toLocaleString('th-TH');
+    
+    // ส่งอีเมลแจ้งเตือนอัตโนมัติผ่าน Gmail ของผู้ดูแลระบบ
+    MailApp.sendEmail({
+      to: recipient,
+      subject: '[ET OPC Company] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก: ' + candidateName + ' (คะแนน: ' + score + '/100)',
+      htmlBody: '<div style="font-family:Segoe UI, sans-serif; padding:20px; border:2px solid #8B0000; border-radius:14px; max-width:600px;">' +
+                '<h2 style="color:#8B0000; margin-top:0;">ET OPC Company — แจ้งเตือนผู้สมัครผ่านเกณฑ์</h2>' +
+                '<p><strong>ผู้สมัคร:</strong> ' + candidateName + '<br>' +
+                '<strong>ผู้ประเมิน:</strong> ' + agentName + ' (AI Agent)<br>' +
+                '<strong>วันที่ประเมิน:</strong> ' + dateStr + '<br>' +
+                '<strong>คะแนนความเหมาะสม:</strong> <span style="color:#059669; font-size:18px; font-weight:bold;">' + score + ' / 100 คะแนน</span></p>' +
+                '<hr style="border:none; border-top:1px solid #E2E8F0; margin:16px 0;">' +
+                '<div style="background:#F8FAFC; padding:14px; border-radius:10px; font-size:13.5px; line-height:1.6;">' +
+                summary.replace(/\\n/g, '<br>') +
+                '</div>' +
+                '<br><small style="color:#64748B;">คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST</small>' +
+                '</div>'
+    });
+    
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Email sent successfully!' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', error: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}`;
+
+    navigator.clipboard.writeText(scriptCode).then(() => {
+        showToast("📋 คัดลอกโค้ด Google Apps Script เรียบร้อยแล้ว นำไปวางใน script.google.com ได้ทันที", "success");
+    });
+}
+window.copyGoogleAppsScriptCode = copyGoogleAppsScriptCode;
+
+// Function to trigger email when candidate passes
+window.sendCandidatePassedEmail = sendCandidatePassedEmail;
+async function sendCandidatePassedEmail(score, btnElem = null) {
+    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'siraphop.tha@pim.ac.th';
+    const webhookUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
+    const charName = currentCharacter ? currentCharacter.name : 'HR ET Specialist';
+    const history = appUserData[currentUser]?.history[currentCharacter?.id] || [];
+    const lastMsg = history.length > 0 ? history[history.length - 1].t : '';
+
+    if (btnElem) {
+        btnElem.disabled = true;
+        btnElem.textContent = '⏳ กำลังส่งอีเมล...';
+    }
+
+    if (webhookUrl && webhookUrl.startsWith('http')) {
+        try {
+            const payload = {
+                event: 'CANDIDATE_PASSED',
+                candidateName: 'ผู้สมัคร (ตรวจพบจาก CV)',
+                score: score,
+                recipientEmail: notifyEmail,
+                agentName: charName,
+                summary: lastMsg
+            };
+
+            await fetch(webhookUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            showToast(`✅ ส่งอีเมลแจ้งเตือนไปยัง ${notifyEmail} สำเร็จเรียบร้อยแล้ว!`, "success");
+            if (btnElem) btnElem.textContent = `✅ ส่งอีเมลถึง ${notifyEmail} แล้ว`;
+            return;
+        } catch(err) {
+            console.warn("Webhook send failed, fallback to mailto:", err);
+        }
+    }
+
+    // Direct mailto fallback
+    const subject = encodeURIComponent(`[ET OPC Company] 🎉 แจ้งเตือนผู้สมัครผ่านเกณฑ์ (คะแนน: ${score}/100)`);
+    const body = encodeURIComponent(`รายงานผลการประเมินผู้สมัคร - ET OPC Company\nAgent ผู้ประเมิน: ${charName}\nคะแนนที่ได้: ${score}/100 คะแนน\n\nสรุปผลการประเมิน:\n${lastMsg}\n\n---\nคณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`);
+    
+    window.open(`mailto:${notifyEmail}?subject=${subject}&body=${body}`, '_blank');
+    showToast(`เปิดหน้าต่างส่งอีเมลไปยัง ${notifyEmail} เรียบร้อยแล้ว`, "success");
+    if (btnElem) {
+        btnElem.disabled = false;
+        btnElem.textContent = `📧 ส่งอีเมลแจ้งเตือนไปยัง ${notifyEmail}`;
+    }
+}

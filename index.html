@@ -183,9 +183,9 @@
           <span class="sidebar-tab-text">ตั้งค่า AI & Model</span>
         </button>
       </div>
-            <div style="font-size:10.5px; color:var(--sidebar-muted); padding:10px 12px 4px; text-align:center; letter-spacing:0.04em; white-space: nowrap; overflow: hidden;">
-  ET OPC Workspace • <strong style="color:var#1234;">MR.ST</strong>
-</div>
+      <div style="font-size:10.5px; color:var(--sidebar-muted); padding:10px 12px 4px; text-align:center; letter-spacing:0.04em; white-space: nowrap; overflow: hidden;">
+        ET OPC Workspace • <strong style="color:#FFFFFF;">MR.ST</strong>
+      </div>
     </aside>
 
     <!-- ================= MAIN CONTENT AREA ================= -->
@@ -369,10 +369,7 @@
             <h4>System Instructions (สมอง AI)</h4>
             <div class="box" id="personaPrompt" style="font-family: monospace; font-size:11.5px; opacity:0.9;"></div>
           </div>
-                <div style="font-size:10.5px; color:var(--sidebar-muted); padding:10px 12px 4px; text-align:center; letter-spacing:0.04em;">
-          ET OPC Workspace • <strong style="color:#FFFFFF;">MR.ST</strong>
-        </div>
-    </aside>
+        </aside>
 
         <section class="chat-window" id="chatWindowMain" style="position:relative;">
           <!-- Drag and Drop Overlay -->
@@ -438,62 +435,6 @@
                   </div>
               </div>
               <button class="btn-delete" style="padding:5px 10px; font-size:11.5px; border-radius:6px;" onclick="clearPendingFile()">ยกเลิกไฟล์</button>
-          </div>
-
-          <!-- Composer with File Upload, Drag-Drop, and Paste Support -->
-          <!-- Prompt Library Popover Menu -->
-          <div id="promptLibraryMenu" class="prompt-library-menu hidden">
-            <div class="prompt-lib-header">
-              <span class="prompt-lib-title">
-                💡 คลังคำสั่งด่วน (Prompt Library)
-              </span>
-              <button class="btn-icon" onclick="togglePromptLibrary()" style="width:24px; height:24px; border:none; background:transparent;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-            </div>
-            <div class="prompt-lib-list">
-              <div class="prompt-lib-category">🎯 HR & ประเมินเรซูเม่ (CV)</div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยคัดกรองเรซูเม่นี้เทียบกับความต้องการของตำแหน่งงาน พร้อมประเมินคะแนน 100 คะแนนและวิเคราะห์จุดแข็ง-จุดอ่อน')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                <span>คัดกรอง CV เทียบความต้องการ</span>
-              </div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยเปรียบเทียบผู้สมัครทั้งหมดในข้อมูลข้างต้นแบบ Head-to-Head Matrix พร้อมตารางคะแนนและจัดอันดับความเหมาะสม')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
-                <span>เปรียบเทียบผู้สมัครหลายคน (Matrix)</span>
-              </div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยร่างอีเมลนัดหมายสัมภาษณ์งานภาษาไทยอย่างเป็นทางการ โดยระบุวันเวลา ลิงก์ออนไลน์ และสิ่งที่ต้องเตรียมตัว')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                <span>ร่างอีเมลนัดสัมภาษณ์งาน</span>
-              </div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยร่างอีเมลปฏิเสธผู้สมัครงานอย่างสุภาพ อบอุ่น และรักษาภาพลักษณ์ที่ดีขององค์กร')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg>
-                <span>ร่างอีเมลปฏิเสธอย่างสุภาพ</span>
-              </div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยปรับปรุงประวัติการทำงานในเรซูเม่นี้ให้กระชับ โดดเด่น และเป็นมาตรฐาน ATS-Friendly')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
-                <span>ปรับปรุง CV เป็น ATS-Friendly</span>
-              </div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยร่างคำถามสัมภาษณ์งานเชิงลึก 5 ข้อ พร้อมแนวทางการประเมินคำตอบ โดยอิงจากประวัติการทำงานใน CV นี้')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span>ร่างคำถามสัมภาษณ์งาน 5 ข้อ</span>
-              </div>
-
-              <div class="prompt-lib-category">📌 สรุปงาน & สกัดประเด็น</div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('กรุณาสรุปประเด็นสำคัญของเอกสารนี้อย่างกระชับ พร้อมแยกเป็นหัวข้อและ Action Items')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span>สรุปใจความและ Action Items</span>
-              </div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยร่างอีเมลภาษาไทยทางการเพื่อรายงานผลสรุปนี้ส่งต่อให้ทีมงานและผู้บริหาร')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                <span>ร่างอีเมลสรุปงานทางการ</span>
-              </div>
-
-              <div class="prompt-lib-category">📊 ข้อมูล & เปรียบเทียบ</div>
-              <div class="prompt-lib-item" onclick="insertPromptTemplate('ช่วยแปลงข้อมูลข้างต้นให้อยู่ในรูปแบบตาราง Markdown เพื่อเปรียบเทียบข้อดี ข้อเสีย และสถิติสำคัญ')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
-                <span>จัดระเบียบเป็นตารางเปรียบเทียบ</span>
-              </div>
-            </div>
           </div>
 
           <!-- Composer with File Upload, Drag-Drop, Prompt Library, and Paste Support -->
@@ -829,6 +770,7 @@
       <button class="admin-tab-btn" id="btnAdminTabPrompts" onclick="switchAdminTab('prompts')">💡 คลังคำสั่งด่วน</button>
       <button class="admin-tab-btn" id="btnAdminTabRoles" onclick="switchAdminTab('roles')">🏢 แผนก & แท็ก</button>
       <button class="admin-tab-btn" id="btnAdminTabUsers" onclick="switchAdminTab('users')">👥 สิทธิ์ & บัญชีผู้ใช้</button>
+      <button class="admin-tab-btn" id="btnAdminTabIntegrations" onclick="switchAdminTab('integrations')">🔗 เชื่อมต่อ Drive & Email</button>
     </div>
 
     <!-- TAB 1: STATS & ANNOUNCEMENTS -->
@@ -955,26 +897,90 @@
       <div id="userAccountList" style="max-height: 140px; overflow-y:auto; margin-bottom: 16px; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
+    <!-- TAB 5: GOOGLE DRIVE & EMAIL AUTOMATION INTEGRATIONS -->
+    <div id="adminTabContentIntegrations" class="admin-tab-content hidden">
+      <!-- 1. Google Drive Settings -->
+      <h4 class="admin-section-heading">📂 1. การเชื่อมต่อ Google Drive ประจำองค์กร</h4>
+      <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:12px;">ลิงก์หรือ ID โฟลเดอร์ Google Drive (สำหรับเก็บและอ่านไฟล์)</label>
+          <input type="text" id="adminDriveFolderUrl" class="admin-field-input" placeholder="เช่น https://drive.google.com/drive/folders/1ABCxyz... หรือ ID โฟลเดอร์">
+        </div>
+        <div class="form-group" style="margin-bottom:4px;">
+          <label style="font-size:12px;">Google Apps Script Webhook URL (สำหรับรับไฟล์และส่งอีเมลอัตโนมัติ)</label>
+          <input type="text" id="adminDriveWebhookUrl" class="admin-field-input" placeholder="https://script.google.com/macros/s/AKfycbx.../exec">
+        </div>
+        <p style="font-size:11px; color:var(--ink-faint); margin:4px 0 0 0;">*รองรับทั้งการวางลิงก์ไฟล์ Google Docs/PDF ในแชท และส่งไฟล์เข้า Drive ของ Admin โดยตรง</p>
+      </div>
+
+      <!-- 2. Automated Email Evaluation Trigger Settings -->
+      <h4 class="admin-section-heading">📧 2. การตั้งค่าอีเมลแจ้งเตือนอัตโนมัติเมื่อผ่านเกณฑ์</h4>
+      <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div>
+            <strong style="font-size:13px; color:var(--ink);">เปิดใช้งานระบบส่งอีเมลแจ้งเตือนอัตโนมัติ</strong>
+            <p style="font-size:11.5px; color:var(--ink-soft); margin:2px 0 0 0;">เมื่อคะแนนการประเมินถึงเกณฑ์ที่กำหนด</p>
+          </div>
+          <label class="switch-toggle">
+            <input type="checkbox" id="toggleAutoEmailNotify" onchange="toggleAutoEmailState()">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:12px;">อีเมลผู้รับแจ้งเตือน (Admin / อาจารย์ / หัวหน้าฝ่าย HR)</label>
+          <input type="email" id="adminNotifyEmail" class="admin-field-input" placeholder="เช่น hr.etopc@pim.ac.th, siraphop.tha@pim.ac.th">
+        </div>
+
+        <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:12px; display:flex; justify-content:space-between;">
+            <span>เกณฑ์คะแนนขั้นต่ำสำหรับ "ผ่านการคัดเลือก" (Passing Threshold)</span>
+            <strong id="passingScoreDisplay" style="color:var(--maroon); font-size:13px;">80 / 100 คะแนน</strong>
+          </label>
+          <input type="range" id="adminPassingScore" min="50" max="100" step="5" value="80" oninput="document.getElementById('passingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label style="font-size:12px;">รูปแบบการส่งแจ้งเตือน</label>
+          <select id="adminEmailSendMode" class="admin-field-input">
+            <option value="manual">👆 Manual: แสดงปุ่มในการ์ดแชทให้ Admin/กรรมการ กดส่งอีเมลหรือตรวจสอบก่อน</option>
+            <option value="auto">⚡ Auto-Trigger: ส่งอีเมลแจ้งเตือนไปยังผู้รับทันทีที่ประเมินผ่านเกณฑ์</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 3. Google Apps Script Helper & Code Template -->
+      <h4 class="admin-section-heading">📜 3. โค้ด Google Apps Script ฟรี (สำหรับเชื่อมต่อ Gmail & Drive)</h4>
+      <div style="background:var(--surface-2); padding:12px 14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
+        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 8px 0;">นำโค้ดนี้ไปวางใน <strong>Google Apps Script</strong> ของคุณเพื่อรับ Webhook ส่งอีเมลและบันทึกไฟล์ลง Drive อัตโนมัติ:</p>
+        <button type="button" class="btn-cancel" style="width:100%; padding:8px; font-size:12px; font-weight:800; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px;" onclick="copyGoogleAppsScriptCode()">
+          📋 คัดลอกโค้ด Google Apps Script ตัวอย่าง
+        </button>
+      </div>
+
+      <button type="button" class="btn-submit" style="width:100%; padding:11px; font-weight:800;" onclick="saveIntegrationSettings()">
+        💾 บันทึกการตั้งค่า Drive & Email
+      </button>
+    </div>
+
     <button class="btn-cancel" style="width:100%; font-weight:800; margin-top:14px;" onclick="closeAdminDashboard()">ปิดหน้าต่าง</button>
   </div>
 </div>
 
 <!-- Quick Guide Modal -->
-<!-- Quick Guide Modal (User + Secret Admin Guide) -->
 <div id="quickGuideModal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width: 650px; text-align:left; max-height: 88vh; overflow-y: auto;">
+  <div class="modal-box" style="max-width: 620px; text-align:left;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-      <h3 class="modal-title heading" id="quickGuideTitle" style="margin:0; font-size: 20px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> 
-        <span id="quickGuideTitleText">คู่มือการใช้งาน (Quick User Guide)</span>
+      <h3 class="modal-title heading" style="margin:0; font-size: 20px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> คู่มือการใช้งาน (Quick User Guide)
       </h3>
       <button class="btn-icon" onclick="closeQuickGuideModal()" style="width:32px; height:32px; border:none; background:transparent;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
-    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px 0;">ยินดีต้อนรับสู่ ET OPC Company AI Workspace แพลตฟอร์มผู้ช่วยอัจฉริยะสำหรับองค์กร คณะวิศวกรรมศาสตร์และเทคโนโลยี PIM</p>
+    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px 0;">ยินดีต้อนรับสู่ ET OPC Company AI Workspace แพลตฟอร์มผู้ช่วยอัจฉริยะสำหรับองค์กร</p>
 
-    <!-- ================= ADMIN-ONLY SECTION (Hidden from Normal Users) ================= -->
+    <!-- Admin-only secret guide section -->
     <div id="adminGuideContent" style="display:none; margin-bottom: 20px;">
       <div style="background: linear-gradient(135deg, rgba(139, 0, 0, 0.08) 0%, rgba(217, 119, 6, 0.08) 100%); border: 1.5px solid rgba(139, 0, 0, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
@@ -986,7 +992,6 @@
         <p style="font-size:12px; color:var(--ink-soft); margin:0 0 10px 0;">ส่วนนี้จะแสดงผลเฉพาะบัญชีผู้ดูแลระบบ (Admin) เท่านั้น สมาชิกทั่วไปจะไม่สามารถมองเห็นได้</p>
       </div>
 
-      <!-- Admin Guide Step 1: API Setup -->
       <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
         <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
           🔑 1. วิธีการขอและตั้งค่า API Key (Google Gemini 3.X)
@@ -997,34 +1002,9 @@
           • กด <strong>"🧪 ทดสอบเชื่อมต่อ"</strong> และ <strong>"💾 บันทึกและเปิดใช้งาน"</strong> ระบบพร้อมทำงานทันที!
         </p>
       </div>
-
-      <!-- Admin Guide Step 2: Policy & User Management -->
-      <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
-        <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
-          🛡️ 2. การควบคุมสิทธิ์ & นโยบายความปลอดภัย
-        </h4>
-        <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
-          • <strong>สิทธิ์การสร้าง Agent:</strong> ในหน้า <em>"⚙️ จัดการระบบ"</em> สามารถเปิด/ปิดสวิตช์ <em>"อนุญาตให้ User ทั่วไปสร้าง Agent ได้"</em> เพื่อควบคุมความเรียบร้อย<br>
-          • <strong>การจัดการผู้ใช้:</strong> สามารถค้นหาชื่อผู้ใช้ ลบบัญชีผู้ใช้ที่ผิดระเบียบ หรือแต่งตั้ง Admin เพิ่มเติมได้ในแท็บ <em>"👥 สิทธิ์ & บัญชีผู้ใช้"</em><br>
-          • <strong>บัญชี Super Admin:</strong> บัญชี <code>@ETPIM</code> เป็นบัญชีหลักของสถาบัน ได้รับการป้องกันไม่ให้ถูกลบออกจากระบบ
-        </p>
-      </div>
-
-      <!-- Admin Guide Step 3: Announcement & Prompt Library -->
-      <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
-        <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
-          📢 3. การติดป้ายประกาศ & เพิ่มคำสั่งลงคลังด่วน
-        </h4>
-        <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
-          • <strong>ป้ายประกาศองค์กร:</strong> เปิดใช้งานและพิมพ์ข้อความในแท็บ <em>"สถิติ & ประกาศ"</em> เพื่อส่งข่าวสารสำคัญให้ทุกคนที่เข้าหน้าแรกเห็นทันที<br>
-          • <strong>คลังคำสั่งด่วน (Prompt Library):</strong> เพิ่มแม่แบบคำสั่งสำเร็จรูป เช่น <em>"คัดกรองเรซูเม่", "ร่างหนังสืออนุมัติ"</em> เพื่อให้ทีมงานกดเลือกใช้งานในแชทได้ทันที
-        </p>
-      </div>
       <hr style="border:none; border-top:1.5px solid var(--line); margin: 16px 0;">
     </div>
 
-    <!-- ================= USER GENERAL SECTION ================= -->
-    <h4 style="font-size:13.5px; font-weight:800; color:var(--ink); margin: 0 0 10px;">👤 คู่มือการใช้งานสำหรับสมาชิกทั่วไป (User Guide)</h4>
     <div class="guide-step-grid">
       <div class="guide-step-card">
         <div class="guide-step-num">1</div>
