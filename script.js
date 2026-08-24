@@ -158,13 +158,15 @@ const SYSTEM_CHARACTERS = [
     name:"เลขาส่วนตัว (Administration & Secretary)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=600&q=80",
+    imageUrl: "CoffeeGirl.jpg",
     color:"linear-gradient(135deg,#8B0000,#450A0A)", 
     chatCount: 1540, 
     isPrivate: false,
     role: {v:"role-summary", t:"Executive Assistant", color:"#7C3AED"},
     bio:"ผู้ช่วยเลขาประจำตัว คอยดูแลจัดการตารางงาน สรุปการประชุม วิเคราะห์เอกสาร จัดการข้อมูลต่างๆ และช่วยอำนวยความสะดวกในการทำงานอย่างมืออาชีพ",
-    requirements: `1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร\n2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ\n3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร`,
+    requirements: `1. ความถูกต้อง แม่นยำ และเป็นระบบในการจัดเก็บเอกสาร
+2. ความรวดเร็วในการประสานงานและการจัดลำดับความสำคัญ
+3. การสื่อสารที่สุภาพ เป็นมืออาชีพ และรักษาความลับองค์กร`,
     tags:[{v:"tag-summary", t:"#สรุปรายงาน", c:"tag-summary"},{v:"tag-meeting", t:"#การประชุม", c:"tag-meeting"}], 
     featured:true, 
     badge:"เลขาส่วนตัวประจำตัว",
@@ -180,13 +182,16 @@ const SYSTEM_CHARACTERS = [
     name:"HR ET — ฝ่ายทรัพยากรบุคคล (HR Specialist)", 
     creator:"@ETPIM", 
     icon:"users", 
-    imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
+    imageUrl: "HRMAN.png",
     color:"linear-gradient(135deg,#8B0000,#450A0A)", 
     chatCount: 2450, 
     isPrivate: false,
     role: {v:"role-hr", t:"HR & People Operations", color:"#EC4899"},
     bio:"ผู้เชี่ยวชาญด้านทรัพยากรบุคคล คัดกรองและประเมินเรซูเม่เทียบกับความต้องการของตำแหน่งงาน (CV Screening & Score) พร้อมช่วยปรับปรุงประวัติการทำงาน",
-    requirements: `1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี\n2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง\n3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง\n4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น`,
+    requirements: `1. ประสบการณ์ตรงสายงานอย่างน้อย 1-3 ปี
+2. ทักษะเฉพาะทาง (Hard & Soft Skills) ที่สอดคล้องกับตำแหน่ง
+3. วุฒิการศึกษาและใบรับรองทางวิชาชีพที่เกี่ยวข้อง
+4. ผลงานเชิงประจักษ์ (Metrics/Impact) และความกระตือรือร้น`,
     tags:[{v:"tag-hr", t:"#HR_ET", c:"tag-hr"},{v:"tag-resume", t:"#Resume_CV", c:"tag-resume"},{v:"tag-ops", t:"#Operations", c:"tag-ops"}], 
     featured:true, 
     badge:"ผู้เชี่ยวชาญฝ่ายบุคคล & CV",
@@ -217,7 +222,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ช่วยสรุปงาน & สรุปการประชุม (Executive Summary)", 
     creator:"@ETPIM", 
     icon:"filetext", 
-    imageUrl: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=600&q=80",
+    imageUrl: "HelperGirl.png",
     color:"linear-gradient(135deg,#7C3AED,#1E1B4B)", 
     chatCount: 1820, 
     isPrivate: false,
@@ -234,7 +239,7 @@ const SYSTEM_CHARACTERS = [
     name:"ผู้ประสานงานฝ่ายปฏิบัติการ (Operations Coordinator)", 
     creator:"@ETPIM", 
     icon:"briefcase", 
-    imageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80",
+    imageUrl: "CoPx.png",
     color:"linear-gradient(135deg,#0284C7,#0F172A)", 
     chatCount: 2310, 
     isPrivate: false,
@@ -251,7 +256,7 @@ const SYSTEM_CHARACTERS = [
     name:"นักวิเคราะห์เอกสารและข้อมูล (Data Analyst Bot)", 
     creator:"@ETPIM", 
     icon:"chart", 
-    imageUrl: "https://images.unsplash.com/photo-1573496799652-408c2ac9fe98?auto=format&fit=crop&w=600&q=80",
+    imageUrl: "CheckingGR.png",
     color:"linear-gradient(135deg,#059669,#064E3B)", 
     chatCount: 1180, 
     isPrivate: false,
@@ -394,7 +399,7 @@ function logout() {
     window.location.href = 'login.html';
 }
 
-const APP_DATA_VERSION = 'v2.8';
+const APP_DATA_VERSION = 'v3.0';
 
 function loadData() {
     const savedVersion = localStorage.getItem(STORAGE_PREFIX + 'app_version');
@@ -2524,8 +2529,8 @@ function closeCropperModal() {
 }
 function applyCrop() {
     if(!cropper) return;
-    const canvas = cropper.getCroppedCanvas({ width: 240, height: 240 });
-    const croppedData = canvas.toDataURL('image/jpeg', 0.78);
+    const canvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
+    const croppedData = canvas.toDataURL('image/jpeg', 0.92);
 
     if (currentCropperTarget === 'profile') {
         currentUploadedProfileImage = croppedData;
