@@ -250,6 +250,17 @@ let userGeminiPreference = {
 
 // --- INITIALIZATION ---
 function initApp() {
+    const savedTheme = localStorage.getItem(STORAGE_PREFIX + 'theme') || 'light';
+    setTheme(savedTheme, false);
+
+    if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            const currentPref = localStorage.getItem(STORAGE_PREFIX + 'theme');
+            if (currentPref === 'auto') {
+                setTheme('auto', false);
+            }
+        });
+    }
     const loggedIn = localStorage.getItem(STORAGE_PREFIX + 'logged_in') || sessionStorage.getItem(STORAGE_PREFIX + 'logged_in');
     
     if (loggedIn === 'true') {
@@ -2117,11 +2128,29 @@ function clearCurrentChat() {
     });
 }
 
-function setTheme(mode){
-    document.documentElement.setAttribute('data-theme', mode);
+function setTheme(mode, save = true){
+    window.setTheme = setTheme;
+    let effectiveMode = mode;
+    if (mode === 'auto') {
+        effectiveMode = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', effectiveMode);
     document.getElementById('btnLight')?.classList.toggle('active', mode === 'light');
     document.getElementById('btnDark')?.classList.toggle('active', mode === 'dark');
+    
+    document.getElementById('themeCardLight')?.classList.toggle('active', mode === 'light');
+    document.getElementById('themeCardDark')?.classList.toggle('active', mode === 'dark');
+    document.getElementById('themeCardAuto')?.classList.toggle('active', mode === 'auto');
+
+    if (save) {
+        localStorage.setItem(STORAGE_PREFIX + 'theme', mode);
+        if (typeof showToast === 'function') {
+            const label = mode === 'dark' ? 'โหมดมืด' : (mode === 'auto' ? 'ตามระบบ' : 'โหมดสว่าง');
+            showToast('เปลี่ยนธีมเป็น ' + label + ' แล้ว', 'info');
+        }
+    }
 }
+window.setTheme = setTheme;
 
 function handleSearch(e) {
     currentSearchQuery = e.target.value.toLowerCase().trim();
@@ -2929,7 +2958,7 @@ function downloadMessageAsPdf(idx) {
             ${formatRoleplayText(rawText)}
         </div>
         <div style="margin-top: 36px; border-top: 1px solid #E2E8F0; padding-top: 12px; text-align: center; font-size: 10.5px; color: #94A3B8;">
-            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • จัดทำโดยระบบอัตโนมัติ AI
+            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST • Developed by MR.ST • จัดทำโดยระบบอัตโนมัติ AI
         </div>
     </div>`;
 
@@ -3000,7 +3029,7 @@ function downloadMessageAsWord(idx) {
             ${formatRoleplayText(rawText)}
         </div>
         <div class="footer-box">
-            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026
+            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST
         </div>
     </body>
     </html>`;
@@ -3170,15 +3199,37 @@ function startNewChatSession() {
 };
 
 
-// --- QUICK GUIDE MODAL ---
+// --- QUICK GUIDE MODAL & ROLE-GUARDED ADMIN GUIDE ---
 window.openQuickGuideModal = openQuickGuideModal;
 function openQuickGuideModal() {
+    const adminSection = document.getElementById('adminGuideContent');
+    const titleText = document.getElementById('quickGuideTitleText');
+    const isAdmin = (currentUserRole === 'admin');
+
+    if (adminSection) {
+        adminSection.style.display = isAdmin ? 'block' : 'none';
+    }
+    if (titleText) {
+        titleText.textContent = isAdmin ? 'คู่มือการใช้งาน & ดูแลระบบ (Admin & User Guide)' : 'คู่มือการใช้งาน (Quick User Guide)';
+    }
+
     document.getElementById('quickGuideModal')?.classList.remove('hidden');
 };
+
+window.openAdminGuideDirectly = openAdminGuideDirectly;
+function openAdminGuideDirectly() {
+    closeAdminDashboard();
+    openQuickGuideModal();
+    const adminSection = document.getElementById('adminGuideContent');
+    if (adminSection) {
+        adminSection.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
 window.closeQuickGuideModal = closeQuickGuideModal;
 function closeQuickGuideModal() {
     document.getElementById('quickGuideModal')?.classList.add('hidden');
-};
+};;
 
 
 // --- TERMS & PRIVACY MODAL ---
@@ -3368,7 +3419,7 @@ function downloadMessageAsSlides(idx) {
       ${formatRoleplayText(rawText)}
     </div>
     <div class="slide-footer">
-      <span>คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026</span>
+      <span>คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST</span>
       <span>วันที่จัดทำ: ${dateStr}</span>
     </div>
   </div>

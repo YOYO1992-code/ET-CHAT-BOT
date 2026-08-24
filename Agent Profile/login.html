@@ -36,7 +36,7 @@
   /* LEFT HERO PANEL (Dark Emerald Forest Green) */
   .hero-panel {
     flex: 1.1;
-    background: linear-gradient(145deg, #041F18 0%, #083327 50%, #06261D 100%);
+    background: linear-gradient(145deg, #4A0004 0%, #700008 50%, #8B0000 100%);
     color: #FFFFFF;
     padding: 56px 64px 48px;
     display: flex;
@@ -531,7 +531,7 @@
     </div>
 
     <div class="hero-center-content">
-      <div class="hero-tagline">AGENT & WORKSPACE AUTOMATION</div>
+      <div class="hero-tagline">#TeamET · AGENT & WORKSPACE AUTOMATION</div>
       <h1 class="hero-main-title">ทำเนียบผู้ช่วยดิจิทัล<br>ประจำองค์กร</h1>
       <p class="hero-desc">
         เข้าสู่ระบบเพื่อเรียกใช้ AI Agent ที่ทีมของคุณกำหนดไว้สำหรับงานเอกสาร งานบุคคล และการสรุปประชุม — บันทึกและติดตามได้ทุกขั้นตอน
@@ -554,7 +554,7 @@
     </div>
 
     <div class="hero-footer">
-      ET OPC COMPANY © 2026 · สงวนลิขสิทธิ์ทุกกระบวนการทำงาน
+      ET OPC COMPANY © 2026 · Developed by MR.ST · สงวนลิขสิทธิ์ทุกกระบวนการทำงาน
     </div>
   </div>
 
@@ -672,10 +672,17 @@
   let currentMode = 'login';
   const STORAGE_PREFIX = 'etopc_company_';
 
-  function setTheme(mode){
-    document.documentElement.setAttribute('data-theme', mode);
+  function setTheme(mode, save = true){
+    let effectiveMode = mode;
+    if (mode === 'auto') {
+      effectiveMode = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', effectiveMode);
     document.getElementById('btnLight')?.classList.toggle('active', mode === 'light');
     document.getElementById('btnDark')?.classList.toggle('active', mode === 'dark');
+    if (save) {
+      localStorage.setItem(STORAGE_PREFIX + 'theme', mode);
+    }
   }
 
   function openTermsModal() {
@@ -722,6 +729,9 @@
   }
 
   window.onload = function() {
+      const savedTheme = localStorage.getItem(STORAGE_PREFIX + 'theme') || 'light';
+      setTheme(savedTheme, false);
+
       const loggedIn = localStorage.getItem(STORAGE_PREFIX + 'logged_in') || sessionStorage.getItem(STORAGE_PREFIX + 'logged_in');
       if(loggedIn === 'true') {
           window.location.href = 'index.html';

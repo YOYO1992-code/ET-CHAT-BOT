@@ -2958,7 +2958,7 @@ function downloadMessageAsPdf(idx) {
             ${formatRoleplayText(rawText)}
         </div>
         <div style="margin-top: 36px; border-top: 1px solid #E2E8F0; padding-top: 12px; text-align: center; font-size: 10.5px; color: #94A3B8;">
-            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • จัดทำโดยระบบอัตโนมัติ AI
+            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST • Developed by MR.ST • จัดทำโดยระบบอัตโนมัติ AI
         </div>
     </div>`;
 
@@ -3029,7 +3029,7 @@ function downloadMessageAsWord(idx) {
             ${formatRoleplayText(rawText)}
         </div>
         <div class="footer-box">
-            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026
+            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST
         </div>
     </body>
     </html>`;
@@ -3419,7 +3419,7 @@ function downloadMessageAsSlides(idx) {
       ${formatRoleplayText(rawText)}
     </div>
     <div class="slide-footer">
-      <span>คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026</span>
+      <span>คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST</span>
       <span>วันที่จัดทำ: ${dateStr}</span>
     </div>
   </div>
