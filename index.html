@@ -1319,34 +1319,42 @@
 </div>
 <!-- Candidate Screening Hub Modal (ตรวจเรซูเม่ นศ. จำนวนมาก & ส่ง Gmail) -->
 <div id="candidateHubModal" class="modal-overlay hidden" style="z-index: 2100;">
-  <div class="modal-box" style="max-width: 680px; text-align:left; max-height: 88vh; overflow-y: auto; padding: 24px 26px;">
+  <div class="modal-box" style="max-width: 680px; text-align:left; max-height: 88vh; overflow-y: auto; padding: 24px 26px; border-radius: 16px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <h3 class="modal-title heading" style="margin:0; font-size: 19px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+      <h3 class="modal-title heading" style="margin:0; font-size: 19px; color:var(--ink); display:flex; align-items:center; gap:8px;">
         🎓 ศูนย์คัดกรองเรซูเม่ นศ. (Candidate Screening Hub)
       </h3>
       <button class="btn-icon" onclick="closeCandidateHubModal()" style="width:32px; height:32px; border:none; background:transparent;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
-    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 14px 0;">ศูนย์กลางรวบรวมไฟล์เรซูเม่ของนักศึกษา ตรวจประเมินแบบรายบุคคล/กลุ่ม และส่งผลคะแนนเข้า Gmail อัตโนมัติ</p>
+    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 16px 0;">ศูนย์กลางรวบรวมไฟล์เรซูเม่ของนักศึกษา ตรวจประเมินแบบรายบุคคล/กลุ่ม และส่งผลคะแนนเข้า Gmail อัตโนมัติ</p>
 
     <!-- Upload Box: Multiple Files Support -->
-    <div class="form-group" style="margin-bottom:14px;">
-      <label style="font-size:12px; font-weight:800;">📥 อัปโหลดเรซูเม่ นศ. (เลือกทีละหลายไฟล์ได้):</label>
+    <div class="form-group" style="margin-bottom:18px;">
+      <label style="font-size:12.5px; font-weight:800; color: var(--ink); display:flex; align-items:center; gap:6px; margin-bottom: 8px;">
+        📤 อัปโหลดเรซูเม่ นศ. (เลือกทีละหลายไฟล์ได้):
+      </label>
       <input type="file" id="batchCvInput" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" multiple class="hidden" onchange="handleBatchCvUpload(event)">
-      <div onclick="document.getElementById('batchCvInput').click()" style="border:2px dashed var(--line); border-radius:12px; padding:16px; text-align:center; background:var(--surface-2); cursor:pointer; transition:border-color 0.2s ease;">
-        <span style="font-size:24px; display:block; margin-bottom:4px;">📄</span>
-        <strong style="font-size:13px; color:var(--ink);">คลิกเพื่อเลือกไฟล์เรซูเม่ หรือลากไฟล์ PDF มาวางที่นี่</strong>
-        <span style="font-size:11.5px; color:var(--ink-faint); display:block; margin-top:2px;">รองรับการอัปโหลดพร้อมกันหลายไฟล์ (Multiple PDFs)</span>
+      <div onclick="document.getElementById('batchCvInput').click()" style="border:2px dashed #CBD5E1; border-radius:12px; padding:24px; text-align:center; background:#F8FAFC; cursor:pointer; transition:border-color 0.2s ease;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.5" style="margin-bottom:8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <strong style="font-size:14px; color:var(--ink); display:block;">คลิกเพื่อเลือกไฟล์เรซูเม่ หรือลากไฟล์ PDF มาวางที่นี่</strong>
+        <span style="font-size:12px; color:var(--ink-soft); display:block; margin-top:4px;">รองรับการอัปโหลดพร้อมกันหลายไฟล์ (Multiple PDFs)</span>
       </div>
     </div>
 
     <!-- Candidate Queue Table / Cards -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <h4 style="font-size:13px; font-weight:800; color:var(--maroon); margin:0;">📋 รายชื่อเรซูเม่ในคิวตรวจ (<span id="hubCandidateCount">2</span> คน)</h4>
-      <div style="display:flex; gap:6px;">
-        <button type="button" class="btn-submit" style="padding:4px 10px; font-size:11.5px; border-radius:8px;" onclick="batchEvaluateAllCandidates()">⚡ ตรวจทั้งหมด</button>
-        <button type="button" class="btn-cancel" style="padding:4px 10px; font-size:11.5px; border-radius:8px;" onclick="exportCandidateMatrixCsv()">📊 ส่งออก CSV</button>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h4 style="font-size:13.5px; font-weight:800; color:var(--maroon); margin:0; display:flex; align-items:center; gap:6px;">
+        📋 รายชื่อเรซูเม่ในคิวตรวจ (<span id="hubCandidateCount">0</span> คน)
+      </h4>
+      <div style="display:flex; gap:8px;">
+        <button type="button" class="btn-submit" style="padding:6px 12px; font-size:12px; border-radius:8px; background-color: #8B0000; display:flex; align-items:center; gap:4px;" onclick="batchEvaluateAllCandidates()">
+          ⚡ ตรวจทั้งหมด
+        </button>
+        <button type="button" class="btn-cancel" style="padding:6px 12px; font-size:12px; border-radius:8px; background-color: #F1F5F9; color: #334155; border: 1px solid #E2E8F0; display:flex; align-items:center; gap:4px;" onclick="exportCandidateMatrixCsv()">
+          📊 ส่งออก CSV
+        </button>
       </div>
     </div>
 
@@ -1354,7 +1362,7 @@
       <!-- Populated dynamically via JS -->
     </div>
 
-    <button type="button" class="btn-cancel" style="width:100%; font-weight:800;" onclick="closeCandidateHubModal()">ปิดหน้าต่าง</button>
+    <button type="button" class="btn-cancel" style="width:100%; font-weight:800; padding:12px; border-radius:10px; background-color: #F8FAFC;" onclick="closeCandidateHubModal()">ปิดหน้าต่าง</button>
   </div>
 </div>
 </body>

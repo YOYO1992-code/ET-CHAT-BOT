@@ -2511,8 +2511,8 @@ function saveCharacter() {
     showExplore();
     applyFilters();
 
-    // Supabase Cloud Upsert (Guaranteed Multi-User Sync)
-    if (supabaseClient) {
+   // เปลี่ยนจาก if (supabaseClient) เป็น:
+       if (typeof supabaseClient !== 'undefined' && supabaseClient) {
         const charToSync = editingCharacterId ? appCharacters.find(c => c.id === editingCharacterId) : appCharacters[0];
         if (charToSync) {
             supabaseClient.from('agents').upsert(mapCharToDb(charToSync)).then(({ error }) => {
@@ -4871,109 +4871,45 @@ function triggerAttachedFileAction(actionType) {
     sendMessage(prompt);
 }
 
-
-
-// --- CANDIDATE & CV SCREENING HUB SYSTEM ---
-let appCandidateSubmissions = [
-    {
-        id: "cand-1",
-        name: "สมชาย สายลุย",
-        fileName: "สมชาย สายลุย.pdf",
-        size: "36.2 KB",
-        mimeType: "application/pdf",
-        status: "pending", // pending, evaluated, passed
-        score: null,
-        date: "24 ส.ค. 2026",
-        content: `ประวัติการทำงาน (Resume / CV)\nชื่อ: นายสมชาย สายลุย\nตำแหน่งที่สมัคร: IT Project Coordinator / Operations Specialist\nการศึกษา: วศ.บ. วิศวกรรมคอมพิวเตอร์และปัญญาประดิษฐ์ คณะวิศวกรรมศาสตร์และเทคโนโลยี PIM (GPA 3.65)\nประสบการณ์: 3 ปี ด้าน Project Coordination, Agile, Jira, Python\nผลงาน: ปรับปรุง Workflow ลดระยะเวลาการส่งมอบงาน 25%`
-    },
-    {
-        id: "cand-2",
-        name: "ธนดล เจริญรุ่งเรือง",
-        fileName: "Resume นายธนดลเจริญรุ่งเรือง.pdf",
-        size: "142 KB",
-        mimeType: "application/pdf",
-        status: "passed",
-        score: 95,
-        date: "24 ส.ค. 2026",
-        content: `Resume นายธนดล เจริญรุ่งเรือง\nตำแหน่ง: Senior Project Manager / Business Analyst\nการศึกษา: MBA เกียรตินิยม GPA 3.85 & วศ.บ. คอมพิวเตอร์\nประสบการณ์: 8 ปี (BA 4 ปี, PM 3.5 ปี, Senior PM 1 ปี)\nใบรับรอง: PMP, CSM, Strategic Leadership\nผลงาน: ลดต้นทุน 25%, ประหยัดงบ 15%, CSAT 95%`
-    }
-];
-
-function loadCandidateSubmissions() {
-    const saved = localStorage.getItem(STORAGE_PREFIX + 'candidate_submissions_v1');
+// ฟังก์ชันเปิดหน้าต่าง Candidate Hub
+window.openCandidateHubModal = function() {
+    // โหลดข้อมูลเก่าจาก LocalStorage (ถ้ามี)
+    const saved = localStorage.getItem(STORAGE_PREFIX + 'candidate_hub');
     if (saved) {
-        try { appCandidateSubmissions = JSON.parse(saved); } catch(e) {}
+        try { 
+            appCandidateSubmissions = JSON.parse(saved); 
+        } catch(e) { 
+            appCandidateSubmissions = []; 
+        }
     }
-}
-
-function saveCandidateSubmissions() {
-    localStorage.setItem(STORAGE_PREFIX + 'candidate_submissions_v1', JSON.stringify(appCandidateSubmissions));
-}
-
-window.openCandidateHubModal = openCandidateHubModal;
-function openCandidateHubModal() {
-    loadCandidateSubmissions();
     renderCandidateQueueList();
     document.getElementById('candidateHubModal')?.classList.remove('hidden');
-}
+};
 
-window.closeCandidateHubModal = closeCandidateHubModal;
-function closeCandidateHubModal() {
+// ฟังก์ชันปิดหน้าต่าง Candidate Hub
+window.closeCandidateHubModal = function() {
     document.getElementById('candidateHubModal')?.classList.add('hidden');
-}
+};
 
-function renderCandidateQueueList() {
-    const list = document.getElementById('candidateQueueList');
-    const countLabel = document.getElementById('hubCandidateCount');
-    if (!list) return;
-    list.innerHTML = '';
-    if (countLabel) countLabel.textContent = appCandidateSubmissions.length;
+// ประกาศอาร์เรย์สำหรับเก็บข้อมูลผู้สมัคร
+let appCandidateSubmissions = [];
 
-    if (appCandidateSubmissions.length === 0) {
-        list.innerHTML = '<p style="font-size:12.5px; color:var(--ink-faint); padding:12px; text-align:center;">ยังไม่มีเรซูเม่ในคิว สามารถกดอัปโหลดไฟล์ด้านบนได้ทันที</p>';
-        return;
-    }
+// สร้างฟังก์ชันเซฟข้อมูลลง LocalStorage
+window.saveCandidateSubmissions = function() {
+    localStorage.setItem(STORAGE_PREFIX + 'candidate_hub', JSON.stringify(appCandidateSubmissions));
+};
 
-    appCandidateSubmissions.forEach((cand, idx) => {
-        let statusBadge = '<span style="background:var(--surface-3); color:var(--ink-soft); font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">⏳ รอตรวจ</span>';
-        if (cand.status === 'passed') {
-            statusBadge = `<span style="background:rgba(16,185,129,0.15); color:#059669; font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;">🟢 ผ่านเกณฑ์ (${cand.score}/100)</span>`;
-        } else if (cand.status === 'evaluated') {
-            statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#D97706; font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;">🟡 พิจารณา (${cand.score}/100)</span>`;
-        }
+// --- CANDIDATE & CV SCREENING HUB SYSTEM (FIXED & REBUILT) ---
 
-        const div = document.createElement('div');
-        div.className = 'candidate-queue-card';
-        div.style.cssText = 'background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px;';
-        
-        div.innerHTML = `
-          <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-            <span style="font-size:22px;">📕</span>
-            <div style="min-width:0;">
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <strong style="font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(cand.name || cand.fileName)}</strong>
-                ${statusBadge}
-              </div>
-              <span style="font-size:11px; color:var(--ink-faint); display:block;">${escapeHtml(cand.fileName)} • ${escapeHtml(cand.size || '36 KB')} • ส่งเมื่อ ${escapeHtml(cand.date || 'วันนี้')}</span>
-            </div>
-          </div>
-          <div style="display:flex; gap:6px; flex-shrink:0;">
-            <button type="button" class="btn-submit" style="padding:5px 10px; font-size:11.5px; font-weight:800; border-radius:8px;" onclick="evaluateSingleCandidateFromHub(${idx})">🎯 ตรวจเลย</button>
-            <button type="button" class="btn-delete" style="padding:5px 8px; font-size:11.5px; border-radius:8px;" onclick="deleteCandidateSubmission(${idx})">✕</button>
-          </div>
-        `;
-        list.appendChild(div);
-    });
-}
-
-window.handleBatchCvUpload = handleBatchCvUpload;
-function handleBatchCvUpload(e) {
+window.handleBatchCvUpload = function(e) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach(file => {
         const reader = new FileReader();
+        // FIX: ใช้ readAsDataURL เพื่อดึง Base64 ให้ AI อ่านไฟล์ PDF ได้จริง
         reader.onload = function(evt) {
+            const base64Data = evt.target.result.split(',')[1];
             const rawName = file.name.replace(/\.[^/.]+$/, "");
             const newCand = {
                 id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
@@ -4984,36 +4920,90 @@ function handleBatchCvUpload(e) {
                 status: 'pending',
                 score: null,
                 date: new Date().toLocaleDateString('th-TH'),
+                base64: base64Data, // เก็บ Base64 ไว้ส่งให้ AI
                 content: `เอกสารเรซูเม่ของ ${rawName} (${file.name})\nขนาดไฟล์: ${(file.size / 1024).toFixed(1)} KB`
             };
             appCandidateSubmissions.unshift(newCand);
             saveCandidateSubmissions();
             renderCandidateQueueList();
         };
-        reader.readAsArrayBuffer(file);
+        reader.readAsDataURL(file);
     });
 
     showToast(`📥 เพิ่มเรซูเม่ ${files.length} ไฟล์เข้าสู่คิวตรวจแล้ว!`, "success");
     e.target.value = '';
-}
+};
 
-window.evaluateSingleCandidateFromHub = evaluateSingleCandidateFromHub;
-function evaluateSingleCandidateFromHub(idx) {
+window.renderCandidateQueueList = function() {
+    const list = document.getElementById('candidateQueueList');
+    const countLabel = document.getElementById('hubCandidateCount');
+    if (!list) return;
+    list.innerHTML = '';
+    if (countLabel) countLabel.textContent = appCandidateSubmissions.length;
+
+    if (appCandidateSubmissions.length === 0) {
+        list.innerHTML = '<p style="font-size:12.5px; color:var(--ink-faint); padding:24px; text-align:center; background: #F8FAFC; border-radius: 12px; border: 1px dashed #CBD5E1;">ยังไม่มีเรซูเม่ในคิว สามารถกดอัปโหลดไฟล์ด้านบนได้ทันที</p>';
+        return;
+    }
+
+    appCandidateSubmissions.forEach((cand, idx) => {
+        let statusBadge = '<span style="background:#F1F5F9; color:#64748B; border: 1px solid #E2E8F0; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; display:flex; align-items:center; gap:4px;">⏳ รอตรวจ</span>';
+        if (cand.status === 'passed') {
+            statusBadge = `<span style="background:rgba(16,185,129,0.15); color:#059669; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px;">🟢 ผ่านเกณฑ์ (${cand.score}/100)</span>`;
+        } else if (cand.status === 'evaluated') {
+            statusBadge = `<span style="background:rgba(245,158,11,0.15); color:#D97706; font-size:11px; font-weight:800; padding:2px 8px; border-radius:6px;">🟡 ตรวจแล้ว</span>`;
+        }
+
+        const div = document.createElement('div');
+        div.className = 'candidate-queue-card';
+        // อัปเดต UI Card ให้ตรงกับภาพต้นแบบ
+        div.style.cssText = 'background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px;';
+        
+        div.innerHTML = `
+          <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+            <div style="font-size:24px; background: #FEF2F2; padding: 6px; border-radius: 8px;">📕</div>
+            <div style="min-width:0;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom: 2px;">
+                <strong style="font-size:13.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(cand.name || cand.fileName)}</strong>
+                ${statusBadge}
+              </div>
+              <span style="font-size:11.5px; color:#64748B; display:block;">${escapeHtml(cand.fileName)} • ${escapeHtml(cand.size || '36 KB')} • ส่งเมื่อ ${escapeHtml(cand.date || 'วันนี้')}</span>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; flex-shrink:0;">
+            <button type="button" class="btn-submit" style="padding:6px 12px; font-size:12px; font-weight:800; border-radius:8px; background-color: #8B0000; display:flex; align-items:center; gap:4px;" onclick="evaluateSingleCandidateFromHub(${idx})">
+              🎯 ตรวจเลย
+            </button>
+            <button type="button" class="btn-cancel" style="padding:6px 10px; font-size:12px; font-weight:800; border-radius:8px; background-color: #FEE2E2; color: #EF4444; border: 1px solid #FCA5A5;" onclick="deleteCandidateSubmission(${idx})">
+              ✕
+            </button>
+          </div>
+        `;
+        list.appendChild(div);
+    });
+};
+
+window.evaluateSingleCandidateFromHub = function(idx) {
     const cand = appCandidateSubmissions[idx];
     if (!cand) return;
 
     closeCandidateHubModal();
 
-    // Select HR ET agent
-    const hrAgent = SYSTEM_CHARACTERS.find(c => c.id === 'char-hr' || c.name.includes('HR')) || currentCharacter;
-    if (hrAgent) selectCharacter(hrAgent.id);
+    // FIX: ค้นหา HR Agent และเปลี่ยนเป็นฟังก์ชัน openChat() เพื่อเปิดหน้าต่างสนทนา
+    const hrAgent = appCharacters.find(c => c.id === 'opc-hr-et') || appCharacters.find(c => c.name.includes('HR')) || currentCharacter;
+    
+    if (hrAgent) {
+        openChat(hrAgent.id); 
+    }
 
+    // FIX: นำ Base64 จากไฟล์ที่โหลดไว้มาตั้งค่าให้ AI อ่าน PDF ได้
     pendingAttachedFile = {
         name: cand.fileName,
         mimeType: cand.mimeType,
+        base64: cand.base64,
         content: cand.content,
-        isPdf: true,
-        isImage: false,
+        isPdf: cand.mimeType === 'application/pdf' || cand.fileName.endsWith('.pdf'),
+        isImage: cand.mimeType.startsWith('image/'),
         size: 36000,
         formattedSize: cand.size
     };
@@ -5025,56 +5015,37 @@ function evaluateSingleCandidateFromHub(idx) {
 4. ผลงานเชิงประจักษ์และการนำเสนอ (15 คะแนน)
 พร้อมระบุคะแนนความเหมาะสมรวม (Match Score / 100) และข้อเสนอแนะสำหรับ HR`;
 
-    sendMessage(prompt);
-}
+    // หน่วงเวลาเล็กน้อยเพื่อให้ระบบสลับหน้าจอเสร็จก่อนส่งคำสั่ง
+    setTimeout(() => {
+        sendMessage(prompt);
+        cand.status = 'evaluated';
+        saveCandidateSubmissions();
+    }, 300);
+};
 
-window.batchEvaluateAllCandidates = batchEvaluateAllCandidates;
-function batchEvaluateAllCandidates() {
+window.batchEvaluateAllCandidates = function() {
     if (appCandidateSubmissions.length === 0) {
         showToast("ยังไม่มีเรซูเม่ในคิว", "warning");
         return;
     }
     closeCandidateHubModal();
 
-    const hrAgent = SYSTEM_CHARACTERS.find(c => c.id === 'char-hr' || c.name.includes('HR')) || currentCharacter;
-    if (hrAgent) selectCharacter(hrAgent.id);
+    // FIX: ใช้ openChat() เช่นเดียวกัน
+    const hrAgent = appCharacters.find(c => c.id === 'opc-hr-et') || appCharacters.find(c => c.name.includes('HR')) || currentCharacter;
+    if (hrAgent) {
+        openChat(hrAgent.id);
+    }
 
-    let summaryBatchList = appCandidateSubmissions.map((c, i) => `${i+1}. ${c.name} (${c.fileName}): ${c.content}`).join("\n---\n");
+    let summaryBatchList = appCandidateSubmissions.map((c, i) => `${i+1}. ${c.name} (${c.fileName})`).join("\n");
 
     const batchPrompt = `📊 กรุณาตรวจประเมินและเปรียบเทียบผู้สมัครทั้งหมด (${appCandidateSubmissions.length} คน) ในคิว ในรูปแบบตาราง Head-to-Head Candidate Matrix:
 1. ตารางคะแนนรวม: [ลำดับ] | [ชื่อผู้สมัคร] | [ประสบการณ์] | [ทักษะหลัก] | [คะแนนความเหมาะสม /100] | [สถานะ: ผ่าน/ไม่ผ่าน]
 2. จัดอันดับ Top Candidates (Leaderboard) พร้อมระบุเหตุผล
 3. สรุปรายชื่อผู้ที่แนะนำให้เรียกสัมภาษณ์งานรอบแรก
 
-ข้อมูลผู้สมัครทั้งหมด:\n${summaryBatchList}`;
+รายชื่อผู้สมัคร:\n${summaryBatchList}\n\n(หมายเหตุ: โปรดวิเคราะห์เนื้อหาเชิงลึกหากมีข้อมูล หรือให้คำแนะนำภาพรวมในการคัดเลือก)`;
 
-    sendMessage(batchPrompt);
-}
-
-window.deleteCandidateSubmission = deleteCandidateSubmission;
-function deleteCandidateSubmission(idx) {
-    appCandidateSubmissions.splice(idx, 1);
-    saveCandidateSubmissions();
-    renderCandidateQueueList();
-    showToast("ลบรายการเรซูเม่แล้ว", "info");
-}
-
-window.exportCandidateMatrixCsv = exportCandidateMatrixCsv;
-function exportCandidateMatrixCsv() {
-    if (appCandidateSubmissions.length === 0) {
-        showToast("ไม่มีข้อมูลสำหรับส่งออก", "warning");
-        return;
-    }
-
-    let csvContent = "\uFEFFลำดับ,ชื่อผู้สมัคร,ชื่อไฟล์,ขนาดไฟล์,สถานะ,คะแนน,วันที่\n";
-    appCandidateSubmissions.forEach((c, idx) => {
-        csvContent += `"${idx + 1}","${c.name}","${c.fileName}","${c.size}","${c.status}","${c.score || '-'}","${c.date}"\n`;
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `ET_OPC_Candidates_Matrix_${Date.now()}.csv`;
-    link.click();
-    showToast("📊 ส่งออกตารางผู้สมัครเป็น CSV สำเร็จ!", "success");
-}
+    setTimeout(() => {
+        sendMessage(batchPrompt);
+    }, 300);
+};
