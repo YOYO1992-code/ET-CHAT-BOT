@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ET OPC Company — AI Agent & Automation Workspace (Phase 2 Demo Ready)</title>
+<title>ET OPC Company — AI Agent & Automation Workspace (Ver 3.0)</title>
 <link rel="icon" type="image/png" href="AIXCHAT.png">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 <link rel="stylesheet" href="style.css">
@@ -17,7 +17,7 @@
 <div id="recentDrawer" class="recent-drawer">
     <div class="drawer-header">
         <h3 class="heading" style="margin:0; font-size:18px;">ประวัติงาน & การสนทนา</h3>
-                <div id="topbarCloudStatus" style="margin-right:2px;"></div>
+                <div id="drawerCloudStatus" style="margin-right:2px;"></div>
         <button class="btn-icon" onclick="toggleRecentDrawer()" style="width:32px; height:32px; border:none; background:transparent;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -55,7 +55,7 @@
       </div>
 
       <div class="header-right">
-                <div id="topbarCloudStatus" style="margin-right:2px;"></div>
+                <div id="drawerCloudStatus" style="margin-right:2px;"></div>
         <button class="btn-icon" onclick="toggleRecentDrawer()" title="ประวัติงานล่าสุด" style="margin-right:2px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         </button>
@@ -180,7 +180,7 @@
 
         <button class="sidebar-tab-btn" onclick="handleAiHeaderButtonClick()" title="ตั้งค่าโมเดล AI">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg>
-          <span class="sidebar-tab-text">ตั้งค่า AI & Model</span>
+          <span class="sidebar-tab-text" id="sidebarAiStatusText">ตั้งค่า AI & Model</span>
         </button>
       </div>
       <div class="sidebar-watermark-text">ET OPC Workspace • MR.ST</div>
@@ -403,27 +403,13 @@
           </div>
 
           <!-- Quick Action Automation Bar -->
-          <div class="automation-bar" id="chatAutomationBar">
-             <button class="btn-auto-action" onclick="triggerAutomation('cv_screen')" title="วิเคราะห์ ประเมินคะแนน และร่างคำถามสัมภาษณ์จากเรซูเม่">🎯 ประเมินเรซูเม่ (CV Screening)</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('cv_compare')" title="เปรียบเทียบผู้สมัครหลายคนในตาราง Head-to-Head">📊 เปรียบเทียบผู้สมัคร</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('cv_optimize')" title="ปรับปรุงประวัติการทำงานให้เป็นแบบมืออาชีพ ATS-Friendly">✨ ปรับปรุง CV ให้โดดเด่น</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('email_interview')" title="ร่างอีเมลนัดสัมภาษณ์งานอย่างเป็นทางการ">📧 ร่างอีเมลนัดสัมภาษณ์</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('slide_outline')" title="สร้างโครงร่างสไลด์นำเสนอสำหรับการประชุม">📑 สไลด์นำเสนอ</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('summary')" title="สรุปใจความสำคัญและประเด็นหลักอย่างกระชับ">📌 สรุปใจความสำคัญ</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('action_items')" title="สกัดสิ่งที่ต้องทำต่อ ผู้รับผิดชอบ และกำหนดส่ง">📋 สร้าง Action Items</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('draft_email')" title="ร่างอีเมลภาษาทางการเพื่อรายงานสรุปส่งต่อ">✉️ ร่างอีเมลสรุปงาน</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('table_matrix')" title="จัดระเบียบข้อมูลให้อยู่ในรูปตาราง Markdown">📊 สรุปเป็นตาราง</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('export_pdf')" title="จัดทำเอกสารรายงานฉบับสมบูรณ์สำหรับส่งออก PDF">📕 จัดทำรายงาน PDF</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('export_csv')" title="สกัดข้อมูลให้อยู่ในตารางสำหรับส่งออก Excel/CSV">📊 สกัดไฟล์ Excel/CSV</button>
-             <button class="btn-auto-action" onclick="triggerAutomation('qa_deep')" title="วิเคราะห์เจาะลึก จุดแข็ง-จุดอ่อน และความเสี่ยง">🔍 วิเคราะห์เจาะลึก</button>
-          </div>
+          <div class="automation-bar" id="chatAutomationBar"></div>
 
           <div class="messages" id="messages"></div>
 
           <!-- Quick Replies Container -->
           <div class="quick-replies" id="quickReplies" style="display:none;"></div>
 
-          <!-- Enhanced Pending File Preview Badge -->
           <!-- Enhanced Pending File Preview Badge with 1-Click Action Buttons -->
           <div id="fileAttachmentPreview" class="file-attachment-preview" style="display:none; flex-direction:column; gap:8px; padding:12px 14px; background:var(--surface-2); border:1.5px solid var(--maroon); border-radius:14px; margin-bottom:10px;">
               <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
@@ -453,10 +439,10 @@
               </div>
           </div>
 
-          <!-- Composer with File Upload, Drag-Drop, Prompt Library, and Paste Support -->
-                    <!-- Prompt Library Popover Menu -->
+          <!-- Prompt Library Popover Menu -->
           <div id="promptLibraryMenu" class="prompt-library-menu hidden"></div>
 
+          <!-- Composer with File Upload, Drag-Drop, Prompt Library, and Paste Support -->
           <div class="composer">
             <input type="file" id="chatFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.txt,.csv,.json,.md,.tsv,.doc,.docx,.html,.js,.py,.xml" class="hidden" onchange="handleFileSelection(event)">
             
@@ -464,7 +450,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
             </button>
 
-                                    <button type="button" class="btn-icon" id="btnCandidateHub" onclick="openCandidateHubModal()" title="🎓 ศูนย์คัดกรองเรซูเม่ นศ. (Candidate Screening Hub)" style="width:40px; height:40px; border-radius:50%; margin-right:2px;">
+            <button type="button" class="btn-icon" id="btnCandidateHub" onclick="openCandidateHubModal()" title="👥 คลังเรซูเม่ & ศูนย์คัดกรองผู้สมัคร (Candidate Hub)" style="width:40px; height:40px; border-radius:50%; margin-right:2px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </button>
 
@@ -834,6 +820,22 @@
         </label>
       </div>
 
+      
+      <!-- Workspace Backup & Restore Section -->
+      <h4 class="admin-section-heading" style="margin-top:16px;">💾 สำรองและกู้คืนข้อมูลระบบ (Backup & Restore)</h4>
+      <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:18px;">
+        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 10px 0;">สำรองข้อมูล Agent, การตั้งค่า, คลังคำสั่ง และประวัติการใช้งานทั้งหมดเป็นไฟล์ JSON หรือนำเข้าข้อมูลเดิมกลับมา</p>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn-cancel" style="flex:1; padding:9px; font-weight:800; font-size:12px; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px;" onclick="exportWorkspaceBackup()">
+            📥 สำรองข้อมูล (Export JSON)
+          </button>
+          <input type="file" id="workspaceBackupInput" accept=".json" class="hidden" onchange="importWorkspaceBackup(event)">
+          <button type="button" class="btn-submit" style="flex:1; padding:9px; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:8px;" onclick="document.getElementById('workspaceBackupInput').click()">
+            📤 กู้คืนข้อมูล (Import JSON)
+          </button>
+        </div>
+      </div>
+
       <!-- Global Announcement Settings -->
       <h4 class="admin-section-heading" style="margin-top:16px;">📢 ป้ายประกาศข่าวสารองค์กร (Announcement Banner)</h4>
       <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:18px;">
@@ -852,8 +854,7 @@
       </div>
     </div>
 
-    <!-- TAB 2: GLOBAL PROMPT LIBRARY -->
-        <!-- TAB 2: PROMPTS & ACTIONS (คลังคำสั่งด่วน: คำสั่งงาน & คำสั่งลัดช่วยพิมพ์) -->
+    <!-- TAB 2: PROMPTS & ACTIONS (คลังคำสั่งด่วน: คำสั่งงาน & คำสั่งลัดช่วยพิมพ์) -->
     <div id="adminTabContentPrompts" class="admin-tab-content hidden">
       <!-- Sub Tabs within Prompts -->
       <div style="display:flex; gap:8px; margin-bottom:14px; background:var(--surface-3); padding:4px; border-radius:10px;">
@@ -905,6 +906,7 @@
       </div>
     </div>
 
+    <!-- TAB 3: ROLES & TAGS -->
     <div id="adminTabContentRoles" class="admin-tab-content hidden">
       <!-- 1. Roles -->
       <h4 class="admin-section-heading">1. จัดการแผนก / ฝ่ายงาน (Roles)</h4>
@@ -943,8 +945,7 @@
       <div id="userAccountList" style="max-height: 140px; overflow-y:auto; margin-bottom: 16px; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
-    <!-- TAB 5: GOOGLE DRIVE & EMAIL AUTOMATION INTEGRATIONS -->
-        <!-- TAB 5: GMAIL EVALUATION AUTOMATION -->
+    <!-- TAB 5: GMAIL EVALUATION AUTOMATION -->
     <div id="adminTabContentIntegrations" class="admin-tab-content hidden">
       <!-- Automated Email Evaluation Trigger Settings -->
       <h4 class="admin-section-heading">📧 การตั้งค่าอีเมลแจ้งเตือนอัตโนมัติเมื่อผ่านเกณฑ์</h4>
@@ -960,9 +961,13 @@
           </label>
         </div>
 
+                <div class="form-group" style="margin-bottom:10px;">
+          <label style="font-size:12px;">Google Drive Folder URL (โฟลเดอร์เก็บเรซูเม่องค์กร)</label>
+          <input type="text" id="adminDriveFolderUrl" class="admin-field-input" placeholder="https://drive.google.com/drive/folders/...">
+        </div>
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:12px;">อีเมลผู้รับแจ้งเตือน (Admin / อาจารย์ / หัวหน้าฝ่าย HR)</label>
-          <input type="email" id="adminNotifyEmail" class="admin-field-input" placeholder="เช่น ai.yoshi2006@gmail.com">
+          <input type="email" id="adminNotifyEmail" class="admin-field-input" placeholder="เช่น your-email@pim.ac.th (Email ของท่าน)">
         </div>
 
         <div class="form-group" style="margin-bottom:10px;">
@@ -973,9 +978,9 @@
         <div class="form-group" style="margin-bottom:10px;">
           <label style="font-size:12px; display:flex; justify-content:space-between;">
             <span>เกณฑ์คะแนนขั้นต่ำสำหรับ "ผ่านการคัดเลือก" (Passing Threshold)</span>
-            <strong id="passingScoreDisplay" style="color:var(--maroon); font-size:13px;">70 / 100 คะแนน</strong>
+            <strong id="passingScoreDisplay" style="color:var(--maroon); font-size:13px;">75 / 100 คะแนน</strong>
           </label>
-          <input type="range" id="adminPassingScore" min="50" max="100" step="5" value="70" oninput="document.getElementById('passingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
+          <input type="range" id="adminPassingScore" min="50" max="100" step="5" value="75" oninput="document.getElementById('passingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
@@ -1010,18 +1015,19 @@
   </div>
 </div>
 
-<!-- Quick Guide Modal -->
+<!-- Quick Guide Modal (User-Friendly Guide Ver 3.0) -->
 <div id="quickGuideModal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width: 620px; text-align:left;">
+  <div class="modal-box" style="max-width: 680px; text-align:left; max-height: 88vh; overflow-y: auto; padding: 26px 28px; border-radius: 20px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
       <h3 class="modal-title heading" style="margin:0; font-size: 20px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> คู่มือการใช้งาน (Quick User Guide)
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg> 
+        <span id="quickGuideTitleText">คู่มือการใช้งานระบบ (User & Admin Guide Ver 3.0)</span>
       </h3>
       <button class="btn-icon" onclick="closeQuickGuideModal()" style="width:32px; height:32px; border:none; background:transparent;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
-    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px 0;">ยินดีต้อนรับสู่ ET OPC Company AI Workspace แพลตฟอร์มผู้ช่วยอัจฉริยะสำหรับองค์กร</p>
+    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 16px 0;">ยินดีต้อนรับสู่ <strong>ET OPC Company AI Workspace</strong> แพลตฟอร์มผู้ช่วยอัจฉริยะสำหรับงานเอกสาร สรุปประชุม และคัดกรองเรซูเม่</p>
 
     <!-- Admin-only secret guide section -->
     <div id="adminGuideContent" style="display:none; margin-bottom: 20px;">
@@ -1037,53 +1043,135 @@
 
       <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
         <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
-          🔑 1. วิธีการขอและตั้งค่า API Key (Google Gemini 3.X)
+          🔑 1. วิธีการขอและตั้งค่า API Key (Google Gemini 3.X / Flash / Pro)
         </h4>
         <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
           • ไปที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--maroon); font-weight:700; text-decoration:underline;">Google AI Studio ↗</a> แล้วกดสร้าง <strong>Create API Key</strong> ฟรี (ไม่ต้องผูกบัตรเครดิต)<br>
-          • เปิดเมนู <strong>"ตั้งค่า AI & Model"</strong> ด้านล่างซ้าย ➔ เลือก <strong>Google Gemini (3.X)</strong> เลือกรุ่น <strong>Gemini 3.6 Flash</strong> แล้ววางคีย์ลงในช่อง<br>
+          • เปิดเมนู <strong>"ตั้งค่า AI & Model"</strong> ด้านล่างซ้าย ➔ เลือก <strong>Google Gemini (3.X)</strong> เลือกรุ่น <strong>Gemini 2.5 Flash</strong> แล้ววางคีย์ลงในช่อง<br>
           • กด <strong>"🧪 ทดสอบเชื่อมต่อ"</strong> และ <strong>"💾 บันทึกและเปิดใช้งาน"</strong> ระบบพร้อมทำงานทันที!
+        </p>
+      </div>
+
+      <div class="quick-guide-section" style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:12px;">
+        <h4 style="color:var(--maroon); font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
+          💾 2. การสำรองและกู้คืนข้อมูล (Backup & Restore)
+        </h4>
+        <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0;">
+          • ไปที่เมนู <strong>"จัดการระบบ" ➔ แท็บ "📊 สถิติ & ประกาศ"</strong><br>
+          • กดปุ่ม <strong>"📥 สำรองข้อมูล (Export JSON)"</strong> เพื่อดาวน์โหลดข้อมูล Agent, การตั้งค่า และคลังคำสั่งทั้งหมด<br>
+          • หากเปลี่ยนเครื่อง สามารถกด <strong>"📤 กู้คืนข้อมูล (Import JSON)"</strong> เพื่อโหลดข้อมูลเดิมกลับมาได้ทันที
         </p>
       </div>
       <hr style="border:none; border-top:1.5px solid var(--line); margin: 16px 0;">
     </div>
 
+    <!-- General User Guide Section -->
+    <h4 style="font-size:14px; font-weight:800; color:var(--maroon); margin: 0 0 12px 0; text-transform:uppercase;">
+      🚀 แนะนำการใช้งานสำหรับผู้ใช้ทั่วไป (Quick Step-by-Step Guide)
+    </h4>
+
     <div class="guide-step-grid">
       <div class="guide-step-card">
-        <div class="guide-step-num">1</div>
-        <div class="guide-step-content">
-          <h4>เลือก Agent ตามสายงาน</h4>
-          <p>เลือก Agent ฝ่ายบุคคล (HR), สรุปงานบริหาร, ปฏิบัติการ หรือวิเคราะห์ข้อมูลตามวัตถุประสงค์</p>
+        <div class="guide-step-header">
+          <div class="guide-step-num">1</div>
+          <h4 class="guide-step-title">เลือก Agent ตามสายงาน</h4>
+        </div>
+        <div class="guide-step-body">
+          <ul class="guide-step-list">
+            <li><strong>เลขาส่วนตัว:</strong> จัดการตารางงาน ร่างหนังสือราชการ</li>
+            <li><strong>HR ET:</strong> ตรวจเรซูเม่ (CV Score) & ร่างคำถามสัมภาษณ์</li>
+            <li><strong>สรุปงานบริหาร:</strong> สรุปประชุม & สกัด Action Items</li>
+            <li><strong>ฝ่ายปฏิบัติการ / ข้อมูล:</strong> ร่างอีเมล วิเคราะห์ CSV</li>
+          </ul>
         </div>
       </div>
 
       <div class="guide-step-card">
-        <div class="guide-step-num">2</div>
-        <div class="guide-step-content">
-          <h4>แนบไฟล์ได้ทุกรูปแบบ</h4>
-          <p>กดปุ่ม 📎 หรือลากไฟล์ PDF, Word, รูปภาพ, CSV มาวางในแชท หรือกด Ctrl+V เพื่อแปะภาพหน้าจอ</p>
+        <div class="guide-step-header">
+          <div class="guide-step-num">2</div>
+          <h4 class="guide-step-title">แนบไฟล์ & สั่งงาน 1-Click</h4>
+        </div>
+        <div class="guide-step-body">
+          <ul class="guide-step-list">
+            <li>กดปุ่ม 📎 หรือลากไฟล์ PDF, รูปภาพ, CSV, Word มาวาง</li>
+            <li>สามารถกด <strong>Ctrl + V</strong> เพื่อแปะภาพหน้าจอได้ทันที</li>
+            <li>กดปุ่มลัด 1-Click บนไฟล์แนบเพื่อสั่งประเมิน/สรุปผล</li>
+          </ul>
         </div>
       </div>
 
       <div class="guide-step-card">
-        <div class="guide-step-num">3</div>
-        <div class="guide-step-content">
-          <h4>ใช้ปุ่มลัด & คลังคำสั่ง 💡</h4>
-          <p>กดปุ่มคำสั่งลัดอัตโนมัติด้านบน หรือคลิกหลอดไฟ 💡 ข้างช่องพิมพ์ เพื่อเลือกคำสั่งสำเร็จรูป</p>
+        <div class="guide-step-header">
+          <div class="guide-step-num">3</div>
+          <h4 class="guide-step-title">คลังคำสั่งด่วน 💡 & สั่งด้วยเสียง 🎙️</h4>
+        </div>
+        <div class="guide-step-body">
+          <ul class="guide-step-list">
+            <li>กดปุ่ม 💡 ข้างช่องพิมพ์ เพื่อเลือกแม่แบบคำสั่งสำเร็จรูป</li>
+            <li>กดปุ่ม 🎙️ เพื่อพูดสั่งงานด้วยเสียงภาษาไทย (Voice to Text)</li>
+            <li>กดปุ่มทางลัดด้านบน เช่น 🎯 ประเมิน CV หรือ 📑 สไลด์</li>
+          </ul>
         </div>
       </div>
 
       <div class="guide-step-card">
-        <div class="guide-step-num">4</div>
-        <div class="guide-step-content">
-          <h4>ส่งออกเอกสารในคลิกเดียว</h4>
-          <p>ดาวน์โหลดรายงานผลการวิเคราะห์เป็น PDF, Word (.doc), Excel/CSV หรือ Markdown ได้ทันที</p>
+        <div class="guide-step-header">
+          <div class="guide-step-num">4</div>
+          <h4 class="guide-step-title">ดาวน์โหลดรายงาน 5 รูปแบบ</h4>
+        </div>
+        <div class="guide-step-body">
+          <ul class="guide-step-list">
+            <li><strong>PDF:</strong> รายงานทางการพร้อมหัวกระดาษตรา PIM</li>
+            <li><strong>Word (.doc):</strong> เอกสารนำไปแก้ไขต่อได้ทันที</li>
+            <li><strong>สไลด์:</strong> โครงร่าง Presentation พร้อม Speaker Notes</li>
+            <li><strong>Excel / CSV:</strong> สกัดตารางข้อมูลตัวเลข</li>
+            <li><strong>Markdown (.md):</strong> ไฟล์ข้อความดิบ</li>
+          </ul>
         </div>
       </div>
     </div>
 
-    <h4 style="font-size:13.5px; font-weight:800; color:var(--maroon); margin: 20px 0 10px;">⌨️ คีย์ลัดแนะนำ (Keyboard Shortcuts)</h4>
-    <div style="display:flex; flex-direction:column; gap:6px;">
+    <!-- Agent Email Sending Guide Section -->
+    <div class="guide-email-card" style="background: linear-gradient(135deg, rgba(139, 0, 0, 0.05) 0%, rgba(2, 132, 199, 0.07) 100%); border: 1.5px solid rgba(139, 0, 0, 0.2); border-radius: 14px; padding: 16px 18px; margin: 16px 0;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+        <span style="font-size:22px;">📧</span>
+        <h4 style="margin:0; font-size:14.5px; font-weight:800; color:var(--maroon);">
+          วิธีการให้ Agent ส่งอีเมลและร่างอีเมล (Agent Email Guide)
+        </h4>
+      </div>
+      <p style="font-size:12.5px; color:var(--ink); line-height:1.6; margin:0 0 12px 0;">
+        ระบบรองรับการทำงานกับอีเมล 2 รูปแบบหลัก ทั้งการให้ AI ช่วยร่างข้อความ และการยิงอีเมลแจ้งเตือนอัตโนมัติ:
+      </p>
+      <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px;">
+        <div style="background:var(--surface); padding:12px 14px; border-radius:10px; border:1px solid var(--line);">
+          <strong style="font-size:12.5px; color:var(--maroon); display:block; margin-bottom:4px;">1. สั่งให้ AI ร่างอีเมลทางการ</strong>
+          <span style="font-size:11.5px; color:var(--ink-soft); line-height:1.5; display:block;">
+            • กดปุ่ม <strong>"📧 ร่างอีเมลนัดสัมภาษณ์"</strong> หรือ <strong>"✉️ ร่างอีเมลสรุปงาน"</strong> บนแถบแชท<br>
+            • หรือพิมพ์สั่งงาน เช่น <em>"ร่างอีเมลนัดสัมภาษณ์ตำแหน่ง IT Project Coordinator วันจันทร์หน้า 10.00 น."</em>
+          </span>
+        </div>
+        <div style="background:var(--surface); padding:12px 14px; border-radius:10px; border:1px solid var(--line);">
+          <strong style="font-size:12.5px; color:#0284C7; display:block; margin-bottom:4px;">2. ส่งผลประเมินเข้า Gmail (1-Click & Auto)</strong>
+          <span style="font-size:11.5px; color:var(--ink-soft); line-height:1.5; display:block;">
+            • เมื่อตรวจเรซูเม่แล้วได้คะแนนผ่านเกณฑ์ (≥ 75 คะแนน) จะมีการ์ดสีเขียวขึ้นมาในแชท<br>
+            • กดปุ่ม <strong>"📧 ส่งอีเมลแจ้งเตือนพร้อมแนบไฟล์เข้า Gmail"</strong> เพื่อส่งผลสรุปพร้อมแนบเรซูเม่เข้าอีเมลทันที
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Candidate Hub Highlight -->
+    <div style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1.5px solid rgba(2, 132, 199, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;">
+      <h4 style="color:#0284C7; font-size:13.5px; font-weight:800; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
+        🎓 ศูนย์คัดกรองเรซูเม่ นศ. (Candidate Screening Hub)
+      </h4>
+      <p style="font-size:12px; color:var(--ink); line-height:1.55; margin:0;">
+        คลิกไอคอน 🎓 ข้างช่องพิมพ์ เพื่อเปิดศูนย์คัดกรองเรซูเม่ สามารถอัปโหลดไฟล์ PDF ผู้สมัครหลายคนพร้อมกัน กด <strong>"⚡ ตรวจทั้งหมด"</strong> เพื่อสร้างตารางเปรียบเทียบ Head-to-Head Matrix และส่งออกผลเป็นไฟล์ CSV
+      </p>
+    </div>
+
+    <h4 style="font-size:13px; font-weight:800; color:var(--maroon); margin: 0 0 8px;">⌨️ คีย์ลัดแนะนำ (Keyboard Shortcuts)</h4>
+    <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:18px;">
       <div class="guide-shortcut-row">
         <span>ส่งข้อความ / สั่งงาน AI</span>
         <span class="guide-kbd">Enter</span>
@@ -1093,12 +1181,12 @@
         <span class="guide-kbd">Ctrl + V</span>
       </div>
       <div class="guide-shortcut-row">
-        <span>ปิดหน้าต่างป๊อปอัป / กลับหน้ารวม</span>
+        <span>ปิดหน้าต่างป๊อปอัป / กลับสู่หน้ารวม</span>
         <span class="guide-kbd">ESC</span>
       </div>
     </div>
 
-    <button class="btn-cancel" style="width:100%; margin-top:22px; font-weight:800;" onclick="closeQuickGuideModal()">เข้าใจแล้ว เริ่มใช้งานเลย</button>
+    <button class="btn-cancel" style="width:100%; font-weight:800; padding:12px; border-radius:10px;" onclick="closeQuickGuideModal()">เข้าใจแล้ว เริ่มใช้งานเลย</button>
   </div>
 </div>
 
@@ -1217,7 +1305,6 @@
   </div>
 </div>
 
-</div>
 
 <!-- Delete Modal -->
 <div id="deleteModal" class="modal-overlay hidden">
@@ -1276,11 +1363,7 @@
     </div>
   </div>
 </div>
-<!-- Google Drive File Fetcher Modal -->
-<!-- Google Drive File Fetcher & Preview Modal -->
-<!-- Google Drive File Fetcher & Preview Modal -->
 
-<!-- Edit Quick Action Button Modal (For Admin) -->
 <!-- Edit Quick Action Button Modal (Clean Anatomy) -->
 <div id="editQuickActionModal" class="modal-overlay hidden" style="z-index: 2200;">
   <div class="modal-box" style="max-width: 480px; text-align:left; padding: 24px;">
@@ -1317,52 +1400,96 @@
     </div>
   </div>
 </div>
-<!-- Candidate Screening Hub Modal (ตรวจเรซูเม่ นศ. จำนวนมาก & ส่ง Gmail) -->
+
+<!-- Candidate Screening Hub Modal (คลังเก็บข้อมูล File: ตรวจเรซูเม่ นศ. & ส่ง Gmail) -->
+<!-- Candidate Screening Hub Modal (คลังเรซูเม่ & ศูนย์คัดกรองผู้สมัคร) -->
 <div id="candidateHubModal" class="modal-overlay hidden" style="z-index: 2100;">
-  <div class="modal-box" style="max-width: 680px; text-align:left; max-height: 88vh; overflow-y: auto; padding: 24px 26px; border-radius: 16px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-      <h3 class="modal-title heading" style="margin:0; font-size: 19px; color:var(--ink); display:flex; align-items:center; gap:8px;">
-        🎓 ศูนย์คัดกรองเรซูเม่ นศ. (Candidate Screening Hub)
-      </h3>
+  <div class="modal-box candidate-hub-modal">
+    <!-- Hub Header -->
+    <div class="hub-header">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="hub-header-icon">👥</div>
+        <div>
+          <h3 class="modal-title heading" style="margin:0; font-size: 18.5px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+            คลังเรซูเม่ & ศูนย์คัดกรองผู้สมัคร (Candidate Hub)
+          </h3>
+          <span style="font-size:12px; color:var(--ink-soft); display:block; margin-top:2px;">
+            ศูนย์รวบรวมไฟล์เรซูเม่ ตรวจประเมินรายบุคคล/กลุ่มด้วย AI และส่งออกผลการคัดเลือก
+          </span>
+        </div>
+      </div>
       <button class="btn-icon" onclick="closeCandidateHubModal()" style="width:32px; height:32px; border:none; background:transparent;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
-    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 16px 0;">ศูนย์กลางรวบรวมไฟล์เรซูเม่ของนักศึกษา ตรวจประเมินแบบรายบุคคล/กลุ่ม และส่งผลคะแนนเข้า Gmail อัตโนมัติ</p>
 
-    <!-- Upload Box: Multiple Files Support -->
-    <div class="form-group" style="margin-bottom:18px;">
-      <label style="font-size:12.5px; font-weight:800; color: var(--ink); display:flex; align-items:center; gap:6px; margin-bottom: 8px;">
-        📤 อัปโหลดเรซูเม่ นศ. (เลือกทีละหลายไฟล์ได้):
-      </label>
-      <input type="file" id="batchCvInput" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" multiple class="hidden" onchange="handleBatchCvUpload(event)">
-      <div onclick="document.getElementById('batchCvInput').click()" style="border:2px dashed #CBD5E1; border-radius:12px; padding:24px; text-align:center; background:#F8FAFC; cursor:pointer; transition:border-color 0.2s ease;">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.5" style="margin-bottom:8px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-        <strong style="font-size:14px; color:var(--ink); display:block;">คลิกเพื่อเลือกไฟล์เรซูเม่ หรือลากไฟล์ PDF มาวางที่นี่</strong>
-        <span style="font-size:12px; color:var(--ink-soft); display:block; margin-top:4px;">รองรับการอัปโหลดพร้อมกันหลายไฟล์ (Multiple PDFs)</span>
+    <!-- Stats Summary Row -->
+    <div class="hub-stats-row">
+      <div class="hub-stat-item">
+        <span class="hub-stat-title">📁 ไฟล์ทั้งหมด</span>
+        <strong class="hub-stat-value" id="hubStatTotal">0</strong>
+      </div>
+      <div class="hub-stat-item">
+        <span class="hub-stat-title">⏳ รอตรวจประเมิน</span>
+        <strong class="hub-stat-value text-amber" id="hubStatPending">0</strong>
+      </div>
+      <div class="hub-stat-item">
+        <span class="hub-stat-title">🟢 ผ่านเกณฑ์ (≥70)</span>
+        <strong class="hub-stat-value text-emerald" id="hubStatPassed">0</strong>
+      </div>
+      <div class="hub-stat-item">
+        <span class="hub-stat-title">📊 คะแนนเฉลี่ย</span>
+        <strong class="hub-stat-value text-maroon" id="hubStatAvg">-</strong>
       </div>
     </div>
 
-    <!-- Candidate Queue Table / Cards -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h4 style="font-size:13.5px; font-weight:800; color:var(--maroon); margin:0; display:flex; align-items:center; gap:6px;">
-        📋 รายชื่อเรซูเม่ในคิวตรวจ (<span id="hubCandidateCount">0</span> คน)
-      </h4>
-      <div style="display:flex; gap:8px;">
-        <button type="button" class="btn-submit" style="padding:6px 12px; font-size:12px; border-radius:8px; background-color: #8B0000; display:flex; align-items:center; gap:4px;" onclick="batchEvaluateAllCandidates()">
-          ⚡ ตรวจทั้งหมด
-        </button>
-        <button type="button" class="btn-cancel" style="padding:6px 12px; font-size:12px; border-radius:8px; background-color: #F1F5F9; color: #334155; border: 1px solid #E2E8F0; display:flex; align-items:center; gap:4px;" onclick="exportCandidateMatrixCsv()">
-          📊 ส่งออก CSV
-        </button>
+    <!-- Compact Modern Dropzone -->
+    <input type="file" id="batchCvInput" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" multiple class="hidden" onchange="handleBatchCvUpload(event)">
+    <div class="hub-dropzone" onclick="document.getElementById('batchCvInput').click()">
+      <div class="hub-dropzone-icon">📥</div>
+      <div class="hub-dropzone-text">
+        <strong>คลิกเพื่ออัปโหลดไฟล์เรซูเม่ หรือลากไฟล์ PDF / Word มาวางที่นี่</strong>
+        <span>รองรับการเลือกและประมวลผลพร้อมกันหลายไฟล์ (Multiple Uploads)</span>
+      </div>
+      <button type="button" class="btn-submit hub-browse-btn" onclick="event.stopPropagation(); document.getElementById('batchCvInput').click()">+ เพิ่มไฟล์</button>
+    </div>
+
+    <!-- Drive Link Input Row inside Hub -->
+    <div class="hub-drive-row">
+      <span style="font-size:12px; font-weight:800; color:var(--ink); white-space:nowrap; display:flex; align-items:center; gap:4px;">
+        🔗 วางลิงก์ Google Drive:
+      </span>
+      <input type="text" id="hubDriveLinkInput" class="admin-field-input" placeholder="https://drive.google.com/... (โฟลเดอร์ หรือไฟล์)" style="font-size:12px; height:36px; padding:6px 12px;" onkeydown="if(event.key==='Enter') importDriveLinkToHub()">
+      <button type="button" class="btn-submit" style="padding:6px 12px; font-size:11.5px; font-weight:800; white-space:nowrap; border-radius:8px; height:36px;" onclick="importDriveLinkToHub()">
+        📥 ดึงลงคลัง
+      </button>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="hub-toolbar">
+      <div class="hub-filter-tabs">
+        <button type="button" class="hub-tab-btn active" id="hubFilterAll" onclick="setHubFilter('all')">ทั้งหมด (<span id="hubCountAll">0</span>)</button>
+        <button type="button" class="hub-tab-btn" id="hubFilterPending" onclick="setHubFilter('pending')">⏳ รอตรวจ (<span id="hubCountPending">0</span>)</button>
+        <button type="button" class="hub-tab-btn" id="hubFilterPassed" onclick="setHubFilter('passed')">🟢 ผ่านเกณฑ์ (<span id="hubCountPassed">0</span>)</button>
+      </div>
+
+      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="hubSearchInput" class="admin-field-input hub-search" placeholder="🔍 ค้นหาชื่อ/ไฟล์..." oninput="renderCandidateQueueList()">
+        <button type="button" class="btn-submit" style="padding:6px 11px; font-size:11.5px; font-weight:800; border-radius:8px; white-space:nowrap;" onclick="batchEvaluateAllCandidates()" title="ให้ AI ตรวจประเมินเปรียบเทียบผู้สมัครทั้งหมด">⚡ ตรวจทั้งหมด</button>
+        <button type="button" class="btn-cancel" style="padding:6px 11px; font-size:11.5px; font-weight:800; border-radius:8px; white-space:nowrap;" onclick="exportCandidateMatrixCsv()" title="ส่งออกตารางสรุปเป็น CSV">📊 ส่งออก CSV</button>
+        <button type="button" class="btn-delete" style="padding:6px 10px; font-size:11.5px; font-weight:800; border-radius:8px; white-space:nowrap;" onclick="clearAllCandidateSubmissions()" title="ล้างรายการไฟล์ทั้งหมดในคลัง">🗑️ ล้าง</button>
       </div>
     </div>
 
-    <div id="candidateQueueList" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; margin-bottom:16px;">
+    <!-- Candidate List Queue -->
+    <div id="candidateQueueList" class="hub-queue-list">
       <!-- Populated dynamically via JS -->
     </div>
 
-    <button type="button" class="btn-cancel" style="width:100%; font-weight:800; padding:12px; border-radius:10px; background-color: #F8FAFC;" onclick="closeCandidateHubModal()">ปิดหน้าต่าง</button>
+    <!-- Modal Footer -->
+    <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+      <button type="button" class="btn-cancel" style="padding:8px 24px; font-weight:800; border-radius:10px;" onclick="closeCandidateHubModal()">ปิดหน้าต่าง</button>
+    </div>
   </div>
 </div>
 </body>
