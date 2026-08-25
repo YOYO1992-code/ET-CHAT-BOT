@@ -4073,7 +4073,7 @@ async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
     }
 }
 
-// --- RE-BUILT CANDIDATE HUB & RESUME REPOSITORY SYSTEM ---
+// --- RE-BUILT CANDIDATE HUB & RESUME REPOSITORY SYSTEM (VER 3.0 ENHANCED) ---
 let currentHubFilter = 'all';
 
 function loadCandidateSubmissions() {
@@ -4081,10 +4081,12 @@ function loadCandidateSubmissions() {
     if (saved) {
         try { 
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) {
+            if (Array.isArray(parsed)) {
                 appCandidateSubmissions = parsed;
             }
-        } catch(e) {}
+        } catch(e) {
+            appCandidateSubmissions = [];
+        }
     }
 }
 
@@ -4117,7 +4119,8 @@ function setHubFilter(filterType) {
 function updateHubStats() {
     const total = appCandidateSubmissions.length;
     const pending = appCandidateSubmissions.filter(c => c.status === 'pending' || !c.score).length;
-    const passed = appCandidateSubmissions.filter(c => (c.score && c.score >= 70) || c.status === 'passed').length;
+    const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
+    const passed = appCandidateSubmissions.filter(c => (c.score && c.score >= passingThreshold) || c.status === 'passed').length;
     
     const scoredList = appCandidateSubmissions.filter(c => typeof c.score === 'number');
     const avgScore = scoredList.length > 0 ? (scoredList.reduce((acc, c) => acc + c.score, 0) / scoredList.length).toFixed(0) + '/100' : '-';
@@ -4148,24 +4151,26 @@ function renderCandidateQueueList() {
     updateHubStats();
 
     const searchQuery = (document.getElementById('hubSearchInput')?.value || '').toLowerCase().trim();
+    const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
     
     let filtered = appCandidateSubmissions.filter(cand => {
         const matchesSearch = (cand.name || '').toLowerCase().includes(searchQuery) || (cand.fileName || '').toLowerCase().includes(searchQuery);
         if (!matchesSearch) return false;
 
         if (currentHubFilter === 'pending') return cand.status === 'pending' || !cand.score;
-        if (currentHubFilter === 'passed') return cand.status === 'passed' || (cand.score && cand.score >= 70);
+        if (currentHubFilter === 'passed') return cand.status === 'passed' || (cand.score && cand.score >= passingThreshold);
         return true;
     });
 
     list.innerHTML = '';
     if (filtered.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--ink-faint); font-size:12.5px;">📄 ไม่พบไฟล์เรซูเม่ที่ตรงกับเงื่อนไขการค้นหา</div>';
+        list.innerHTML = '<div style="text-align:center; padding:24px; color:var(--ink-faint); font-size:12.5px;">📄 ไม่พบไฟล์เรซูเม่ที่ตรงกับเงื่อนไขการค้นหา (กดอัปโหลดไฟล์หรือวางลิงก์ Drive ด้านบน)</div>';
         return;
     }
 
     filtered.forEach((cand, idx) => {
-        const isPassed = cand.status === 'passed' || (cand.score && cand.score >= 70);
+        const realIdx = appCandidateSubmissions.findIndex(c => c.id === cand.id);
+        const isPassed = cand.status === 'passed' || (cand.score && cand.score >= passingThreshold);
         const hasScore = typeof cand.score === 'number';
         
         let statusBadge = '<span style="background:var(--surface-3); color:var(--ink-soft); font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">⏳ รอตรวจ</span>';
@@ -4175,26 +4180,42 @@ function renderCandidateQueueList() {
                 `<span style="background:rgba(245,158,11,0.15); color:#D97706; font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px;">🟡 พิจารณา (${cand.score}/100)</span>`;
         }
 
-        const extIcon = (cand.fileName || '').endsWith('.docx') || (cand.fileName || '').endsWith('.doc') ? '📘' : ((cand.fileName || '').endsWith('.pdf') ? '📕' : '📄');
+        let extIcon = '📄';
+        if (cand.isDriveFolder || (cand.size === 'Folder Link')) {
+            extIcon = '📁';
+        } else if ((cand.fileName || '').endsWith('.docx') || (cand.fileName || '').endsWith('.doc')) {
+            extIcon = '📘';
+        } else if ((cand.fileName || '').endsWith('.pdf') || cand.mimeType === 'application/pdf') {
+            extIcon = '📕';
+        } else if ((cand.fileName || '').endsWith('.png') || (cand.fileName || '').endsWith('.jpg')) {
+            extIcon = '🖼️';
+        }
+
+        const driveBadge = cand.driveUrl ? 
+            `<a href="${escapeHtml(cand.driveUrl)}" target="_blank" style="color:var(--maroon); font-size:11px; font-weight:700; text-decoration:underline; display:inline-flex; align-items:center; gap:3px;">🔗 ลิงก์ Drive ↗</a>` : '';
 
         const card = document.createElement('div');
         card.className = 'hub-card';
         card.innerHTML = `
-          <div class="hub-card-file-icon">${extIcon}</div>
+          <div class="hub-card-file-icon" style="font-size:22px;">${extIcon}</div>
           <div class="hub-card-body">
             <div class="hub-card-title-row">
-              <span class="hub-card-title">${escapeHtml(cand.name || cand.fileName)}</span>
+              <span class="hub-card-title" title="คลิกเพื่อแก้ไขชื่อ" style="cursor:pointer;" onclick="renameCandidateSubmission(${realIdx})">
+                ${escapeHtml(cand.name || cand.fileName)}
+                <span style="font-size:11px; opacity:0.6; margin-left:4px;">✏️</span>
+              </span>
               ${statusBadge}
             </div>
             <div class="hub-card-meta">
-              ${escapeHtml(cand.fileName)} • ${escapeHtml(cand.size || '38 KB')} • ส่งเมื่อ ${escapeHtml(cand.date || 'วันนี้')}
+              <span>${escapeHtml(cand.fileName)}</span> • <span>${escapeHtml(cand.size || '38 KB')}</span> • <span>ส่งเมื่อ ${escapeHtml(cand.date || 'วันนี้')}</span>
+              ${driveBadge ? ` • ${driveBadge}` : ''}
             </div>
           </div>
-          <div style="display:flex; gap:6px; flex-shrink:0;">
-            <button type="button" class="btn-submit" style="padding:5px 12px; font-size:11.5px; font-weight:800; border-radius:8px; display:flex; align-items:center; gap:4px;" onclick="evaluateSingleCandidateFromHub(${idx})">
+          <div style="display:flex; gap:6px; flex-shrink:0; align-items:center;">
+            <button type="button" class="btn-submit" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-radius:8px; display:flex; align-items:center; gap:4px;" onclick="evaluateSingleCandidateFromHub(${realIdx})">
               <span>🎯 ${hasScore ? 'ตรวจซ้ำ' : 'ประเมิน'}</span>
             </button>
-            <button type="button" class="btn-delete" style="padding:5px 9px; font-size:11.5px; border-radius:8px;" onclick="deleteCandidateSubmission(${idx})" title="ลบรายการนี้">✕</button>
+            <button type="button" class="btn-delete" style="padding:6px 9px; font-size:11.5px; border-radius:8px;" onclick="deleteCandidateSubmission(${realIdx})" title="ลบรายการนี้">✕</button>
           </div>
         `;
         list.appendChild(card);
@@ -4207,25 +4228,158 @@ function handleBatchCvUpload(e) {
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach(file => {
-        const rawName = file.name.replace(/\.[^/.]+$/, "");
-        const newCand = {
-            id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-            name: rawName,
-            fileName: file.name,
-            size: (file.size / 1024).toFixed(1) + ' KB',
-            mimeType: file.type || 'application/pdf',
-            status: 'pending',
-            score: null,
-            date: new Date().toLocaleDateString('th-TH'),
-            content: `เอกสารเรซูเม่ของ ${rawName} (${file.name})\nขนาดไฟล์: ${(file.size / 1024).toFixed(1)} KB`
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const base64Data = evt.target.result.split(',')[1];
+            const rawName = file.name.replace(/\.[^/.]+$/, "");
+            const newCand = {
+                id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                name: rawName,
+                fileName: file.name,
+                size: (file.size / 1024).toFixed(1) + ' KB',
+                mimeType: file.type || 'application/pdf',
+                status: 'pending',
+                score: null,
+                date: new Date().toLocaleDateString('th-TH'),
+                base64: base64Data,
+                content: `เอกสารเรซูเม่ของ ${rawName} (${file.name})\nขนาดไฟล์: ${(file.size / 1024).toFixed(1)} KB`
+            };
+            appCandidateSubmissions.unshift(newCand);
+            saveCandidateSubmissions();
+            renderCandidateQueueList();
         };
-        appCandidateSubmissions.unshift(newCand);
+        reader.readAsDataURL(file);
     });
+
+    showToast(`📥 เพิ่มไฟล์ ${files.length} รายการเข้าสู่คลังเรียบร้อยแล้ว!`, "success");
+    e.target.value = '';
+}
+
+function extractGoogleDriveInfo(url) {
+    let driveId = '';
+    let isFolder = false;
+    
+    const folderMatch = url.match(/folders\/([a-zA-Z0-9_-]+)/i);
+    const fileMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/i);
+    const docMatch = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/i);
+    const sheetMatch = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/i);
+    const idMatch = url.match(/id=([a-zA-Z0-9_-]+)/i);
+
+    if (folderMatch) {
+        driveId = folderMatch[1];
+        isFolder = true;
+    } else if (fileMatch) {
+        driveId = fileMatch[1];
+    } else if (docMatch) {
+        driveId = docMatch[1];
+    } else if (sheetMatch) {
+        driveId = sheetMatch[1];
+    } else if (idMatch) {
+        driveId = idMatch[1];
+    } else {
+        driveId = 'link-' + Math.random().toString(36).substr(2, 6);
+    }
+
+    return { driveId, isFolder };
+}
+
+window.importDriveLinkToHub = importDriveLinkToHub;
+async function importDriveLinkToHub() {
+    const input = document.getElementById('hubDriveLinkInput');
+    const rawInput = input ? input.value.trim() : '';
+    if (!rawInput) {
+        showToast("กรุณากรอกหรือวางลิงก์ Google Drive", "warning");
+        return;
+    }
+
+    const urls = rawInput.split(/[\s,\n]+/).map(u => u.trim()).filter(u => u.startsWith('http'));
+    if (urls.length === 0) {
+        showToast("ไม่พบลิงก์ URL ที่ถูกต้อง (ต้องขึ้นต้นด้วย http หรือ https)", "warning");
+        return;
+    }
+
+    const webhookUrl = (document.getElementById('adminDriveWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+    let addedCount = 0;
+
+    for (let link of urls) {
+        const { driveId, isFolder } = extractGoogleDriveInfo(link);
+        const shortId = driveId.slice(-6);
+
+        let expandedFiles = null;
+        if (isFolder && webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com')) {
+            try {
+                const res = await fetch(`${webhookUrl}?action=listFiles&folderUrl=${encodeURIComponent(link)}&folderId=${encodeURIComponent(driveId)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'success' && Array.isArray(data.files) && data.files.length > 0) {
+                        expandedFiles = data.files;
+                    }
+                }
+            } catch(e) {
+                console.warn("Webhook folder fetch fallback:", e);
+            }
+        }
+
+        if (expandedFiles && expandedFiles.length > 0) {
+            expandedFiles.forEach(f => {
+                const rawName = (f.name || 'ผู้สมัคร').replace(/\.[^/.]+$/, "");
+                const newCand = {
+                    id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                    name: rawName,
+                    fileName: f.name || 'Resume.pdf',
+                    driveUrl: f.url || link,
+                    size: f.size || 'Drive File',
+                    mimeType: f.mimeType || 'application/pdf',
+                    status: 'pending',
+                    score: null,
+                    date: new Date().toLocaleDateString('th-TH'),
+                    content: `เอกสารเรซูเม่จาก Google Drive: ${f.name}\nลิงก์: ${f.url || link}`
+                };
+                appCandidateSubmissions.unshift(newCand);
+                addedCount++;
+            });
+        } else {
+            const defaultName = isFolder ? 
+                `โฟลเดอร์ผู้สมัคร (Drive: ${shortId})` : 
+                `เรซูเม่ผู้สมัคร (Drive: ${shortId})`;
+            
+            const newCand = {
+                id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                name: defaultName,
+                fileName: isFolder ? `Google_Drive_Folder_${shortId}.pdf` : `Resume_Drive_${shortId}.pdf`,
+                driveUrl: link,
+                driveId: driveId,
+                isDriveFolder: isFolder,
+                size: isFolder ? "Folder Link" : "Drive Link",
+                mimeType: "application/pdf",
+                status: "pending",
+                score: null,
+                date: new Date().toLocaleDateString('th-TH'),
+                content: `เอกสารเรซูเม่จาก Google Drive (${isFolder ? 'โฟลเดอร์' : 'ไฟล์'}): ${link}\nรหัสอ้างอิง ID: ${driveId}`
+            };
+            appCandidateSubmissions.unshift(newCand);
+            addedCount++;
+        }
+    }
 
     saveCandidateSubmissions();
     renderCandidateQueueList();
-    showToast(`📥 เพิ่มไฟล์ ${files.length} รายการเข้าสู่คลังเรียบร้อยแล้ว!`, "success");
-    e.target.value = '';
+    if (input) input.value = '';
+    showToast(`📥 เพิ่มรายการจาก Google Drive (${addedCount} รายการ) เรียบร้อยแล้ว!`, "success");
+}
+
+window.renameCandidateSubmission = renameCandidateSubmission;
+function renameCandidateSubmission(idx) {
+    const cand = appCandidateSubmissions[idx];
+    if (!cand) return;
+
+    const newName = prompt(`✏️ แก้ไขชื่อผู้สมัครหรือชุดเอกสารสำหรับ:\n(${cand.fileName})`, cand.name);
+    if (newName && newName.trim() !== '') {
+        cand.name = newName.trim();
+        saveCandidateSubmissions();
+        renderCandidateQueueList();
+        showToast("เปลี่ยนชื่อเรียบร้อยแล้ว", "success");
+    }
 }
 
 window.evaluateSingleCandidateFromHub = evaluateSingleCandidateFromHub;
@@ -4233,6 +4387,7 @@ function evaluateSingleCandidateFromHub(idx) {
     const cand = appCandidateSubmissions[idx];
     if (!cand) return;
 
+    currentEvaluatingCandidateId = cand.id; // Sets target ID for score updater
     closeCandidateHubModal();
 
     const hrAgent = SYSTEM_CHARACTERS.find(c => c.id === 'opc-hr-et' || c.name.includes('HR')) || currentCharacter || SYSTEM_CHARACTERS[0];
@@ -4240,22 +4395,33 @@ function evaluateSingleCandidateFromHub(idx) {
         openChat(hrAgent.id);
     }
 
+    clearPendingFile();
+
     pendingAttachedFile = {
         name: cand.fileName,
-        mimeType: cand.mimeType,
+        mimeType: cand.mimeType || 'application/pdf',
+        base64: cand.base64 || null,
         content: cand.content,
         isPdf: true,
         isImage: false,
         size: 36000,
-        formattedSize: cand.size
+        formattedSize: cand.size || 'Drive Link'
     };
 
-    const prompt = `🎯 กรุณาวิเคราะห์และตรวจสอบประเมินเรซูเม่ของ "${cand.name}" (${cand.fileName}) เทียบกับเกณฑ์ 4 มิติความต้องการของตำแหน่งงาน:
+    const prompt = `🎯 กรุณาวิเคราะห์และตรวจสอบประเมินเรซูเม่ของผู้สมัคร: "${cand.name}"
+เอกสารอ้างอิง: ${cand.driveUrl ? `[Google Drive Link](${cand.driveUrl})` : cand.fileName}
+${cand.content && !cand.content.startsWith('เอกสารเรซูเม่จาก Google Drive') ? `\nเนื้อหาเรซูเม่:\n${cand.content}` : ''}
+
+เกณฑ์การประเมิน 4 มิติความต้องการ (คะแนนเต็ม 100):
 1. ประสบการณ์ทำงานตรงสาย (40 คะแนน)
 2. ทักษะเฉพาะทางและความสามารถหลัก (30 คะแนน)
 3. วุฒิการศึกษาและใบรับรอง (15 คะแนน)
 4. ผลงานเชิงประจักษ์และการนำเสนอ (15 คะแนน)
-พร้อมระบุคะแนนความเหมาะสมรวม (Match Score / 100) และข้อเสนอแนะสำหรับ HR`;
+
+โปรดระบุ:
+- สรุปคะแนนความเหมาะสมรวม (Match Score / 100 คะแนน)
+- จุดเด่น (Strengths) และข้อควรระวัง/จุดที่ต้องพัฒนา (Gaps)
+- ร่างคำถามสัมภาษณ์งานเชิงลึก 3-5 ข้อ`;
 
     setTimeout(() => {
         sendMessage(prompt);
@@ -4275,14 +4441,15 @@ function batchEvaluateAllCandidates() {
         openChat(hrAgent.id);
     }
 
-    let summaryBatchList = appCandidateSubmissions.map((c, i) => `${i+1}. ${c.name} (${c.fileName}): ${c.content}`).join("\n---\n");
+    let summaryBatchList = appCandidateSubmissions.map((c, i) => `${i+1}. ${c.name} (${c.fileName}): ${c.driveUrl || c.content}`).join("\n---\n");
 
     const batchPrompt = `📊 กรุณาตรวจประเมินและเปรียบเทียบผู้สมัครทั้งหมด (${appCandidateSubmissions.length} คน) ในคลัง ในรูปแบบตาราง Head-to-Head Candidate Matrix:
 1. ตารางคะแนนรวม: [ลำดับ] | [ชื่อผู้สมัคร] | [ประสบการณ์] | [ทักษะหลัก] | [คะแนนความเหมาะสม /100] | [สถานะ: ผ่าน/ไม่ผ่าน]
 2. จัดอันดับ Top Candidates (Leaderboard) พร้อมระบุเหตุผล
 3. สรุปรายชื่อผู้ที่แนะนำให้เรียกสัมภาษณ์งานรอบแรก
 
-ข้อมูลผู้สมัครทั้งหมด:\n${summaryBatchList}`;
+ข้อมูลผู้สมัครทั้งหมด:
+${summaryBatchList}`;
 
     setTimeout(() => {
         sendMessage(batchPrompt);
@@ -4323,9 +4490,9 @@ function exportCandidateMatrixCsv() {
         return;
     }
 
-    let csvContent = "\uFEFFลำดับ,ชื่อผู้สมัคร,ชื่อไฟล์,ขนาดไฟล์,สถานะ,คะแนน,วันที่\n";
+    let csvContent = "\uFEFFลำดับ,ชื่อผู้สมัคร,ชื่อไฟล์,ลิงก์อ้างอิง,ขนาดไฟล์,สถานะ,คะแนน,วันที่\n";
     appCandidateSubmissions.forEach((c, idx) => {
-        csvContent += `"${idx + 1}","${c.name}","${c.fileName}","${c.size}","${c.status}","${c.score || '-'}","${c.date}"\n`;
+        csvContent += `"${idx + 1}","${(c.name || '').replace(/"/g, '""')}","${(c.fileName || '').replace(/"/g, '""')}","${(c.driveUrl || '').replace(/"/g, '""')}","${c.size}","${c.status}","${c.score || '-'}","${c.date}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -4334,35 +4501,6 @@ function exportCandidateMatrixCsv() {
     link.download = `ET_OPC_Candidates_Matrix_${Date.now()}.csv`;
     link.click();
     showToast("📊 ส่งออกตารางผู้สมัครเป็น CSV สำเร็จ!", "success");
-}
-
-window.importDriveLinkToHub = importDriveLinkToHub;
-function importDriveLinkToHub() {
-    const input = document.getElementById('hubDriveLinkInput');
-    const link = input ? input.value.trim() : '';
-    if (!link) {
-        showToast("กรุณากรอกหรือวางลิงก์ Google Drive", "warning");
-        return;
-    }
-
-    const isFolder = link.includes('/folders/');
-    const name = isFolder ? "โฟลเดอร์ผู้สมัคร (Drive Folder)" : "เรซูเม่ผู้สมัคร (Drive File)";
-    const newCand = {
-        id: 'cand-' + Date.now(),
-        name: name,
-        fileName: isFolder ? "Google_Drive_Folder" : "Candidate_Drive_File.pdf",
-        size: "Drive Link",
-        mimeType: "application/pdf",
-        status: "pending",
-        score: null,
-        date: new Date().toLocaleDateString('th-TH'),
-        content: `เอกสารจากลิงก์ Google Drive: ${link}`
-    };
-    appCandidateSubmissions.unshift(newCand);
-    saveCandidateSubmissions();
-    renderCandidateQueueList();
-    if (input) input.value = '';
-    showToast("📥 เพิ่มลิงก์ Drive เข้าสู่คลังเรซูเม่เรียบร้อยแล้ว!", "success");
 }
 
 
@@ -4656,7 +4794,8 @@ function exportWorkspaceBackup() {
         quickActions: appQuickActions,
         promptTemplates: appPromptTemplates,
         userData: appUserData,
-        adminModels: adminModels
+        adminModels: adminModels,
+        candidateSubmissions: appCandidateSubmissions
     };
 
     const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
@@ -4705,6 +4844,10 @@ function importWorkspaceBackup(e) {
             if (data.adminModels && Array.isArray(data.adminModels)) {
                 adminModels = data.adminModels;
                 localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(adminModels));
+            }
+            if (data.candidateSubmissions && Array.isArray(data.candidateSubmissions)) {
+                appCandidateSubmissions = data.candidateSubmissions;
+                saveCandidateSubmissions();
             }
 
             showToast('📤 นำเข้าข้อมูลระบบและกู้คืนสำเร็จแล้ว! กำลังรีโหลด...', 'success');
