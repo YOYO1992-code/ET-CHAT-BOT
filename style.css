@@ -2715,3 +2715,11 @@ html[data-theme="dark"] .ai-thought-box summary {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
+
+
+#customConfirmModal, #deleteModal {
+  z-index: 3500 !important;
+}
+.confirm-dialog-box {
+  z-index: 3501 !important;
+}

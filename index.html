@@ -18,6 +18,9 @@
     <div class="drawer-header">
         <h3 class="heading" style="margin:0; font-size:18px;">ประวัติงาน & การสนทนา</h3>
                 <div id="drawerCloudStatus" style="margin-right:2px;"></div>
+                <button class="btn-icon" onclick="openCandidateHubModal()" title="คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ (Document & Candidate Hub)" style="margin-right:2px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </button>
         <button class="btn-icon" onclick="toggleRecentDrawer()" style="width:32px; height:32px; border:none; background:transparent;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -56,6 +59,9 @@
 
       <div class="header-right">
                 <div id="drawerCloudStatus" style="margin-right:2px;"></div>
+                <button class="btn-icon" onclick="openCandidateHubModal()" title="คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ (Document & Candidate Hub)" style="margin-right:2px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </button>
         <button class="btn-icon" onclick="toggleRecentDrawer()" title="ประวัติงานล่าสุด" style="margin-right:2px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
         </button>
@@ -108,6 +114,10 @@
               เลือกโมเดล AI
             </button>
             <hr class="dropdown-divider">
+                        <button class="dropdown-item" onclick="openCandidateHubModal()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ
+            </button>
             <button class="dropdown-item" onclick="setFilterFromMenu('fav')">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
               Agent ที่ติดดาว ⭐
@@ -162,6 +172,11 @@
         <button class="sidebar-tab-btn btn-sidebar-create" id="sidebarBtnCreate" onclick="showCreateForm()" title="สร้าง Agent ใหม่" style="display:none;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           <span class="sidebar-tab-text">สร้าง Agent ใหม่</span>
+        </button>
+              <button class="sidebar-tab-btn" id="tabNavCandidateHub" onclick="openCandidateHubModal()" title="คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span class="sidebar-tab-text">คลังเอกสาร & ผู้สมัคร</span>
+          <span class="sidebar-badge" id="sidebarHubCount">0</span>
         </button>
       </nav>
 
@@ -450,7 +465,7 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
             </button>
 
-            <button type="button" class="btn-icon" id="btnCandidateHub" onclick="openCandidateHubModal()" title="👥 คลังเรซูเม่ & ศูนย์คัดกรองผู้สมัคร (Candidate Hub)" style="width:40px; height:40px; border-radius:50%; margin-right:2px;">
+            <button type="button" class="btn-icon" id="btnCandidateHub" onclick="openCandidateHubModal()" title="👥 คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ (Document & Candidate Hub)" style="width:40px; height:40px; border-radius:50%; margin-right:2px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             </button>
 
@@ -1307,7 +1322,7 @@
 
 
 <!-- Delete Modal -->
-<div id="deleteModal" class="modal-overlay hidden">
+<div id="deleteModal" class="modal-overlay hidden" style="z-index: 3500;">
   <div class="modal-box" style="max-width: 400px; text-align:center;">
     <h3 class="modal-title heading" style="margin-top:0; font-size: 19px; color:#DC2626;">ยืนยันการลบ Agent นี้?</h3>
     <div style="display:flex; gap:12px; margin-top:20px;">
@@ -1350,7 +1365,7 @@
 <div id="toastContainer" class="toast-container"></div>
 
 <!-- Custom Confirmation Dialog Modal -->
-<div id="customConfirmModal" class="modal-overlay hidden" style="z-index: 2000;">
+<div id="customConfirmModal" class="modal-overlay hidden" style="z-index: 3500;">
   <div class="modal-box confirm-dialog-box">
     <div class="confirm-dialog-icon-wrapper" id="customConfirmIconWrapper">
       <span class="confirm-dialog-icon" id="customConfirmIcon">⚠️</span>
@@ -1402,7 +1417,7 @@
 </div>
 
 <!-- Candidate Screening Hub Modal (คลังเก็บข้อมูล File: ตรวจเรซูเม่ นศ. & ส่ง Gmail) -->
-<!-- Candidate Screening Hub Modal (คลังเรซูเม่ & ศูนย์คัดกรองผู้สมัคร) -->
+<!-- Candidate Screening Hub Modal (คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ) -->
 <div id="candidateHubModal" class="modal-overlay hidden" style="z-index: 2100;">
   <div class="modal-box candidate-hub-modal">
     <!-- Hub Header -->
@@ -1411,7 +1426,7 @@
         <div class="hub-header-icon">👥</div>
         <div>
           <h3 class="modal-title heading" style="margin:0; font-size: 18.5px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
-            คลังเรซูเม่ & ศูนย์คัดกรองผู้สมัคร (Candidate Hub)
+            คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ (Document & Candidate Hub)
           </h3>
           <span style="font-size:12px; color:var(--ink-soft); display:block; margin-top:2px;">
             ศูนย์รวบรวมไฟล์เรซูเม่ ตรวจประเมินรายบุคคล/กลุ่มด้วย AI และส่งออกผลการคัดเลือก

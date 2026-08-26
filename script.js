@@ -359,7 +359,9 @@ function initApp() {
         updateUIAfterProfileChange(); 
         loadData();     
         renderRecentChats(); 
-        renderSidebarStarred(); 
+        renderSidebarStarred();
+        loadCandidateSubmissions();
+        updateHubStats(); 
          
          
         initDragAndDropAndPaste();
@@ -464,6 +466,8 @@ function loadData() {
     renderTagsUI();
     applyFilters();
     renderSidebarStarred();
+        loadCandidateSubmissions();
+        updateHubStats();
 }
 
 function saveToStorage() {
@@ -1970,6 +1974,8 @@ function showExplore(pushHistory = true){
     updateSidebarTabUI();
     applyFilters();
     renderSidebarStarred();
+        loadCandidateSubmissions();
+        updateHubStats();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -2217,6 +2223,8 @@ window.toggleFavorite = function(id, e) {
     saveUserData();
     applyFilters();
     renderSidebarStarred();
+        loadCandidateSubmissions();
+        updateHubStats();
     if (typeof showToast === 'function') {
         showToast(isNowFav ? "ติดดาว Agent เรียบร้อยแล้ว ⭐" : "ยกเลิกการติดดาวแล้ว", "info");
     }
@@ -2702,6 +2710,8 @@ function confirmDelete() {
     showExplore();
     applyFilters();
     renderSidebarStarred();
+        loadCandidateSubmissions();
+        updateHubStats();
     showToast("ลบ Agent เรียบร้อยแล้ว", "success");
 }
 
@@ -4142,6 +4152,9 @@ function updateHubStats() {
     if (countAll) countAll.textContent = total;
     if (countPending) countPending.textContent = pending;
     if (countPassed) countPassed.textContent = passed;
+
+    const sidebarHubCount = document.getElementById('sidebarHubCount');
+    if (sidebarHubCount) sidebarHubCount.textContent = total;
 }
 
 window.renderCandidateQueueList = renderCandidateQueueList;
@@ -4168,10 +4181,11 @@ function renderCandidateQueueList() {
         return;
     }
 
-    filtered.forEach((cand, idx) => {
+    filtered.forEach((cand) => {
         const realIdx = appCandidateSubmissions.findIndex(c => c.id === cand.id);
         const isPassed = cand.status === 'passed' || (cand.score && cand.score >= passingThreshold);
         const hasScore = typeof cand.score === 'number';
+        const isFolder = (cand.isDriveFolder === true) || (cand.size === 'Folder Link' && !cand.parentFolderId);
         
         let statusBadge = '<span style="background:var(--surface-3); color:var(--ink-soft); font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">⏳ รอตรวจ</span>';
         if (hasScore) {
@@ -4181,7 +4195,7 @@ function renderCandidateQueueList() {
         }
 
         let extIcon = '📄';
-        if (cand.isDriveFolder || (cand.size === 'Folder Link')) {
+        if (isFolder) {
             extIcon = '📁';
         } else if ((cand.fileName || '').endsWith('.docx') || (cand.fileName || '').endsWith('.doc')) {
             extIcon = '📘';
@@ -4200,20 +4214,24 @@ function renderCandidateQueueList() {
           <div class="hub-card-file-icon" style="font-size:22px;">${extIcon}</div>
           <div class="hub-card-body">
             <div class="hub-card-title-row">
-              <span class="hub-card-title" title="คลิกเพื่อแก้ไขชื่อ" style="cursor:pointer;" onclick="renameCandidateSubmission(${realIdx})">
+              <span class="hub-card-title" title="คลิกเพื่อแก้ไขชื่อ" style="cursor:pointer; display:inline-flex; align-items:center; gap:4px;" onclick="renameCandidateSubmission(${realIdx})">
                 ${escapeHtml(cand.name || cand.fileName)}
-                <span style="font-size:11px; opacity:0.6; margin-left:4px;">✏️</span>
+                <span style="font-size:11px; opacity:0.6;">✏️</span>
               </span>
               ${statusBadge}
             </div>
             <div class="hub-card-meta">
-              <span>${escapeHtml(cand.fileName)}</span> • <span>${escapeHtml(cand.size || '38 KB')}</span> • <span>ส่งเมื่อ ${escapeHtml(cand.date || 'วันนี้')}</span>
+              <span>${escapeHtml(cand.fileName)}</span> • <span>${escapeHtml(cand.size || (isFolder ? 'Folder Link' : '38 KB'))}</span> • <span>ส่งเมื่อ ${escapeHtml(cand.date || 'วันนี้')}</span>
               ${driveBadge ? ` • ${driveBadge}` : ''}
             </div>
           </div>
-          <div style="display:flex; gap:6px; flex-shrink:0; align-items:center;">
+          <div style="display:flex; gap:6px; flex-shrink:0; align-items:center; flex-wrap:wrap;">
+            ${isFolder ? `
+            <button type="button" class="btn-cancel" style="padding:5px 9px; font-size:11px; font-weight:800; border-radius:8px; display:flex; align-items:center; gap:3px; color:#0284C7; border-color:#0284C7;" onclick="expandDriveFolderCandidates(${realIdx})" title="แตกไฟล์/เพิ่มรายชื่อผู้สมัครในโฟลเดอร์นี้">
+              <span>📂 แตกไฟล์</span>
+            </button>` : ''}
             <button type="button" class="btn-submit" style="padding:6px 12px; font-size:11.5px; font-weight:800; border-radius:8px; display:flex; align-items:center; gap:4px;" onclick="evaluateSingleCandidateFromHub(${realIdx})">
-              <span>🎯 ${hasScore ? 'ตรวจซ้ำ' : 'ประเมิน'}</span>
+              <span>🎯 ${hasScore ? 'ตรวจซ้ำ' : (isFolder ? 'ประเมินโฟลเดอร์' : 'ประเมิน')}</span>
             </button>
             <button type="button" class="btn-delete" style="padding:6px 9px; font-size:11.5px; border-radius:8px;" onclick="deleteCandidateSubmission(${realIdx})" title="ลบรายการนี้">✕</button>
           </div>
@@ -4368,6 +4386,61 @@ async function importDriveLinkToHub() {
     showToast(`📥 เพิ่มรายการจาก Google Drive (${addedCount} รายการ) เรียบร้อยแล้ว!`, "success");
 }
 
+window.expandDriveFolderCandidates = expandDriveFolderCandidates;
+function expandDriveFolderCandidates(idx) {
+    const cand = appCandidateSubmissions[idx];
+    if (!cand) return;
+
+    const inputNames = prompt(
+        `📂 แตกไฟล์/เพิ่มรายชื่อในโฟลเดอร์:
+"${cand.name}"
+
+พิมพ์รายชื่อผู้สมัคร/เอกสาร (คั่นด้วยจุลภาคหรือขึ้นบรรทัดใหม่)
+หรือพิมพ์ตัวเลขจำนวนไฟล์ (เช่น 3 หรือ 5) เพื่อสร้างช่องอัตโนมัติ:`,
+        "ผู้สมัคร 1, ผู้สมัคร 2"
+    );
+
+    if (!inputNames || inputNames.trim() === '') return;
+
+    let names = [];
+    const trimmed = inputNames.trim();
+    // Check if user entered just a number (e.g. "3" or "5")
+    if (/^[0-9]+$/.test(trimmed)) {
+        const count = parseInt(trimmed, 10);
+        for (let i = 1; i <= Math.min(count, 30); i++) {
+            names.push(`ผู้สมัคร ${i}`);
+        }
+    } else {
+        names = inputNames.split(/[\n,]+/).map(n => n.trim()).filter(Boolean);
+    }
+
+    if (names.length === 0) return;
+
+    names.forEach((name) => {
+        const subCand = {
+            id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+            name: name,
+            fileName: `${name}.pdf`,
+            driveUrl: cand.driveUrl,
+            driveId: cand.driveId,
+            parentFolderId: cand.id,
+            parentFolderName: cand.name,
+            isDriveFolder: false, // EXPLICITLY FALSE so it renders as a FILE, not a folder
+            size: "Drive File",
+            mimeType: "application/pdf",
+            status: "pending",
+            score: null,
+            date: new Date().toLocaleDateString('th-TH'),
+            content: `เอกสารของผู้สมัคร/รายการ "${name}" ในโฟลเดอร์ Google Drive: ${cand.driveUrl || ''}`
+        };
+        appCandidateSubmissions.push(subCand);
+    });
+
+    saveCandidateSubmissions();
+    renderCandidateQueueList();
+    showToast(`📂 แตกและเพิ่มรายการ ${names.length} รายการจากโฟลเดอร์แล้ว!`, "success");
+}
+
 window.renameCandidateSubmission = renameCandidateSubmission;
 function renameCandidateSubmission(idx) {
     const cand = appCandidateSubmissions[idx];
@@ -4397,6 +4470,8 @@ function evaluateSingleCandidateFromHub(idx) {
 
     clearPendingFile();
 
+    const isFolder = (cand.isDriveFolder === true) || (cand.size === 'Folder Link' && !cand.parentFolderId);
+
     pendingAttachedFile = {
         name: cand.fileName,
         mimeType: cand.mimeType || 'application/pdf',
@@ -4405,10 +4480,28 @@ function evaluateSingleCandidateFromHub(idx) {
         isPdf: true,
         isImage: false,
         size: 36000,
-        formattedSize: cand.size || 'Drive Link'
+        formattedSize: cand.size || (isFolder ? 'Folder Link' : 'Drive Link')
     };
 
-    const prompt = `🎯 กรุณาวิเคราะห์และตรวจสอบประเมินเรซูเม่ของผู้สมัคร: "${cand.name}"
+    let prompt = "";
+    if (isFolder) {
+        prompt = `🎯 กรุณาวิเคราะห์และประเมินเรซูเม่ของผู้สมัคร 'ทุกคน' ที่อยู่ในโฟลเดอร์ Google Drive นี้:
+📁 ชื่อโฟลเดอร์: "${cand.name}"
+🔗 ลิงก์โฟลเดอร์: [Google Drive Folder](${cand.driveUrl || cand.content})
+(รหัสโฟลเดอร์ ID: ${cand.driveId || 'Drive Folder'})
+
+คำสั่งการประเมินผู้สมัครทั้งโฟลเดอร์ (Comprehensive Folder Evaluation):
+1. ตรวจสอบและสกัดรายชื่อผู้สมัครทุกคนที่พบในโฟลเดอร์นี้
+2. ประเมินผู้สมัครแต่ละคนอย่างละเอียดตามเกณฑ์ 4 มิติความต้องการ (คะแนนเต็ม 100):
+   - 1. ประสบการณ์ทำงานตรงสาย (40 คะแนน)
+   - 2. ทักษะเฉพาะทางและความสามารถหลัก (30 คะแนน)
+   - 3. วุฒิการศึกษาและใบรับรอง (15 คะแนน)
+   - 4. ผลงานเชิงประจักษ์และการนำเสนอ (15 คะแนน)
+3. จัดทำ 'ตารางเปรียบเทียบผู้สมัครทุกคนในโฟลเดอร์ (Head-to-Head Candidate Matrix)':
+   | ลำดับ | ชื่อผู้สมัคร | ประสบการณ์ | ทักษะเด่น | คะแนนความเหมาะสม | สถานะ (ผ่าน/ไม่ผ่าน) |
+4. จัดอันดับ Top Candidates (Ranking) พร้อมข้อเสนอแนะสำหรับการเรียกสัมภาษณ์งาน`;
+    } else {
+        prompt = `🎯 กรุณาวิเคราะห์และตรวจสอบประเมินเรซูเม่ของผู้สมัคร: "${cand.name}"
 เอกสารอ้างอิง: ${cand.driveUrl ? `[Google Drive Link](${cand.driveUrl})` : cand.fileName}
 ${cand.content && !cand.content.startsWith('เอกสารเรซูเม่จาก Google Drive') ? `\nเนื้อหาเรซูเม่:\n${cand.content}` : ''}
 
@@ -4422,6 +4515,7 @@ ${cand.content && !cand.content.startsWith('เอกสารเรซูเม
 - สรุปคะแนนความเหมาะสมรวม (Match Score / 100 คะแนน)
 - จุดเด่น (Strengths) และข้อควรระวัง/จุดที่ต้องพัฒนา (Gaps)
 - ร่างคำถามสัมภาษณ์งานเชิงลึก 3-5 ข้อ`;
+    }
 
     setTimeout(() => {
         sendMessage(prompt);
@@ -4443,8 +4537,8 @@ function batchEvaluateAllCandidates() {
 
     let summaryBatchList = appCandidateSubmissions.map((c, i) => `${i+1}. ${c.name} (${c.fileName}): ${c.driveUrl || c.content}`).join("\n---\n");
 
-    const batchPrompt = `📊 กรุณาตรวจประเมินและเปรียบเทียบผู้สมัครทั้งหมด (${appCandidateSubmissions.length} คน) ในคลัง ในรูปแบบตาราง Head-to-Head Candidate Matrix:
-1. ตารางคะแนนรวม: [ลำดับ] | [ชื่อผู้สมัคร] | [ประสบการณ์] | [ทักษะหลัก] | [คะแนนความเหมาะสม /100] | [สถานะ: ผ่าน/ไม่ผ่าน]
+    const batchPrompt = `📊 กรุณาตรวจประเมินและเปรียบเทียบผู้สมัครทั้งหมด (${appCandidateSubmissions.length} รายการ) ในคลัง ในรูปแบบตาราง Head-to-Head Candidate Matrix:
+1. ตารางคะแนนรวม: [ลำดับ] | [ชื่อผู้สมัคร/โฟลเดอร์] | [ประสบการณ์] | [ทักษะหลัก] | [คะแนนความเหมาะสม /100] | [สถานะ: ผ่าน/ไม่ผ่าน]
 2. จัดอันดับ Top Candidates (Leaderboard) พร้อมระบุเหตุผล
 3. สรุปรายชื่อผู้ที่แนะนำให้เรียกสัมภาษณ์งานรอบแรก
 
