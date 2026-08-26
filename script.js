@@ -1288,7 +1288,9 @@ function loadGeminiConfigs() {
         try { 
             const parsed = JSON.parse(savedModels);
             if (Array.isArray(parsed)) {
-                adminModels = parsed.filter(m => m && m.id !== 'default-gemini-flash' && m.apiKey);
+                // Completely purge any leftover Global or invalid dummy models from browser storage
+                adminModels = parsed.filter(m => m && m.apiKey && m.apiKey.trim() !== '' && !(m.displayName || '').includes('Global') && m.id !== 'default-gemini-flash');
+                localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(adminModels));
             } else {
                 adminModels = [];
             }
