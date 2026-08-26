@@ -359,16 +359,6 @@ let pendingAttachedFile = null;
 // AI Configuration
 let adminModels = [];
 
-const GLOBAL_DEFAULT_MODEL = {
-    id: "default-gemini-flash",
-    providerType: "gemini",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/models/",
-    apiKey: "AQ.Ab8RN6Igzo3PB6zKfxxHonf9XMpr5bpUQ5iM2iT-eQNvqNp4SA",
-    modelName: "gemini-2.5-flash",
-    displayName: "Gemini 3.5 Flash (Global)",
-    temperature: 0.7
-};
-
 let userGeminiPreference = {
     selectedModelId: null,
     temperature: 0.7
@@ -822,7 +812,7 @@ async function callUniversalAiApi(config, character, profile, history, temperatu
 
     const apiKey = config.apiKey.trim();
     let baseUrl = (config.baseUrl || "https://generativelanguage.googleapis.com/v1beta/models/").trim();
-    const model = (config.modelName || 'gemini-2.5-flash').trim();
+    const model = (config.modelName || 'gemini-3.5-flash').trim();
     const providerType = config.providerType || (baseUrl.includes("generativelanguage.googleapis.com") ? "gemini" : "openai");
 
     const systemInstruction = `You are the specialized enterprise AI Agent "${character.name}" at ET OPC Company.
@@ -843,14 +833,25 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
 3. ปฏิเสธเรื่องที่ไม่เกี่ยวข้องกับการทำงานในองค์กรอย่างสุภาพ และนำบริบทกลับมาสู่งานในความรับผิดชอบของคุณ
 4. จัดรูปแบบข้อความให้อ่านง่าย ชัดเจน มีระดับ ใช้ตัวหนาเน้นประเด็นสำคัญ และจัดข้อมูลเปรียบเทียบหรือคะแนนให้อยู่ในรูปตาราง Markdown Table เสมอ`;
 
-    if (providerType === 'gemini') {
+        if (providerType === 'gemini') {
         let base = baseUrl;
         if (!base.endsWith('/')) base += '/';
-        const cleanModel = model.replace(/^models\//, '');
+        let cleanModel = model.replace(/^models\//, '') || 'gemini-2.5-flash';
         
-        const endpoint = (typeof onChunk === 'function') ?
-            `${base}${cleanModel}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}` :
-            `${base}${cleanModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        // Map UI model identifier to official REST API endpoint
+        let targetModel = cleanModel;
+        if (cleanModel === 'gemini-3.5-flash' || cleanModel === 'gemini-3.6-flash') {
+            targetModel = 'gemini-2.5-flash';
+        }
+
+        const isStream = (typeof onChunk === 'function');
+        const action = isStream ? 'streamGenerateContent?alt=sse' : 'generateContent';
+        
+        const buildEndpoint = (mName) => `${base}${mName}:${action}&key=${encodeURIComponent(apiKey)}`;
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+        };
 
         const contents = [];
         const firstUserIdx = history.findIndex(m => m.r === 'user');
@@ -898,15 +899,39 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             }
         };
 
-        const response = await fetch(endpoint, {
+        let endpoint = buildEndpoint(targetModel);
+        let response = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify(payload)
+        }).catch(err => {
+            console.warn("Primary fetch error:", err);
+            return null;
         });
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+        // If 404 or 400, automatically fallback across official Gemini models
+        if (!response || (!response.ok && (response.status === 404 || response.status === 400))) {
+            const fallbacks = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+            for (const fbModel of fallbacks) {
+                if (fbModel === targetModel) continue;
+                const fbEndpoint = buildEndpoint(fbModel);
+                const fbRes = await fetch(fbEndpoint, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                }).catch(() => null);
+
+                if (fbRes && fbRes.ok) {
+                    response = fbRes;
+                    break;
+                }
+            }
+        }
+
+        if (!response || !response.ok) {
+            const errData = response ? await response.json().catch(() => ({})) : {};
+            const errMsg = errData.error?.message || (response ? `HTTP ${response.status}: ${response.statusText}` : "Network connection failed");
+            throw new Error(errMsg);
         }
 
         // Streaming Reader
@@ -949,7 +974,6 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             return data.candidates[0].content.parts.map(p => p.text).join('');
         }
         throw new Error("ไม่ได้รับข้อความตอบกลับจาก Gemini API");
-
     } else {
         // OPENAI / OPENROUTER
         let endpoint = baseUrl;
@@ -1262,15 +1286,17 @@ function loadGeminiConfigs() {
     const savedModels = localStorage.getItem(STORAGE_PREFIX + 'admin_models_v1');
     if (savedModels) {
         try { 
-            adminModels = JSON.parse(savedModels);
-            if (!Array.isArray(adminModels) || adminModels.length === 0) {
-                adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
+            const parsed = JSON.parse(savedModels);
+            if (Array.isArray(parsed)) {
+                adminModels = parsed.filter(m => m && m.id !== 'default-gemini-flash' && m.apiKey);
+            } else {
+                adminModels = [];
             }
         } catch(e) {
-            adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
+            adminModels = [];
         }
     } else {
-        adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
+        adminModels = [];
     }
 
     const userSaved = localStorage.getItem(STORAGE_PREFIX + 'user_pref_v1_' + currentUser);
@@ -1284,34 +1310,31 @@ function loadGeminiConfigs() {
             userGeminiPreference.selectedModelId = adminModels[0].id;
             userGeminiPreference.temperature = adminModels[0].temperature || 0.7;
         }
+    } else {
+        userGeminiPreference.selectedModelId = null;
     }
     updateTopbarAiBadge();
 }
 
 function getActiveModelConfig() {
     if (!adminModels || adminModels.length === 0) {
-        return GLOBAL_DEFAULT_MODEL;
+        return null;
     }
     const found = adminModels.find(m => m.id === userGeminiPreference.selectedModelId);
-    return found || adminModels[0] || GLOBAL_DEFAULT_MODEL;
+    return found || adminModels[0] || null;
 }
 
 function updateTopbarAiBadge() {
-    const statusText = document.getElementById('topbarAiStatusText');
-    const sidebarAiText = document.getElementById('sidebarAiStatusText');
-    const chatStatus = document.getElementById('chatAiEngineStatus');
-    const activeConf = getActiveModelConfig();
-    
-    const label = activeConf ? `โมเดล: ${escapeHtml(activeConf.displayName)}` : "ตั้งค่า AI & Model";
-    if(statusText) statusText.textContent = label;
-    if(sidebarAiText) sidebarAiText.textContent = label;
-
-    if(chatStatus) {
-        if(activeConf) {
-            chatStatus.innerHTML = `<span style="font-size:11.5px; color:#10B981; font-weight:700;">🟢 พร้อมทำงาน: ${escapeHtml(activeConf.displayName)}</span>`;
-        } else {
-            chatStatus.innerHTML = `<span style="font-size:11.5px; color:#F59E0B; font-weight:700;">🔴 ยังไม่มีโมเดลในระบบ</span>`;
-        }
+    const badge = document.getElementById('topbarAiModelBadge');
+    const sideText = document.getElementById('sidebarAiStatusText');
+    const active = getActiveModelConfig();
+    if (active) {
+        const provIcon = active.providerType === 'gemini' ? '⚡' : (active.providerType === 'claude' ? '👑' : '🤖');
+        if (badge) badge.textContent = `${provIcon} ${active.displayName || active.modelName}`;
+        if (sideText) sideText.textContent = `โมเดล: ${active.displayName || active.modelName}`;
+    } else {
+        if (badge) badge.textContent = '⚙️ ตั้งค่า AI & Model';
+        if (sideText) sideText.textContent = 'ตั้งค่า AI & Model';
     }
 }
 
