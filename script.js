@@ -358,6 +358,17 @@ let pendingAttachedFile = null;
 
 // AI Configuration
 let adminModels = [];
+
+const GLOBAL_DEFAULT_MODEL = {
+    id: "default-gemini-flash",
+    providerType: "gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/models/",
+    apiKey: "AQ.Ab8RN6Igzo3PB6zKfxxHonf9XMpr5bpUQ5iM2iT-eQNvqNp4SA",
+    modelName: "gemini-2.5-flash",
+    displayName: "Gemini 3.5 Flash (Global)",
+    temperature: 0.7
+};
+
 let userGeminiPreference = {
     selectedModelId: null,
     temperature: 0.7
@@ -1250,7 +1261,16 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
 function loadGeminiConfigs() {
     const savedModels = localStorage.getItem(STORAGE_PREFIX + 'admin_models_v1');
     if (savedModels) {
-        adminModels = JSON.parse(savedModels);
+        try { 
+            adminModels = JSON.parse(savedModels);
+            if (!Array.isArray(adminModels) || adminModels.length === 0) {
+                adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
+            }
+        } catch(e) {
+            adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
+        }
+    } else {
+        adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
     }
 
     const userSaved = localStorage.getItem(STORAGE_PREFIX + 'user_pref_v1_' + currentUser);
@@ -1262,16 +1282,18 @@ function loadGeminiConfigs() {
         const found = adminModels.find(m => m.id === userGeminiPreference.selectedModelId);
         if (!found) {
             userGeminiPreference.selectedModelId = adminModels[0].id;
-            userGeminiPreference.temperature = adminModels[0].temperature;
+            userGeminiPreference.temperature = adminModels[0].temperature || 0.7;
         }
     }
     updateTopbarAiBadge();
 }
 
 function getActiveModelConfig() {
-    if (adminModels.length === 0) return null;
+    if (!adminModels || adminModels.length === 0) {
+        return GLOBAL_DEFAULT_MODEL;
+    }
     const found = adminModels.find(m => m.id === userGeminiPreference.selectedModelId);
-    return found || adminModels[0];
+    return found || adminModels[0] || GLOBAL_DEFAULT_MODEL;
 }
 
 function updateTopbarAiBadge() {
@@ -3860,7 +3882,7 @@ function renderPromptLibrary() {
 // --- ADMIN DASHBOARD TABS & ADVANCED FEATURES ---
 function switchAdminTab(tabName) {
 window.switchAdminTab = switchAdminTab;
-    const tabs = ['stats', 'prompts', 'roles', 'users', 'integrations'];
+    const tabs = ['stats', 'prompts', 'roles', 'users'];
     tabs.forEach(t => {
         const btn = document.getElementById('btnAdminTab' + t.charAt(0).toUpperCase() + t.slice(1));
         const content = document.getElementById('adminTabContent' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -3872,7 +3894,7 @@ window.switchAdminTab = switchAdminTab;
     if (tabName === 'prompts') { renderAdminQuickActions(); renderAdminPromptLibTemplates(); }
     if (tabName === 'roles') { renderRoleList(); renderTagList(); }
     if (tabName === 'users') { renderAdminList(); renderUserAccountList(); }
-    if (tabName === 'integrations') renderIntegrationSettings();
+    
 };
 
 function renderAdminStats() {
@@ -4082,6 +4104,137 @@ window.deleteAdminModel = deleteAdminModel;
 
 
 // --- GOOGLE DRIVE & AUTOMATED EMAIL EVALUATION INTEGRATION ---
+
+// --- EMAIL SETTINGS MODAL (FOR ALL USERS & ADMINS) ---
+window.openEmailSettingsModal = openEmailSettingsModal;
+function openEmailSettingsModal() {
+    const email = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '';
+    const score = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
+    const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
+    const webhook = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
+
+    const emailInput = document.getElementById('modalNotifyEmail');
+    const scoreSlider = document.getElementById('modalPassingScore');
+    const scoreDisplay = document.getElementById('modalPassingScoreDisplay');
+    const sendModeSelect = document.getElementById('modalEmailSendMode');
+    const webhookInput = document.getElementById('modalWebhookUrl');
+
+    if (emailInput) emailInput.value = email;
+    if (scoreSlider) scoreSlider.value = score;
+    if (scoreDisplay) scoreDisplay.textContent = score + ' / 100 คะแนน';
+    if (sendModeSelect) sendModeSelect.value = sendMode;
+    if (webhookInput) webhookInput.value = webhook;
+
+    document.getElementById('emailSettingsModal')?.classList.remove('hidden');
+}
+
+window.closeEmailSettingsModal = closeEmailSettingsModal;
+function closeEmailSettingsModal() {
+    document.getElementById('emailSettingsModal')?.classList.add('hidden');
+}
+
+window.saveEmailSettingsModal = saveEmailSettingsModal;
+function saveEmailSettingsModal() {
+    const email = (document.getElementById('modalNotifyEmail')?.value || '').trim();
+    const score = parseInt(document.getElementById('modalPassingScore')?.value || '75', 10);
+    const sendMode = document.getElementById('modalEmailSendMode')?.value || 'manual';
+    const webhook = (document.getElementById('modalWebhookUrl')?.value || '').trim();
+
+    localStorage.setItem(STORAGE_PREFIX + 'notify_email', email);
+    localStorage.setItem(STORAGE_PREFIX + 'passing_score', score.toString());
+    localStorage.setItem(STORAGE_PREFIX + 'email_send_mode', sendMode);
+    localStorage.setItem(STORAGE_PREFIX + 'drive_webhook_url', webhook);
+
+    closeEmailSettingsModal();
+    showToast("💾 บันทึกการตั้งค่าส่งอีเมลเรียบร้อยแล้ว!", "success");
+}
+
+window.testSendFromEmailSettingsModal = testSendFromEmailSettingsModal;
+async function testSendFromEmailSettingsModal(btnElem = null) {
+    const btn = btnElem || document.getElementById('btnModalTestEmail') || event?.currentTarget;
+    const email = (document.getElementById('modalNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '').trim();
+    const sendMode = document.getElementById('modalEmailSendMode')?.value || localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
+    const webhook = (document.getElementById('modalWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+
+    if (!email) {
+        showToast("⚠️ กรุณาระบุอีเมลผู้รับแจ้งเตือนก่อนทดสอบ", "warning");
+        document.getElementById('modalNotifyEmail')?.focus();
+        return;
+    }
+
+    let origHtml = '🧪 ทดสอบส่งอีเมล';
+    if (btn) {
+        origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-flex; align-items:center; gap:6px;"><span class="dot" style="display:inline-block; width:6px; height:6px; background:currentColor; border-radius:50%;"></span> ⏳ กำลังทดสอบส่งอีเมล...</span>';
+        btn.style.opacity = '0.8';
+    }
+
+    showToast("⏳ กำลังเตรียมการและทดสอบระบบส่งอีเมล...", "info");
+
+    try {
+        if (sendMode === 'auto' && webhook && webhook.startsWith('http') && !webhook.includes('drive.google.com')) {
+            showToast(`⏳ กำลังยิง Webhook ส่งอีเมลจำลองไปยัง ${email}...`, "info");
+            
+            const payload = {
+                candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
+                score: 95,
+                recipientEmail: email,
+                agentName: 'HR ET Specialist (Test)',
+                summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100%'
+            };
+
+            await fetch(webhook, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            showToast(`✅ ส่งคำขออีเมลทดสอบไปยัง ${email} สำเร็จแล้ว!`, "success");
+            if (btn) btn.innerHTML = '<span>✅ ส่งผ่าน Webhook สำเร็จ</span>';
+
+        } else {
+            // 1-Click Direct Gmail Compose
+            showToast(`⏳ กำลังจัดรูปแบบและเปิดหน้าต่าง Gmail สำหรับ ${email}...`, "info");
+            
+            await new Promise(r => setTimeout(r, 350));
+
+            const subject = "[ET OPC #TeamET] 🧪 ทดสอบการส่งอีเมลแจ้งเตือน (Test Email)";
+            const bodyText = `สวัสดีครับ/ค่ะ,
+
+นี่คือข้อความทดสอบจากระบบ ET OPC Company — Enterprise AI Workspace
+วันที่ทดสอบ: ${new Date().toLocaleString('th-TH')}
+ผู้ทดสอบ: @${currentUser}
+
+ระบบส่งอีเมลพร้อมทำงาน 100% เรียบร้อยแล้วครับ!
+---
+คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`;
+
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+            const win = window.open(gmailUrl, '_blank');
+            if (!win) {
+                window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+            }
+
+            showToast(`📧 เปิดหน้าต่าง Gmail พร้อมส่งไปยัง ${email} เรียบร้อยแล้ว!`, "success");
+            if (btn) btn.innerHTML = '<span>✅ เปิด Gmail สำเร็จ</span>';
+        }
+    } catch(err) {
+        console.error("Test email error:", err);
+        showToast("❌ เกิดข้อผิดพลาดในการทดสอบ: " + err.message, "error");
+        if (btn) btn.innerHTML = '<span>❌ เกิดข้อผิดพลาด</span>';
+    } finally {
+        setTimeout(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                btn.style.opacity = '1';
+            }
+        }, 2500);
+    }
+}
+
 function renderIntegrationSettings() {
     window.renderIntegrationSettings = renderIntegrationSettings;
     const folderInput = document.getElementById('adminDriveFolderUrl');
@@ -4184,6 +4337,7 @@ window.copyGoogleAppsScriptCode = copyGoogleAppsScriptCode;
 
 // --- GOOGLE APPS SCRIPT WEBHOOK & CANDIDATE PASSED EMAIL HELPERS ---
 window.testSendWebhookEmail = testSendWebhookEmail;
+window.testSendWebhookEmail = testSendWebhookEmail;
 async function testSendWebhookEmail(btnElem = null) {
     const notifyEmail = (document.getElementById('adminNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'your-email@pim.ac.th').trim();
     const webhookUrl = (document.getElementById('adminDriveWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
@@ -4205,9 +4359,11 @@ async function testSendWebhookEmail(btnElem = null) {
         return;
     }
 
+    let origHtml = '🧪 ทดสอบการเชื่อมต่อ';
     if (btnElem) {
+        origHtml = btnElem.innerHTML;
         btnElem.disabled = true;
-        btnElem.textContent = '⏳ กำลังส่งทดสอบเข้า Gmail...';
+        btnElem.textContent = '⏳ กำลังตรวจสอบการเชื่อมต่อ...';
     }
 
     try {
@@ -4226,50 +4382,52 @@ async function testSendWebhookEmail(btnElem = null) {
             body: JSON.stringify(payload)
         });
 
-        showToast(`✅ ส่งคำขออีเมลทดสอบไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
-        if (btnElem) btnElem.textContent = `✅ ส่งถึง ${notifyEmail} แล้ว`;
+        showToast(`✅ ตรวจสอบการเชื่อมต่อ Webhook สำเร็จ! พร้อมส่งเข้า ${notifyEmail}`, "success");
+        if (btnElem) btnElem.textContent = `✅ ตรวจสอบการเชื่อมต่อสำเร็จ`;
     } catch(err) {
         console.error("Test email error:", err);
         showToast("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ Webhook: " + err.message, "error");
-        if (btnElem) btnElem.textContent = '🧪 ทดสอบส่งอีเมลทันที';
+        if (btnElem) btnElem.textContent = '🧪 ทดสอบการเชื่อมต่อ';
     } finally {
-        if (btnElem) btnElem.disabled = false;
+        setTimeout(() => {
+            if (btnElem) {
+                btnElem.disabled = false;
+                btnElem.innerHTML = origHtml;
+            }
+        }, 2500);
     }
 }
 
 window.sendCandidatePassedEmail = sendCandidatePassedEmail;
 async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
-    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'your-email@pim.ac.th';
+    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '';
     const webhookUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
+    const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
     const charName = currentCharacter ? currentCharacter.name : 'HR ET Specialist';
     const history = appUserData[currentUser]?.history[currentCharacter?.id] || [];
     const lastMsg = history.length > 0 ? history[history.length - 1].t : '';
 
     if (btnElem) {
         btnElem.disabled = true;
-        btnElem.textContent = '⏳ กำลังส่งเข้า Gmail...';
+        btnElem.textContent = '⏳ กำลังเตรียมส่งอีเมล...';
     }
 
     let fileBase64 = null;
     let fileName = null;
     let fileMimeType = null;
-    const lastFile = appUserData[currentUser]?.lastAttachedFile?.[currentCharacter?.id];
-    if (lastFile && lastFile.base64) {
-        fileBase64 = lastFile.base64;
-        fileName = lastFile.name;
-        fileMimeType = lastFile.mimeType;
-    } else if (pendingAttachedFile && pendingAttachedFile.base64) {
+    if (pendingAttachedFile && pendingAttachedFile.base64) {
         fileBase64 = pendingAttachedFile.base64;
         fileName = pendingAttachedFile.name;
         fileMimeType = pendingAttachedFile.mimeType;
     }
 
-    if (webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com')) {
+    // Mode 1: Automated Webhook (if configured)
+    if (webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com') && (sendMode === 'auto' || isAuto)) {
         try {
             const payload = {
                 candidateName: 'ผู้สมัครผ่านเกณฑ์ (CV Assessment)',
                 score: score,
-                recipientEmail: notifyEmail,
+                recipientEmail: notifyEmail || 'your-email@pim.ac.th',
                 agentName: charName,
                 summary: lastMsg,
                 hasAttachment: !!fileBase64,
@@ -4286,23 +4444,45 @@ async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
             });
 
             showToast(`✅ ส่งอีเมลแจ้งเตือนพร้อมแนบไฟล์ไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
-            if (btnElem) btnElem.textContent = `✅ ส่งเข้า Gmail (${notifyEmail}) แล้ว`;
+            if (btnElem) {
+                btnElem.disabled = false;
+                btnElem.textContent = `✅ ส่งเข้า Gmail (${notifyEmail}) แล้ว`;
+            }
             return;
-        } catch(err) {
+        } catch (err) {
             console.warn("Webhook send error:", err);
         }
     }
 
+    // Mode 2: 1-Click Direct Gmail Compose (Easy Mode - No Script Required!)
+    const subject = `[ET OPC #TeamET] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (คะแนน: ${score}/100)`;
+    const bodyText = `รายงานผลการประเมินผู้สมัคร - ET OPC Company (Ver 3.0)
+--------------------------------------------------
+🤖 ผู้ประเมิน: ${charName}
+🏆 คะแนนที่ได้: ${score} / 100 คะแนน (ผ่านเกณฑ์มาตรฐาน)
+📅 วันที่ประเมิน: ${new Date().toLocaleString('th-TH')}
+👤 ผู้สั่งงาน: @${currentUser}
+
+📌 สรุปผลการประเมินและข้อเสนอแนะ:
+${lastMsg}
+
+--------------------------------------------------
+คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`;
+
+    const targetEmail = notifyEmail || '';
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+    
     if (!isAuto) {
-        const subject = encodeURIComponent(`[ET OPC Company] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (คะแนน: ${score}/100)`);
-        const body = encodeURIComponent(`รายงานผลการประเมินผู้สมัคร - ET OPC Company\nAgent ผู้ประเมิน: ${charName}\nคะแนนที่ได้: ${score}/100 คะแนน\n\nสรุปผลการประเมิน:\n${lastMsg}\n\n---\nคณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`);
-        window.open(`mailto:${notifyEmail}?subject=${subject}&body=${body}`, '_blank');
-        showToast(`เปิดหน้าต่างส่งอีเมลไปยัง ${notifyEmail} เรียบร้อยแล้ว`, "success");
+        const win = window.open(gmailUrl, '_blank');
+        if (!win) {
+            window.location.href = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+        }
+        showToast(`📧 เปิดหน้าต่าง Gmail พร้อมเนื้อหารายงานเรียบร้อยแล้ว!`, "success");
     }
 
     if (btnElem) {
         btnElem.disabled = false;
-        btnElem.textContent = `📧 ส่งอีเมลแจ้งผลเข้า Gmail (${notifyEmail})`;
+        btnElem.textContent = targetEmail ? `📧 ส่งเข้า Gmail (${targetEmail})` : `📧 เปิดส่งใน Gmail`;
     }
 }
 
