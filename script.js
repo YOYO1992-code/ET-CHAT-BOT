@@ -364,7 +364,7 @@ const GLOBAL_DEFAULT_MODEL = {
     providerType: "gemini",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/models/",
     apiKey: "AQ.Ab8RN6Igzo3PB6zKfxxHonf9XMpr5bpUQ5iM2iT-eQNvqNp4SA",
-    modelName: "gemini-2.5-flash",
+    modelName: "gemini-3.5-flash",
     displayName: "Gemini 3.5 Flash (Global)",
     temperature: 0.7
 };
@@ -822,7 +822,7 @@ async function callUniversalAiApi(config, character, profile, history, temperatu
 
     const apiKey = config.apiKey.trim();
     let baseUrl = (config.baseUrl || "https://generativelanguage.googleapis.com/v1beta/models/").trim();
-    const model = (config.modelName || 'gemini-2.5-flash').trim();
+    const model = (config.modelName || 'gemini-3.5-flash').trim();
     const providerType = config.providerType || (baseUrl.includes("generativelanguage.googleapis.com") ? "gemini" : "openai");
 
     const systemInstruction = `You are the specialized enterprise AI Agent "${character.name}" at ET OPC Company.
@@ -898,11 +898,25 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             }
         };
 
-        const response = await fetch(endpoint, {
+        let response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+
+        if (!response.ok && (response.status === 404 || response.status === 400)) {
+            const fallbackEndpoint = (typeof onChunk === 'function') ?
+                `${base}gemini-2.5-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}` :
+                `${base}gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const fbRes = await fetch(fallbackEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).catch(() => null);
+            if (fbRes && fbRes.ok) {
+                response = fbRes;
+            }
+        }
 
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
@@ -1265,6 +1279,18 @@ function loadGeminiConfigs() {
             adminModels = JSON.parse(savedModels);
             if (!Array.isArray(adminModels) || adminModels.length === 0) {
                 adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
+            } else {
+                let updated = false;
+                adminModels.forEach(m => {
+                    if (m.modelName === 'gemini-2.5-flash' || m.id === 'default-gemini-flash') {
+                        m.modelName = 'gemini-3.5-flash';
+                        m.displayName = 'Gemini 3.5 Flash (Global)';
+                        updated = true;
+                    }
+                });
+                if (updated) {
+                    localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(adminModels));
+                }
             }
         } catch(e) {
             adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
