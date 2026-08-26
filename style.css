@@ -2723,3 +2723,13 @@ html[data-theme="dark"] .ai-thought-box summary {
 .confirm-dialog-box {
   z-index: 3501 !important;
 }
+
+
+/* Live AI Streaming Animation & Radar (Ver 3.0 Pro) */
+.msg.bot.streaming-bubble .bubble {
+  border-color: var(--maroon) !important;
+  box-shadow: 0 0 12px rgba(139, 0, 0, 0.15) !important;
+}
+.hub-leaderboard-card {
+  animation: fadeIn 0.3s ease;
+}

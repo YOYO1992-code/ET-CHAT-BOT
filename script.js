@@ -126,7 +126,8 @@ const DEFAULT_ROLES = [
     {v:"role-opc", t:"Operations & Workflow", color:"#0284C7"},
     {v:"role-summary", t:"Executive Assistant", color:"#7C3AED"},
     {v:"role-data", t:"Data & Document Analysis", color:"#10B981"},
-    {v:"role-tech", t:"Tech & System Support", color:"#F59E0B"}
+    {v:"role-tech", t:"Tech & System Support", color:"#F59E0B"},
+    {v:"role-academic", t:"Academic & Research Advisory", color:"#6366F1"}
 ];
 let appRoles = [];
 
@@ -137,7 +138,10 @@ const DEFAULT_TAGS = [
   {v:"tag-ops", t:"#Operations", color: "#0284C7", c:"tag-ops"},
   {v:"tag-meeting", t:"#การประชุม", color: "#10B981", c:"tag-meeting"},
   {v:"tag-analysis", t:"#วิเคราะห์เอกสาร", color: "#F59E0B", c:"tag-analysis"},
-  {v:"tag-automation", t:"#Automation", color: "#EF4444", c:"tag-automation"}
+  {v:"tag-automation", t:"#Automation", color: "#EF4444", c:"tag-automation"},
+  {v:"tag-code", t:"#Code_Review", color: "#3B82F6", c:"tag-code"},
+  {v:"tag-academic", t:"#วิจัย_โครงงาน", color: "#8B5CF6", c:"tag-academic"},
+  {v:"tag-helpdesk", t:"#IT_Helpdesk", color: "#10B981", c:"tag-helpdesk"}
 ];
 let appTags = [];
 
@@ -261,6 +265,74 @@ const SYSTEM_CHARACTERS = [
     badge:"วิเคราะห์สถิติ & เอกสาร",
     prompt:"คุณคือ 'Data Analyst Agent' ของ ET OPC Company ช่วยอ่าน วิเคราะห์ และเปรียบเทียบข้อมูล สรุปออกมาเป็นหัวข้อ เปอร์เซ็นต์ และตาราง Markdown ได้อย่างแม่นยำ",
     opener:"สวัสดีครับ ส่งไฟล์ข้อมูล สถิติ หรือรายงานตัวเลขมาให้ผมวิเคราะห์และสรุปเป็นกราฟข้อมูล/ตารางได้เลยครับ!"
+  }
+,
+  { 
+    id:"opc-software-engineer", 
+    name:"Software Engineer Lead (วิศวกรซอฟต์แวร์ & สถาปัตยกรรมระบบ)", 
+    creator:"@ETPIM", 
+    icon:"cpu", 
+    imageUrl: "Agent Profile/SSEARCH.png", 
+    color:"linear-gradient(135deg,#0284C7,#0369A1)", 
+    chatCount: 1620, 
+    isPrivate: false,
+    role: {v:"role-tech", t:"Tech & System Support", color:"#F59E0B"},
+    bio:"ผู้เชี่ยวชาญด้านวิศวกรรมซอฟต์แวร์ ช่วยตรวจสอบโค้ด (Code Review) ดีบัก Error แนะนำ SQL/Python/JavaScript สถาปัตยกรรมระบบ และความปลอดภัยของแอปพลิเคชัน",
+    requirements: `1. โครงสร้างโค้ดที่ถูกต้องตาม Clean Code & Design Patterns\n2. ประสิทธิภาพการทำงาน (Algorithm Efficiency & Performance)\n3. การจัดการ Error Handling และความปลอดภัยของข้อมูล (Security)\n4. ความอ่านง่าย มี Documentation หรือ Comments กำกับชัดเจน`,
+    tags:[{v:"tag-code", t:"#Code_Review", c:"tag-code"},{v:"tag-automation", t:"#Automation", c:"tag-automation"}], 
+    featured:true, 
+    badge:"วิศวกรซอฟต์แวร์ประจำคณะ",
+    prompt:`คุณคือ 'Senior Software Engineer & Code Architect Agent' ประจำคณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) สถาบันการจัดการปัญญาภิวัฒน์ มีความเชี่ยวชาญด้านการพัฒนาซอฟต์แวร์ การตรวจทานโค้ด (Code Review) และการแก้ปัญหาเชิงเทคนิค:
+1. ตรวจสอบโค้ดอย่างละเอียด ชี้จุดที่มี Bug, จุดที่ประสิทธิภาพต่ำ (Bottleneck) หรือความเสี่ยงด้านความปลอดภัย
+2. แนะนำแนวทางแก้ไขพร้อมแสดงตัวอย่างโค้ดที่สะอาด (Clean Code) ให้อ่านและนำไปใช้งานได้ทันที (รองรับ JavaScript, Python, SQL, HTML/CSS, Java, C++, REST API, Webhook)
+3. อธิบายหลักการทางวิศวกรรมซอฟต์แวร์อย่างเป็นระบบ เข้าใจง่าย และให้คำแนะนำด้าน System Architecture อย่างมืออาชีพ
+ตอบด้วยภาษาไทยที่สุภาพ ชัดเจน และจัดโครงสร้างโค้ดด้วย Markdown Codeblock เสมอ`,
+    opener:"สวัสดีครับ! ผมคือวิศวกรซอฟต์แวร์ (Software Engineer Lead) พร้อมช่วยตรวจทานโค้ด (Code Review) ช่วยดีบักบั๊ก ออกแบบฐานข้อมูล SQL หรือแนะนำสถาปัตยกรรมระบบ ส่งโค้ดหรือโจทย์เข้ามาได้เลยครับ!"
+  },
+  { 
+    id:"opc-academic-advisor", 
+    name:"Academic & Senior Project Advisor (อาจารย์ที่ปรึกษาโครงงาน & วิจัย)", 
+    creator:"@ETPIM", 
+    icon:"filetext", 
+    imageUrl: "Agent Profile/AJ.png", 
+    color:"linear-gradient(135deg,#6366F1,#4338CA)", 
+    chatCount: 1430, 
+    isPrivate: false,
+    role: {v:"role-academic", t:"Academic & Research Advisory", color:"#6366F1"},
+    bio:"อาจารย์ที่ปรึกษาโครงงานวิศวกรรมศาสตร์และนวัตกรรม ช่วยตรวจสอบเล่มโครงงานปริญญานิพนธ์ (Senior Project) ตรวจบทคัดย่อ (Abstract) ภาษาไทย-อังกฤษ และรูปแบบอ้างอิงมาตรฐาน IEEE / APA",
+    requirements: `1. ความถูกต้องของระเบียบวิธีวิจัยและขั้นตอนการทดลอง\n2. ความสมบูรณ์ของโครงสร้างบทคัดย่อ (วัตถุประสงค์, วิธีการ, ผลลัพธ์, บทสรุป)\n3. การใช้ภาษาทางวิชาการที่ถูกต้องและเป็นทางการ\n4. รูปแบบการอ้างอิงเอกสารที่ถูกต้องตามมาตรฐานสากล`,
+    tags:[{v:"tag-academic", t:"#วิจัย_โครงงาน", c:"tag-academic"},{v:"tag-summary", t:"#สรุปรายงาน", c:"tag-summary"}], 
+    featured:true, 
+    badge:"ที่ปรึกษาโครงงานปริญญานิพนธ์",
+    prompt:`คุณคือ 'Academic & Senior Project Advisor Agent' (อาจารย์ที่ปรึกษาโครงงานและวิทยานิพนธ์) ประจำคณะวิศวกรรมศาสตร์และเทคโนโลยี PIM มีหน้าที่หลักคือให้คำแนะนำเชิงวิชาการ:
+1. ตรวจสอบและขัดเกลาบทคัดย่อ (Abstract ทั้งภาษาไทยและภาษาอังกฤษ) ให้กระชับ สละสลวย และถูกต้องตามหลักไวยากรณ์วิชาการ
+2. ให้คำปรึกษาโครงสร้างเล่มโปรเจกต์ 5 บท (ที่มาและความสำคัญ, ทฤษฎี, วิธีดำเนินการ, ผลการทดลอง, สรุปและข้อเสนอแนะ)
+3. ตรวจสอบการอ้างอิงและบรรณานุกรมตามมาตรฐาน IEEE และ APA 7th Edition
+4. ให้คำแนะนำการเตรียมสไลด์นำเสนอและเทคนิคการตอบคำถามกรรมการสอบโครงงาน
+ตอบด้วยน้ำเสียงที่อบอุ่น เป็นมืออาชีพ ให้กำลังใจ และมีข้อเสนอแนะเชิงวิชาการที่ชัดเจนเป็นข้อๆ`,
+    opener:"สวัสดีครับนักศึกษาและคณาจารย์ทุกท่าน! อาจารย์พร้อมให้คำปรึกษาโครงงานปริญญานิพนธ์ (Senior Project) ตรวจเล่มรายงาน ปรับแก้บทคัดย่อภาษาไทย/อังกฤษ หรือตรวจสอบรูปแบบการอ้างอิง ส่งเอกสารหรือข้อสงสัยมาได้เลยครับ!"
+  },
+  { 
+    id:"opc-it-helpdesk", 
+    name:"IT Helpdesk & System Support (บริการสนับสนุนไอที & ช่วยเหลือระบบ)", 
+    creator:"@ETPIM", 
+    icon:"users", 
+    imageUrl: "Agent Profile/SHELP.png", 
+    color:"linear-gradient(135deg,#059669,#047857)", 
+    chatCount: 1980, 
+    isPrivate: false,
+    role: {v:"role-tech", t:"Tech & System Support", color:"#F59E0B"},
+    bio:"ผู้ช่วยบริการงานไอทีและสนับสนุนผู้ใช้งาน แนะนำขั้นตอนการแก้ปัญหาการใช้งานระบบ เครือข่าย VPN บัญชีผู้ใช้ ร่างคำตอบช่วยเหลือ (Ticket Response) และจัดทำ FAQ ประจำองค์กร",
+    requirements: `1. ความรวดเร็วและชัดเจนในการให้แนวทางแก้ไขปัญหา (Step-by-step)\n2. การสื่อสารที่เข้าใจง่าย อธิบายศัพท์เทคนิคให้เป็นภาษาคนทั่วไป\n3. ความสุภาพ นอบน้อม และพร้อมอำนวยความสะดวก`,
+    tags:[{v:"tag-helpdesk", t:"#IT_Helpdesk", c:"tag-helpdesk"},{v:"tag-ops", t:"#Operations", c:"tag-ops"}], 
+    featured:true, 
+    badge:"ผู้ช่วยแก้ปัญหาไอที 24/7",
+    prompt:`คุณคือ 'IT Helpdesk & Support Agent' ประจำ ET OPC Company และคณะวิศวกรรมศาสตร์และเทคโนโลยี PIM หน้าที่หลักคือช่วยเหลือผู้ใช้งานในการแก้ปัญหาทางไอทีและระบบภายใน:
+1. ให้คำแนะนำขั้นตอนการแก้ปัญหา (Troubleshooting Steps) อย่างเป็นลำดับ 1, 2, 3 เข้าใจง่าย
+2. ร่างคำตอบ Ticket ช่วยเหลือผู้ใช้งานอย่างสุภาพ ชัดเจน และตรงจุด (เช่น ปัญหา Login, VPN, Email, WiFi, Software Setup)
+3. จัดทำ FAQ และข้อแนะนำการใช้งานระบบเพื่อป้องกันปัญหาเดิมซ้ำซ้อน
+ตอบด้วยน้ำเสียงที่สุภาพ เป็นมิตร ใจเย็น และให้แนวทางปฏิบัติที่สามารถทำตามได้ทันที`,
+    opener:"สวัสดีครับ! ฝ่ายบริการไอทีและช่วยเหลือระบบ (IT Helpdesk) ยินดีให้บริการครับ หากพบปัญหาการใช้งานระบบ ล็อกอินไม่ได้ หรือมีข้อสงสัยด้านเทคนิค แจ้งผมได้ทันทีเลยครับ!"
   }
 ];
 
@@ -732,14 +804,14 @@ function exportCurrentSession(format = 'md') {
 }
 
 // --- UNIVERSAL AI API CALLER (GEMINI + OPENAI + OPENROUTER + DEEPSEEK + GROQ + OLLAMA) ---
-async function callUniversalAiApi(config, character, profile, history, temperature, attachedFile = null) {
+async function callUniversalAiApi(config, character, profile, history, temperature, attachedFile = null, onChunk = null) {
     if(!config || !config.apiKey || config.apiKey.trim() === "") {
         throw new Error("ยังไม่ได้ระบุ API Key ในระบบ");
     }
 
     const apiKey = config.apiKey.trim();
     let baseUrl = (config.baseUrl || "https://generativelanguage.googleapis.com/v1beta/models/").trim();
-    const model = (config.modelName || 'gemini-3.6-flash').trim();
+    const model = (config.modelName || 'gemini-2.5-flash').trim();
     const providerType = config.providerType || (baseUrl.includes("generativelanguage.googleapis.com") ? "gemini" : "openai");
 
     const systemInstruction = `You are the specialized enterprise AI Agent "${character.name}" at ET OPC Company.
@@ -756,16 +828,18 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
 🔒 [STRICT ROLE BOUNDARIES & GUARDRAILS — กฎการปฏิบัติหน้าที่เฉพาะทาง]:
 1. ปฏิบัติหน้าที่ตามความเชี่ยวชาญและขอบเขตงานของตนเองอย่างเคร่งครัด (Strict Role Adherence)
 2. ห้ามตอบหรือรับทำงานที่อยู่นอกเหนือบทบาทหน้าที่ของตนเองเด็ดขาด:
-   - หากผู้ใช้ถามคำถามหรือสั่งงานที่อยู่นอกสายงานของคุณ (เช่น ถามการคำนวณสถิติ/เขียนโค้ดกับฝ่ายบุคคล หรือถามเรื่องสรรหาพนักงานกับฝ่ายปฏิบัติการ) ให้ตอบปฏิเสธอย่างสุภาพและเป็นมืออาชีพ พร้อมแนะนำให้ผู้ใช้เลือกสลับไปใช้งาน Agent ประจำฝ่ายที่ตรงสายงานแทน (ได้แก่: เลขาส่วนตัว, HR ET, ผู้ช่วยสรุปงาน, ผู้ประสานงาน Operations, หรือ นักวิเคราะห์ข้อมูล)
+   - หากผู้ใช้ถามคำถามหรือสั่งงานที่อยู่นอกสายงานของคุณ ให้ตอบปฏิเสธอย่างสุภาพและเป็นมืออาชีพ พร้อมแนะนำให้ผู้ใช้เลือกสลับไปใช้งาน Agent ประจำฝ่ายที่ตรงสายงานแทน (ได้แก่: เลขาส่วนตัว, HR ET, ผู้ช่วยสรุปงาน, ผู้ประสานงาน Operations, นักวิเคราะห์ข้อมูล, วิศวกรซอฟต์แวร์, อาจารย์ที่ปรึกษาโครงงาน, หรือ IT Helpdesk)
 3. ปฏิเสธเรื่องที่ไม่เกี่ยวข้องกับการทำงานในองค์กรอย่างสุภาพ และนำบริบทกลับมาสู่งานในความรับผิดชอบของคุณ
 4. จัดรูปแบบข้อความให้อ่านง่าย ชัดเจน มีระดับ ใช้ตัวหนาเน้นประเด็นสำคัญ และจัดข้อมูลเปรียบเทียบหรือคะแนนให้อยู่ในรูปตาราง Markdown Table เสมอ`;
 
     if (providerType === 'gemini') {
-        // --- 1. GOOGLE GEMINI API FORMAT ---
         let base = baseUrl;
         if (!base.endsWith('/')) base += '/';
         const cleanModel = model.replace(/^models\//, '');
-        const endpoint = `${base}${cleanModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        
+        const endpoint = (typeof onChunk === 'function') ?
+            `${base}${cleanModel}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}` :
+            `${base}${cleanModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
         const contents = [];
         const firstUserIdx = history.findIndex(m => m.r === 'user');
@@ -809,7 +883,7 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             contents: contents,
             generationConfig: {
                 temperature: parseFloat(temperature) || 0.7,
-                maxOutputTokens: 3072
+                maxOutputTokens: 4096
             }
         };
 
@@ -824,6 +898,41 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             throw new Error(errData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
+        // Streaming Reader
+        if (typeof onChunk === 'function' && response.body && response.body.getReader) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+            let accumulatedText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed || !trimmed.startsWith('data:')) continue;
+                    const jsonStr = trimmed.replace(/^data:\s*/, '').trim();
+                    if (jsonStr === '[DONE]') break;
+
+                    try {
+                        const parsed = JSON.parse(jsonStr);
+                        if (parsed.candidates && parsed.candidates[0]?.content?.parts?.[0]?.text) {
+                            const delta = parsed.candidates[0].content.parts.map(p => p.text).join('');
+                            accumulatedText += delta;
+                            onChunk(accumulatedText, delta);
+                        }
+                    } catch(e) {}
+                }
+            }
+            if (accumulatedText) return accumulatedText;
+        }
+
+        // Non-stream Fallback
         const data = await response.json();
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             return data.candidates[0].content.parts.map(p => p.text).join('');
@@ -831,7 +940,7 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
         throw new Error("ไม่ได้รับข้อความตอบกลับจาก Gemini API");
 
     } else {
-        // --- 2. OPENAI-COMPATIBLE API FORMAT ---
+        // OPENAI / OPENROUTER
         let endpoint = baseUrl;
         if (!endpoint.includes('/chat/completions')) {
             endpoint = endpoint.replace(/\/+$/, '') + '/chat/completions';
@@ -881,13 +990,14 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
 
         if (baseUrl.includes("openrouter.ai")) {
             headers['HTTP-Referer'] = window.location.origin || 'http://localhost';
-            headers['X-Title'] = 'ET OPC Company Workspace';
+            headers['X-Title'] = 'ET OPC Company Workspace Ver 3.0';
         }
 
         const payload = {
             model: model,
             messages: messages,
-            temperature: parseFloat(temperature) || 0.7
+            temperature: parseFloat(temperature) || 0.7,
+            stream: Boolean(onChunk)
         };
 
         const response = await fetch(endpoint, {
@@ -900,6 +1010,40 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             const errData = await response.json().catch(() => ({}));
             const msg = errData.error?.message || errData.message || `HTTP ${response.status}: ${response.statusText}`;
             throw new Error(msg);
+        }
+
+        // Streaming Reader
+        if (typeof onChunk === 'function' && response.body && response.body.getReader) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let buffer = '';
+            let accumulatedText = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed || !trimmed.startsWith('data:')) continue;
+                    const jsonStr = trimmed.replace(/^data:\s*/, '').trim();
+                    if (jsonStr === '[DONE]') break;
+
+                    try {
+                        const parsed = JSON.parse(jsonStr);
+                        if (parsed.choices && parsed.choices[0]?.delta?.content) {
+                            const delta = parsed.choices[0].delta.content;
+                            accumulatedText += delta;
+                            onChunk(accumulatedText, delta);
+                        }
+                    } catch(e) {}
+                }
+            }
+            if (accumulatedText) return accumulatedText;
         }
 
         const data = await response.json();
@@ -936,7 +1080,6 @@ function sendMessage(customText = null){
         displayMessageText = `📎 [${fileIcon} แนบไฟล์: ${pendingAttachedFile.name} (${pendingAttachedFile.formattedSize || ''})]\n` + (text || "กรุณาวิเคราะห์ สรุป และให้ข้อคิดเห็นจากไฟล์นี้");
     }
 
-        // Detect Google Drive Link in user input
     const driveLinkMatch = text.match(/https:\/\/drive\.google\.com\/(?:file\/d\/|drive\/folders\/|open\?id=)([a-zA-Z0-9_-]+)/i);
     if (driveLinkMatch && !pendingAttachedFile) {
         showToast("📂 ตรวจพบลิงก์ Google Drive ในคำสั่ง กำลังส่งให้ Agent ประเมิน...", "info");
@@ -963,16 +1106,20 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
     const msgsContainer = document.getElementById('messages');
     if(!msgsContainer) return;
 
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'msg bot typing-indicator';
-    typingDiv.innerHTML = `
+    // Create live bot message container for streaming
+    const liveMsgDiv = document.createElement('div');
+    liveMsgDiv.className = 'msg bot streaming-bubble';
+    liveMsgDiv.innerHTML = `
       <div class="msg-content">
           <div class="avatar" style="background:${currentCharacter.color}">${getAvatarHtml(currentCharacter)}</div>
           <div class="bubble"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
       </div>
     `;
-    msgsContainer.appendChild(typingDiv);
+    msgsContainer.appendChild(liveMsgDiv);
     msgsContainer.scrollTop = msgsContainer.scrollHeight;
+
+    const liveBubble = liveMsgDiv.querySelector('.bubble');
+    let hasStreamed = false;
 
     const profile = appUserData[currentUser]?.profile || { displayName: currentUser, persona: "" };
     const rawHistory = appUserData[currentUser].history[currentCharacter.id] || [];
@@ -985,16 +1132,27 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
             throw new Error("KEY_MISSING");
         }
 
+        const onStreamChunk = (accumulatedText) => {
+            if (!hasStreamed) {
+                hasStreamed = true;
+            }
+            if (liveBubble) {
+                liveBubble.innerHTML = formatRoleplayText(accumulatedText, true);
+                msgsContainer.scrollTop = msgsContainer.scrollHeight;
+            }
+        };
+
         const replyText = await callUniversalAiApi(
             activeConf,
             currentCharacter,
             profile,
             historySubset,
             userGeminiPreference.temperature || activeConf.temperature,
-            attachedFile
+            attachedFile,
+            onStreamChunk
         );
 
-        typingDiv.remove();
+        liveMsgDiv.remove();
 
         if (regenerateBotIdx !== null) {
             const targetMsg = rawHistory[regenerateBotIdx];
@@ -1015,7 +1173,7 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
         saveUserData();
         renderChatMessages();
 
-                // Check for Auto Email Notification & Update Hub Candidate Scores (Single & Batch)
+        // Check for Auto Email Notification & Update Hub Candidate Scores (Single & Batch)
         const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
         const isAutoEmail = (localStorage.getItem(STORAGE_PREFIX + 'auto_email_notify') === 'true') && (sendMode === 'auto');
         const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
@@ -1023,7 +1181,6 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
         if (typeof appCandidateSubmissions !== 'undefined' && Array.isArray(appCandidateSubmissions)) {
             let updatedAny = false;
 
-            // Check if this was a Single Candidate Evaluation
             if (currentEvaluatingCandidateId) {
                 const scoreMatch = replyText.match(/(?:คะแนน(?:ความเหมาะสม)?(?:รวม)?|Match\s*Score|Overall\s*Score|Total\s*Score)[^0-9\n\r]{0,40}?([0-9]{1,3})\s*(?:\/\s*100|%|\s*คะแนน)/i);
                 if (scoreMatch && scoreMatch[1]) {
@@ -1039,15 +1196,10 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
                     }
                 }
             } else {
-                // Batch Evaluation: Match each candidate by name and score in table or bullet points
                 appCandidateSubmissions.forEach(cand => {
-                    const cleanName = cand.name.replace(/[^a-zA-Z0-9ก-๙]/g, '');
-                    // Search for pattern: [Cand Name] ... [Score]
                     const regex1 = new RegExp(`${cand.name}[^0-9\n\r|]{0,50}?([0-9]{2,3})\s*(?:\/\s*100|%|\s*คะแนน)?`, 'i');
                     const regex2 = new RegExp(`\|\s*(?:[0-9]+\s*\|)?\s*${cand.name}[^|]*?\|[^|]*?\|[^|]*?\|[^|]*?\|[^|]*?\|\s*\*\*?([0-9]{2,3})\*\*?`, 'i');
-                    const regex3 = new RegExp(`(?:อันดับ|Score:?)\s*[0-9]*:?\s*${cand.name}[^0-9]*?([0-9]{2,3})`, 'i');
-                    
-                    const m = replyText.match(regex2) || replyText.match(regex1) || replyText.match(regex3);
+                    const m = replyText.match(regex2) || replyText.match(regex1);
                     if (m && m[1]) {
                         const scoreNum = parseInt(m[1], 10);
                         if (scoreNum <= 100 && scoreNum >= 30) {
@@ -1067,7 +1219,7 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
         currentEvaluatingCandidateId = null;
 
     } catch(err) {
-        typingDiv.remove();
+        liveMsgDiv.remove();
         let errorNotice = `⚠️ **เกิดข้อผิดพลาดในการเชื่อมต่อกับ AI:**\n${escapeHtml(err.message)}`;
         if (err.message === "KEY_MISSING") {
             errorNotice = `⚠️ **ยังไม่ได้ตั้งค่า API Key**\nกรุณาให้ผู้ดูแลระบบ (Admin) กดปุ่ม **"ตั้งค่า AI & Model"** ด้านบนเพื่อบันทึก API Key ครับ`;
@@ -1092,6 +1244,7 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
         renderChatMessages();
     }
 }
+
 
 // --- GEMINI CONFIGURATION LOGIC ---
 function loadGeminiConfigs() {
@@ -3436,6 +3589,74 @@ function toggleVoiceRecognition() {
 
 // --- INTERVIEW SCORECARD MODAL FUNCTIONS ---
 window.openScorecardModal = openScorecardModal;
+
+window.renderRadarChartSvg = renderRadarChartSvg;
+function renderRadarChartSvg(tech, comm, prob, cult, size = 180) {
+    const s_tech = Math.min(1.0, Math.max(0.0, parseFloat(tech) / 35.0));
+    const s_comm = Math.min(1.0, Math.max(0.0, parseFloat(comm) / 25.0));
+    const s_prob = Math.min(1.0, Math.max(0.0, parseFloat(prob) / 20.0));
+    const s_cult = Math.min(1.0, Math.max(0.0, parseFloat(cult) / 20.0));
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = (size / 2) - 28;
+
+    const angles = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
+    const labels = ["เทคนิค", "สื่อสาร", "แก้ปัญหา", "องค์กร"];
+    const scores = [s_tech, s_comm, s_prob, s_cult];
+    const actual_vals = [`${tech}/35`, `${comm}/25`, `${prob}/20`, `${cult}/20`];
+
+    let grid_svg = "";
+    [0.25, 0.5, 0.75, 1.0].forEach(level => {
+        let grid_pts = [];
+        angles.forEach(a => {
+            const gx = cx + r * level * Math.cos(a);
+            const gy = cy + r * level * Math.sin(a);
+            grid_pts.push(`${gx.toFixed(1)},${gy.toFixed(1)}`);
+        });
+        grid_svg += `<polygon points="${grid_pts.join(' ')}" fill="none" stroke="var(--line, #E2E8F0)" stroke-width="1" stroke-dasharray="${level < 1.0 ? '2' : '0'}"/>`;
+    });
+
+    let axis_svg = "";
+    for (let i = 0; i < angles.length; i++) {
+        const a = angles[i];
+        const ax = cx + r * Math.cos(a);
+        const ay = cy + r * Math.sin(a);
+        axis_svg += `<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${ax.toFixed(1)}" y2="${ay.toFixed(1)}" stroke="var(--line, #CBD5E1)" stroke-width="1"/>`;
+
+        let lx = cx + (r + 14) * Math.cos(a);
+        let ly = cy + (r + 10) * Math.sin(a);
+        let anchor = "middle";
+        if (i === 1) { anchor = "start"; lx += 2; }
+        else if (i === 3) { anchor = "end"; lx -= 2; }
+
+        axis_svg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="9" font-weight="700" fill="var(--ink-soft, #64748B)" dominant-baseline="middle">${labels[i]} <tspan font-weight="800" fill="var(--maroon, #8B0000)">(${actual_vals[i]})</tspan></text>`;
+    }
+
+    let poly_pts = [];
+    let points_svg = "";
+    for (let i = 0; i < angles.length; i++) {
+        const a = angles[i];
+        const px = cx + r * scores[i] * Math.cos(a);
+        const py = cy + r * scores[i] * Math.sin(a);
+        poly_pts.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+        points_svg += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3" fill="#8B0000" stroke="#FFFFFF" stroke-width="1.2"/>`;
+    }
+
+    return `<svg viewBox="0 0 ${size} ${size}" width="100%" height="${size}" style="display:block; margin:0 auto; overflow:visible;">
+      <defs>
+        <radialGradient id="radarGradScorecard" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#8B0000" stop-opacity="0.45"/>
+          <stop offset="100%" stop-color="#0284C7" stop-opacity="0.2"/>
+        </radialGradient>
+      </defs>
+      ${grid_svg}
+      ${axis_svg}
+      <polygon points="${poly_pts.join(' ')}" fill="url(#radarGradScorecard)" stroke="#8B0000" stroke-width="2" stroke-linejoin="round"/>
+      ${points_svg}
+    </svg>`;
+}
+
 function openScorecardModal() {
     document.getElementById('scorecardModal')?.classList.remove('hidden');
     updateTotalScorecard();
@@ -3461,6 +3682,8 @@ function updateTotalScorecard() {
     const totalNum = document.getElementById('scorecardTotalNum');
     const label = document.getElementById('scorecardStatusLabel');
     if (totalNum) totalNum.textContent = total;
+    const radarBox = document.getElementById('scorecardRadarContainer');
+    if (radarBox) radarBox.innerHTML = renderRadarChartSvg(tech, comm, prob, cult, 190);
 
     if (label) {
         if (total >= 80) {
@@ -4219,7 +4442,52 @@ function renderCandidateQueueList() {
         return true;
     });
 
-    list.innerHTML = '';
+        // Top Candidate Leaderboard Podium
+    const scoredList = appCandidateSubmissions.filter(c => c && typeof c.score === 'number').sort((a, b) => b.score - a.score);
+    let leaderboardHtml = '';
+
+    if (scoredList.length > 0) {
+        const top3 = scoredList.slice(0, 3);
+        const medals = ['🥇', '🥈', '🥉'];
+        const rankTitles = ['อันดับ 1 (Top Candidate)', 'อันดับ 2 (Runner-Up)', 'อันดับ 3 (Third Place)'];
+        const rankStyles = [
+            'background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%); border: 1.5px solid #F59E0B;',
+            'background: linear-gradient(135deg, rgba(148, 163, 184, 0.12) 0%, rgba(100, 116, 139, 0.08) 100%); border: 1.5px solid #94A3B8;',
+            'background: linear-gradient(135deg, rgba(234, 88, 12, 0.12) 0%, rgba(194, 65, 12, 0.08) 100%); border: 1.5px solid #EA580C;'
+        ];
+
+        leaderboardHtml = `
+        <div class="hub-leaderboard-card" style="background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:12.5px; font-weight:800; color:var(--maroon); display:flex; align-items:center; gap:6px;">
+              🏆 ทำเนียบผู้สมัครคะแนนสูงสุด (Candidate Leaderboard)
+            </span>
+            <span style="font-size:11px; background:var(--surface); border:1px solid var(--line); padding:2px 8px; border-radius:999px; font-weight:700; color:var(--ink-soft);">
+              ตรวจแล้ว ${scoredList.length} คน
+            </span>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(${Math.min(top3.length, 3)}, 1fr); gap:8px;">`;
+
+        top3.forEach((cand, rankIdx) => {
+            leaderboardHtml += `
+            <div style="padding:10px 12px; border-radius:12px; ${rankStyles[rankIdx]} display:flex; flex-direction:column; gap:3px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:16px;">${medals[rankIdx]}</span>
+                <strong style="font-size:13.5px; color:var(--ink); font-weight:900;">${cand.score}/100</strong>
+              </div>
+              <strong style="font-size:12.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(cand.name || cand.fileName)}">
+                ${escapeHtml(cand.name || cand.fileName)}
+              </strong>
+              <span style="font-size:10.5px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${escapeHtml(rankTitles[rankIdx])}
+              </span>
+            </div>`;
+        });
+
+        leaderboardHtml += `</div></div>`;
+    }
+
+    list.innerHTML = leaderboardHtml;
     if (filtered.length === 0) {
         list.innerHTML = '<div style="text-align:center; padding:28px; color:var(--ink-faint); font-size:13px; background:var(--surface-2); border-radius:12px; border:1px dashed var(--line); margin:4px 0;">📄 ยังไม่มีเอกสารในหมวดหมู่นี้ (กด <strong>+ เพิ่มไฟล์</strong> หรือวางลิงก์ Google Drive ด้านบน)</div>';
         return;
