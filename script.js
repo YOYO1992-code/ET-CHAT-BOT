@@ -836,18 +836,19 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
         if (providerType === 'gemini') {
         let base = baseUrl;
         if (!base.endsWith('/')) base += '/';
-        let cleanModel = model.replace(/^models\//, '') || 'gemini-2.5-flash';
+        let cleanModel = model.replace(/^models\//, '') || 'gemini-3.6-flash';
         
         // Map UI model identifier to official REST API endpoint
         let targetModel = cleanModel;
         if (cleanModel === 'gemini-3.5-flash' || cleanModel === 'gemini-3.6-flash') {
-            targetModel = 'gemini-2.5-flash';
+            targetModel = 'gemini-3.6-flash';
         }
 
         const isStream = (typeof onChunk === 'function');
         const action = isStream ? 'streamGenerateContent?alt=sse' : 'generateContent';
         
-        const buildEndpoint = (mName) => `${base}${mName}:${action}&key=${encodeURIComponent(apiKey)}`;
+        const sep = action.includes('?') ? '&' : '?';
+        const buildEndpoint = (mName) => `${base}${mName}:${action}${sep}key=${encodeURIComponent(apiKey)}`;
         const headers = {
             'Content-Type': 'application/json',
             'x-goog-api-key': apiKey
@@ -911,7 +912,7 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
 
         // If 404 or 400, automatically fallback across official Gemini models
         if (!response || (!response.ok && (response.status === 404 || response.status === 400))) {
-            const fallbacks = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+            const fallbacks = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
             for (const fbModel of fallbacks) {
                 if (fbModel === targetModel) continue;
                 const fbEndpoint = buildEndpoint(fbModel);
