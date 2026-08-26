@@ -364,7 +364,7 @@ const GLOBAL_DEFAULT_MODEL = {
     providerType: "gemini",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/models/",
     apiKey: "AQ.Ab8RN6Igzo3PB6zKfxxHonf9XMpr5bpUQ5iM2iT-eQNvqNp4SA",
-    modelName: "gemini-3.5-flash",
+    modelName: "gemini-2.5-flash",
     displayName: "Gemini 3.5 Flash (Global)",
     temperature: 0.7
 };
@@ -822,7 +822,7 @@ async function callUniversalAiApi(config, character, profile, history, temperatu
 
     const apiKey = config.apiKey.trim();
     let baseUrl = (config.baseUrl || "https://generativelanguage.googleapis.com/v1beta/models/").trim();
-    const model = (config.modelName || 'gemini-3.5-flash').trim();
+    const model = (config.modelName || 'gemini-2.5-flash').trim();
     const providerType = config.providerType || (baseUrl.includes("generativelanguage.googleapis.com") ? "gemini" : "openai");
 
     const systemInstruction = `You are the specialized enterprise AI Agent "${character.name}" at ET OPC Company.
@@ -846,31 +846,11 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
     if (providerType === 'gemini') {
         let base = baseUrl;
         if (!base.endsWith('/')) base += '/';
-        let cleanModel = model.replace(/^models\//, '') || 'gemini-2.5-flash';
+        const cleanModel = model.replace(/^models\//, '');
         
-        const isBearerToken = apiKey.startsWith('AQ.') || apiKey.startsWith('ya29.') || (!apiKey.startsWith('AIzaSy') && apiKey.includes('.'));
-        
-        const buildHeaders = (bearer) => {
-            const h = { 'Content-Type': 'application/json' };
-            if (bearer) {
-                h['Authorization'] = `Bearer ${apiKey}`;
-            } else {
-                h['x-goog-api-key'] = apiKey;
-            }
-            return h;
-        };
-
-        const buildEndpoint = (targetModel, useQueryKey) => {
-            const action = (typeof onChunk === 'function') ? 'streamGenerateContent?alt=sse' : 'generateContent';
-            if (useQueryKey) {
-                return `${base}${targetModel}:${action}&key=${encodeURIComponent(apiKey)}`;
-            } else {
-                return `${base}${targetModel}:${action}`;
-            }
-        };
-
-        let endpoint = buildEndpoint(cleanModel, !isBearerToken);
-        let headers = buildHeaders(isBearerToken);
+        const endpoint = (typeof onChunk === 'function') ?
+            `${base}${cleanModel}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}` :
+            `${base}${cleanModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
         const contents = [];
         const firstUserIdx = history.findIndex(m => m.r === 'user');
@@ -918,54 +898,15 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             }
         };
 
-        let response = await fetch(endpoint, {
+        const response = await fetch(endpoint, {
             method: 'POST',
-            headers: headers,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
-        }).catch(err => {
-            console.warn("Primary fetch error:", err);
-            return null;
         });
 
-        // If auth error (401/403), attempt alternative auth method (Bearer <-> Key)
-        if (!response || (!response.ok && (response.status === 401 || response.status === 403))) {
-            const altIsBearer = !isBearerToken;
-            const altEndpoint = buildEndpoint(cleanModel, !altIsBearer);
-            const altHeaders = buildHeaders(altIsBearer);
-
-            const altRes = await fetch(altEndpoint, {
-                method: 'POST',
-                headers: altHeaders,
-                body: JSON.stringify(payload)
-            }).catch(() => null);
-
-            if (altRes && altRes.ok) {
-                response = altRes;
-            }
-        }
-
-        // If model not found (404/400), fallback to standard gemini-2.5-flash
-        if (!response || (!response.ok && (response.status === 404 || response.status === 400))) {
-            const fbEndpoint = buildEndpoint('gemini-2.5-flash', !isBearerToken);
-            const fbRes = await fetch(fbEndpoint, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(payload)
-            }).catch(() => null);
-
-            if (fbRes && fbRes.ok) {
-                response = fbRes;
-            }
-        }
-
-        if (!response || !response.ok) {
-            const errData = response ? await response.json().catch(() => ({})) : {};
-            const errMsg = errData.error?.message || (response ? `HTTP ${response.status}: ${response.statusText}` : "Network connection failed");
-            
-            if (errMsg.includes('invalid authentication credentials') || errMsg.includes('Expected OAuth 2') || errMsg.includes('API key not valid')) {
-                throw new Error(`คีย์ API ไม่ถูกต้องหรือหมดอายุ\n\n📌 คำแนะนำ: กรุณาไปที่ Google AI Studio (https://aistudio.google.com/app/apikey) แล้วกดสร้าง 'Create API Key' (คีย์ที่ถูกต้องจะขึ้นต้นด้วย AIzaSy...) แล้วนำมากรอกในเมนู 'ตั้งค่า AI & Model' ครับ`);
-            }
-            throw new Error(errMsg);
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
         // Streaming Reader
@@ -1324,18 +1265,6 @@ function loadGeminiConfigs() {
             adminModels = JSON.parse(savedModels);
             if (!Array.isArray(adminModels) || adminModels.length === 0) {
                 adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
-            } else {
-                let updated = false;
-                adminModels.forEach(m => {
-                    if (m.modelName === 'gemini-2.5-flash' || m.id === 'default-gemini-flash') {
-                        m.modelName = 'gemini-3.5-flash';
-                        m.displayName = 'Gemini 3.5 Flash (Global)';
-                        updated = true;
-                    }
-                });
-                if (updated) {
-                    localStorage.setItem(STORAGE_PREFIX + 'admin_models_v1', JSON.stringify(adminModels));
-                }
             }
         } catch(e) {
             adminModels = [JSON.parse(JSON.stringify(GLOBAL_DEFAULT_MODEL))];
