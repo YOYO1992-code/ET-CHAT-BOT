@@ -846,11 +846,31 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
     if (providerType === 'gemini') {
         let base = baseUrl;
         if (!base.endsWith('/')) base += '/';
-        const cleanModel = model.replace(/^models\//, '');
+        let cleanModel = model.replace(/^models\//, '') || 'gemini-2.5-flash';
         
-        const endpoint = (typeof onChunk === 'function') ?
-            `${base}${cleanModel}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}` :
-            `${base}${cleanModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const isBearerToken = apiKey.startsWith('AQ.') || apiKey.startsWith('ya29.') || (!apiKey.startsWith('AIzaSy') && apiKey.includes('.'));
+        
+        const buildHeaders = (bearer) => {
+            const h = { 'Content-Type': 'application/json' };
+            if (bearer) {
+                h['Authorization'] = `Bearer ${apiKey}`;
+            } else {
+                h['x-goog-api-key'] = apiKey;
+            }
+            return h;
+        };
+
+        const buildEndpoint = (targetModel, useQueryKey) => {
+            const action = (typeof onChunk === 'function') ? 'streamGenerateContent?alt=sse' : 'generateContent';
+            if (useQueryKey) {
+                return `${base}${targetModel}:${action}&key=${encodeURIComponent(apiKey)}`;
+            } else {
+                return `${base}${targetModel}:${action}`;
+            }
+        };
+
+        let endpoint = buildEndpoint(cleanModel, !isBearerToken);
+        let headers = buildHeaders(isBearerToken);
 
         const contents = [];
         const firstUserIdx = history.findIndex(m => m.r === 'user');
@@ -900,27 +920,52 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
 
         let response = await fetch(endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify(payload)
+        }).catch(err => {
+            console.warn("Primary fetch error:", err);
+            return null;
         });
 
-        if (!response.ok && (response.status === 404 || response.status === 400)) {
-            const fallbackEndpoint = (typeof onChunk === 'function') ?
-                `${base}gemini-2.5-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}` :
-                `${base}gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
-            const fbRes = await fetch(fallbackEndpoint, {
+        // If auth error (401/403), attempt alternative auth method (Bearer <-> Key)
+        if (!response || (!response.ok && (response.status === 401 || response.status === 403))) {
+            const altIsBearer = !isBearerToken;
+            const altEndpoint = buildEndpoint(cleanModel, !altIsBearer);
+            const altHeaders = buildHeaders(altIsBearer);
+
+            const altRes = await fetch(altEndpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: altHeaders,
                 body: JSON.stringify(payload)
             }).catch(() => null);
+
+            if (altRes && altRes.ok) {
+                response = altRes;
+            }
+        }
+
+        // If model not found (404/400), fallback to standard gemini-2.5-flash
+        if (!response || (!response.ok && (response.status === 404 || response.status === 400))) {
+            const fbEndpoint = buildEndpoint('gemini-2.5-flash', !isBearerToken);
+            const fbRes = await fetch(fbEndpoint, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(payload)
+            }).catch(() => null);
+
             if (fbRes && fbRes.ok) {
                 response = fbRes;
             }
         }
 
-        if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
+        if (!response || !response.ok) {
+            const errData = response ? await response.json().catch(() => ({})) : {};
+            const errMsg = errData.error?.message || (response ? `HTTP ${response.status}: ${response.statusText}` : "Network connection failed");
+            
+            if (errMsg.includes('invalid authentication credentials') || errMsg.includes('Expected OAuth 2') || errMsg.includes('API key not valid')) {
+                throw new Error(`คีย์ API ไม่ถูกต้องหรือหมดอายุ\n\n📌 คำแนะนำ: กรุณาไปที่ Google AI Studio (https://aistudio.google.com/app/apikey) แล้วกดสร้าง 'Create API Key' (คีย์ที่ถูกต้องจะขึ้นต้นด้วย AIzaSy...) แล้วนำมากรอกในเมนู 'ตั้งค่า AI & Model' ครับ`);
+            }
+            throw new Error(errMsg);
         }
 
         // Streaming Reader
