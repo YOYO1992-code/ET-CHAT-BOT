@@ -188,6 +188,10 @@
           <span class="sidebar-tab-text">จัดการระบบ</span>
         </button>
 
+                <button class="sidebar-tab-btn" id="tabNavEmailSettings" onclick="openEmailSettingsModal()" title="ตั้งค่าส่ง mail">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <span class="sidebar-tab-text">ตั้งค่าส่ง mail</span>
+        </button>
         <button class="sidebar-tab-btn" onclick="openQuickGuideModal()" title="คู่มือการใช้งานระบบ">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
           <span class="sidebar-tab-text">คู่มือการใช้งาน</span>
@@ -794,7 +798,7 @@
       <button class="admin-tab-btn" id="btnAdminTabPrompts" onclick="switchAdminTab('prompts')">💡 คลังคำสั่งด่วน</button>
       <button class="admin-tab-btn" id="btnAdminTabRoles" onclick="switchAdminTab('roles')">🏢 แผนก & แท็ก</button>
       <button class="admin-tab-btn" id="btnAdminTabUsers" onclick="switchAdminTab('users')">👥 สิทธิ์ & บัญชีผู้ใช้</button>
-      <button class="admin-tab-btn" id="btnAdminTabIntegrations" onclick="switchAdminTab('integrations')">📧 ระบบส่งอีเมลแจ้งเตือน (Gmail)</button>
+      
     </div>
 
     <!-- TAB 1: STATS & ANNOUNCEMENTS -->
@@ -960,72 +964,6 @@
       <div id="userAccountList" style="max-height: 140px; overflow-y:auto; margin-bottom: 16px; display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
-    <!-- TAB 5: GMAIL EVALUATION AUTOMATION -->
-    <div id="adminTabContentIntegrations" class="admin-tab-content hidden">
-      <!-- Automated Email Evaluation Trigger Settings -->
-      <h4 class="admin-section-heading">📧 การตั้งค่าอีเมลแจ้งเตือนอัตโนมัติเมื่อผ่านเกณฑ์</h4>
-      <div style="background:var(--surface-2); padding:14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <div>
-            <strong style="font-size:13px; color:var(--ink);">เปิดใช้งานระบบส่งอีเมลแจ้งเตือน</strong>
-            <p style="font-size:11.5px; color:var(--ink-soft); margin:2px 0 0 0;">เมื่อคะแนนการประเมินถึงเกณฑ์ที่กำหนด</p>
-          </div>
-          <label class="switch-toggle">
-            <input type="checkbox" id="toggleAutoEmailNotify" onchange="toggleAutoEmailState()">
-            <span class="switch-slider"></span>
-          </label>
-        </div>
-
-                <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:12px;">Google Drive Folder URL (โฟลเดอร์เก็บเรซูเม่องค์กร)</label>
-          <input type="text" id="adminDriveFolderUrl" class="admin-field-input" placeholder="https://drive.google.com/drive/folders/...">
-        </div>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:12px;">อีเมลผู้รับแจ้งเตือน (Admin / อาจารย์ / หัวหน้าฝ่าย HR)</label>
-          <input type="email" id="adminNotifyEmail" class="admin-field-input" placeholder="เช่น your-email@pim.ac.th (Email ของท่าน)">
-        </div>
-
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:12px;">Google Apps Script Webhook URL (สำหรับส่งอีเมลพร้อมแนบไฟล์)</label>
-          <input type="text" id="adminDriveWebhookUrl" class="admin-field-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
-        </div>
-
-        <div class="form-group" style="margin-bottom:10px;">
-          <label style="font-size:12px; display:flex; justify-content:space-between;">
-            <span>เกณฑ์คะแนนขั้นต่ำสำหรับ "ผ่านการคัดเลือก" (Passing Threshold)</span>
-            <strong id="passingScoreDisplay" style="color:var(--maroon); font-size:13px;">75 / 100 คะแนน</strong>
-          </label>
-          <input type="range" id="adminPassingScore" min="50" max="100" step="5" value="75" oninput="document.getElementById('passingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
-        </div>
-
-        <div class="form-group" style="margin-bottom:0;">
-          <label style="font-size:12px;">รูปแบบการส่งแจ้งเตือน</label>
-          <select id="adminEmailSendMode" class="admin-field-input">
-            <option value="manual">👆 Manual: แสดงปุ่มในการ์ดแชทให้กดส่งอีเมลพร้อมแนบไฟล์</option>
-            <option value="auto">⚡ Auto-Trigger: ส่งอีเมลแจ้งเตือนไปยัง Gmail ทันทีที่ประเมินผ่านเกณฑ์</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Google Apps Script Helper -->
-      <h4 class="admin-section-heading">📜 โค้ด Google Apps Script (สำหรับส่งเข้า Gmail พร้อมแนบไฟล์)</h4>
-      <div style="background:var(--surface-2); padding:12px 14px; border-radius:12px; border:1px solid var(--line); margin-bottom:16px;">
-        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 8px 0;">คัดลอกโค้ดนี้ไปวางใน <strong>Google Apps Script (script.google.com)</strong> เพื่อเปิดใช้งาน Webhook:</p>
-        <button type="button" class="btn-cancel" style="width:100%; padding:8px; font-size:12px; font-weight:800; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px;" onclick="copyGoogleAppsScriptCode()">
-          📋 คัดลอกโค้ด Google Apps Script (พร้อมระบบแนบไฟล์)
-        </button>
-      </div>
-
-      <div style="display:flex; gap:10px; margin-bottom:10px;">
-        <button type="button" class="btn-cancel" style="flex:1; padding:11px; font-weight:800; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px;" onclick="testSendWebhookEmail(this)">
-          🧪 ทดสอบส่งอีเมลทันที
-        </button>
-        <button type="button" class="btn-submit" style="flex:1.2; padding:11px; font-weight:800;" onclick="saveIntegrationSettings()">
-          💾 บันทึกการตั้งค่า
-        </button>
-      </div>
-    </div>
-
     <button class="btn-cancel" style="width:100%; font-weight:800; margin-top:14px;" onclick="closeAdminDashboard()">ปิดหน้าต่าง</button>
   </div>
 </div>
@@ -1062,7 +1000,7 @@
         </h4>
         <p style="font-size:12.5px; line-height:1.6; color:var(--ink-soft); margin:0 0 6px 0;">
           • ไปที่ <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--maroon); font-weight:700; text-decoration:underline;">Google AI Studio ↗</a> แล้วกดสร้าง <strong>Create API Key</strong> ฟรี (ไม่ต้องผูกบัตรเครดิต)<br>
-          • เปิดเมนู <strong>"ตั้งค่า AI & Model"</strong> ด้านล่างซ้าย ➔ เลือก <strong>Google Gemini (3.X)</strong> เลือกรุ่น <strong>Gemini 2.5 Flash</strong> แล้ววางคีย์ลงในช่อง<br>
+          • เปิดเมนู <strong>"ตั้งค่า AI & Model"</strong> ด้านล่างซ้าย ➔ เลือก <strong>Google Gemini (3.X)</strong> เลือกรุ่น <strong>Gemini 3.5 Flash</strong> แล้ววางคีย์ลงในช่อง<br>
           • กด <strong>"🧪 ทดสอบเชื่อมต่อ"</strong> และ <strong>"💾 บันทึกและเปิดใช้งาน"</strong> ระบบพร้อมทำงานทันที!
         </p>
       </div>
@@ -1420,7 +1358,141 @@
   </div>
 </div>
 
+<!-- Email Settings Modal (Accessible by both Users and Admins - Zero Code Setup) -->
+<div id="emailSettingsModal" class="modal-overlay hidden" style="z-index: 2100;">
+  <div class="modal-box" style="max-width: 540px; text-align:left; max-height:88vh; overflow-y:auto; padding: 26px 26px; border-radius: 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <h3 class="modal-title heading" style="margin:0; font-size: 19px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        ตั้งค่าระบบส่งอีเมล (Email Settings)
+      </h3>
+      <button class="btn-icon" onclick="closeEmailSettingsModal()" style="width:32px; height:32px; border:none; background:transparent;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 16px 0;">ตั้งค่าอีเมลปลายทางสำหรับการแจ้งเตือนผลประเมินเรซูเม่และส่งต่อรายงานสรุปงาน</p>
+
+    <!-- Easy Mode Explainer Card -->
+    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(2, 132, 199, 0.08) 100%); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+        <span style="font-size:18px;">💡</span>
+        <strong style="font-size:13px; color:#059669;">ส่งตรงผ่าน Gmail ทันที ไม่ต้องเขียน Script!</strong>
+      </div>
+      <p style="font-size:12px; color:var(--ink); line-height:1.55; margin:0;">
+        เมื่อเลือกโหมด <strong>"1-Click Gmail"</strong> ระบบจะจัดเตรียมหัวข้อ เนื้อหารายงาน และรายชื่อผู้สมัครให้เสร็จสรรพ เพียงกดส่ง ปุ่มจะเปิดหน้าต่าง Gmail พร้อมส่งให้ทันทีใน 1 คลิก
+      </p>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:12.5px; font-weight:700;">1. อีเมลผู้รับแจ้งเตือน (Recipient Email)</label>
+      <input type="email" id="modalNotifyEmail" class="admin-field-input" placeholder="เช่น your-email@pim.ac.th (Email ของท่าน)" style="width:100%;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:12.5px; font-weight:700; display:flex; justify-content:space-between;">
+        <span>2. เกณฑ์คะแนนสำหรับแจ้งเตือนเมื่อ "ผ่านการคัดเลือก"</span>
+        <strong id="modalPassingScoreDisplay" style="color:var(--maroon); font-size:13px;">75 / 100 คะแนน</strong>
+      </label>
+      <input type="range" id="modalPassingScore" min="50" max="100" step="5" value="75" oninput="document.getElementById('modalPassingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label style="font-size:12.5px; font-weight:700;">3. รูปแบบการส่งอีเมล (Sending Method)</label>
+      <select id="modalEmailSendMode" class="admin-field-input" style="width:100%;">
+        <option value="manual">👆 1-Click Gmail (แนะนำ: เปิดหน้าต่าง Gmail พร้อมจัดรูปแบบให้ทันที ไม่ต้องมี Script)</option>
+        <option value="auto">⚡ Auto-Webhook (ส่งเบื้องหลังอัตโนมัติเมื่อผ่านเกณฑ์ - ต้องใส่ Webhook URL)</option>
+      </select>
+    </div>
+
+    <!-- Optional Webhook Collapsible for advanced users -->
+    <details style="background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:12px;">
+      <summary style="cursor:pointer; font-weight:700; color:var(--ink-soft);">⚙️ ตัวเลือกเสริม: Google Apps Script Webhook (สำหรับองค์กร)</summary>
+      <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--line);">
+        <label style="font-size:11.5px; font-weight:700; display:block; margin-bottom:4px;">Webhook URL (เว้นว่างไว้ได้หากใช้โหมด 1-Click Gmail):</label>
+        <input type="text" id="modalWebhookUrl" class="admin-field-input" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; font-size:11.5px;">
+      </div>
+    </details>
+
+    <div style="display:flex; gap:10px;">
+      <button type="button" class="btn-cancel" style="flex:1; padding:11px; font-weight:800; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px; border-radius:10px;" id="btnModalTestEmail" onclick="testSendFromEmailSettingsModal(this)">
+        🧪 ทดสอบการเชื่อมต่อ
+      </button>
+      <button type="button" class="btn-submit" style="flex:1.3; padding:11px; font-weight:800; border-radius:10px;" onclick="saveEmailSettingsModal()">
+        💾 บันทึกการตั้งค่า
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <!-- Candidate Screening Hub Modal (คลังเก็บข้อมูล File: ตรวจเรซูเม่ นศ. & ส่ง Gmail) -->
+<!-- Email Settings Modal (Accessible by both Users and Admins - Zero Code Setup) -->
+<div id="emailSettingsModal" class="modal-overlay hidden" style="z-index: 2100;">
+  <div class="modal-box" style="max-width: 540px; text-align:left; max-height:88vh; overflow-y:auto; padding: 26px 26px; border-radius: 20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <h3 class="modal-title heading" style="margin:0; font-size: 19px; color:var(--maroon); display:flex; align-items:center; gap:8px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        ตั้งค่าระบบส่งอีเมล (Email Settings)
+      </h3>
+      <button class="btn-icon" onclick="closeEmailSettingsModal()" style="width:32px; height:32px; border:none; background:transparent;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <p style="font-size:12.5px; color:var(--ink-soft); margin:0 0 16px 0;">ตั้งค่าอีเมลปลายทางสำหรับการแจ้งเตือนผลประเมินเรซูเม่และส่งต่อรายงานสรุปงาน</p>
+
+    <!-- Easy Mode Explainer Card -->
+    <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(2, 132, 199, 0.08) 100%); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px;">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+        <span style="font-size:18px;">💡</span>
+        <strong style="font-size:13px; color:#059669;">ส่งตรงผ่าน Gmail ทันที ไม่ต้องเขียน Script!</strong>
+      </div>
+      <p style="font-size:12px; color:var(--ink); line-height:1.55; margin:0;">
+        เมื่อเลือกโหมด <strong>"1-Click Gmail"</strong> ระบบจะจัดเตรียมหัวข้อ เนื้อหารายงาน และรายชื่อผู้สมัครให้เสร็จสรรพ เพียงกดส่ง ปุ่มจะเปิดหน้าต่าง Gmail พร้อมส่งให้ทันทีใน 1 คลิก
+      </p>
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:12.5px; font-weight:700;">1. อีเมลผู้รับแจ้งเตือน (Recipient Email)</label>
+      <input type="email" id="modalNotifyEmail" class="admin-field-input" placeholder="เช่น your-email@pim.ac.th (Email ของท่าน)" style="width:100%;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:12px;">
+      <label style="font-size:12.5px; font-weight:700; display:flex; justify-content:space-between;">
+        <span>2. เกณฑ์คะแนนสำหรับแจ้งเตือนเมื่อ "ผ่านการคัดเลือก"</span>
+        <strong id="modalPassingScoreDisplay" style="color:var(--maroon); font-size:13px;">75 / 100 คะแนน</strong>
+      </label>
+      <input type="range" id="modalPassingScore" min="50" max="100" step="5" value="75" oninput="document.getElementById('modalPassingScoreDisplay').textContent = this.value + ' / 100 คะแนน'" style="width:100%; accent-color:var(--maroon);">
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label style="font-size:12.5px; font-weight:700;">3. รูปแบบการส่งอีเมล (Sending Method)</label>
+      <select id="modalEmailSendMode" class="admin-field-input" style="width:100%;">
+        <option value="manual">👆 1-Click Gmail (แนะนำ: เปิดหน้าต่าง Gmail พร้อมจัดรูปแบบให้ทันที ไม่ต้องมี Script)</option>
+        <option value="auto">⚡ Auto-Webhook (ส่งเบื้องหลังอัตโนมัติเมื่อผ่านเกณฑ์ - ต้องใส่ Webhook URL)</option>
+      </select>
+    </div>
+
+    <!-- Optional Webhook Collapsible for advanced users -->
+    <details style="background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:12px;">
+      <summary style="cursor:pointer; font-weight:700; color:var(--ink-soft);">⚙️ ตัวเลือกเสริม: Google Apps Script Webhook (สำหรับองค์กร)</summary>
+      <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--line);">
+        <label style="font-size:11.5px; font-weight:700; display:block; margin-bottom:4px;">Webhook URL (เว้นว่างไว้ได้หากใช้โหมด 1-Click Gmail):</label>
+        <input type="text" id="modalWebhookUrl" class="admin-field-input" placeholder="https://script.google.com/macros/s/.../exec" style="width:100%; font-size:11.5px;">
+      </div>
+    </details>
+
+    <div style="display:flex; gap:10px;">
+      <button type="button" class="btn-cancel" style="flex:1; padding:11px; font-weight:800; color:var(--maroon); border-color:var(--maroon); display:flex; align-items:center; justify-content:center; gap:6px; border-radius:10px;" id="btnModalTestEmail" onclick="testSendFromEmailSettingsModal(this)">
+        🧪 ทดสอบการเชื่อมต่อ
+      </button>
+      <button type="button" class="btn-submit" style="flex:1.3; padding:11px; font-weight:800; border-radius:10px;" onclick="saveEmailSettingsModal()">
+        💾 บันทึกการตั้งค่า
+      </button>
+    </div>
+  </div>
+</div>
+
+
 <!-- Candidate Screening Hub Modal (คลังเอกสาร & ศูนย์คัดกรองอัจฉริยะ) -->
 <div id="candidateHubModal" class="modal-overlay hidden" style="z-index: 2100;">
   <div class="modal-box candidate-hub-modal">
