@@ -1,3 +1,13 @@
+const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3xO_xI7lLcZ6TzF455ePEP2c8s2e3PthfH4a4qGzI6FyWWeCMEsGXa3GWcqG2lT7vw/exec";
+
+function getWebhookUrl() {
+    const saved = (localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+    if (saved && saved.startsWith('http') && !saved.includes('drive.google.com')) {
+        return saved;
+    }
+    return DEFAULT_WEBHOOK_URL;
+}
+
 function createCharacterCard(c) {
     let favs = appUserData[currentUser]?.favs || [];
     let isFav = favs.includes(c.id);
