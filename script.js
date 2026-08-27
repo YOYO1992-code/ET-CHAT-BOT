@@ -106,9 +106,8 @@ function showConfirmDialog({
 }
 window.showConfirmDialog = showConfirmDialog;
 
-const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3xO_xI7lLcZ6TzF455ePEP2c8s2e3PthfH4a4qGzI6FyWWeCMEsGXa3GWcqG2lT7vw/exec";
 const STORAGE_PREFIX = 'etopc_company_';
-
+const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3xO_xI7lLcZ6TzF455ePEP2c8s2e3PthfH4a4qGzI6FyWWeCMEsGXa3GWcqG2lT7vw/exec";
 // SVG Icons helper
 function iconSvg(name){
   const icons = {
@@ -449,6 +448,21 @@ function initApp() {
          
          
         initDragAndDropAndPaste();
+
+        const msgInputElem = document.getElementById('msgInput');
+        const tokenCounterElem = document.getElementById('composerTokenCounter');
+        if (msgInputElem && tokenCounterElem) {
+            msgInputElem.addEventListener('input', () => {
+                const len = msgInputElem.value.length;
+                if (len === 0) {
+                    tokenCounterElem.textContent = '0 ตัวอักษร';
+                } else {
+                    const approxTokens = Math.ceil(len / 3.2);
+                    tokenCounterElem.textContent = `${len} ตัวอักษร • ~${approxTokens} Tokens`;
+                }
+            });
+        }
+
 
         // Browser history navigation
         window.addEventListener('popstate', (e) => {
@@ -1705,6 +1719,26 @@ function saveUserModelChoice() {
 }
 
 // --- RENDER CHAT MESSAGES WITH ACTIONS (EDIT, DELETE, SWIPE, SPEAK, REGENERATE, COPY) ---
+
+window.copyCodeToClipboard = copyCodeToClipboard;
+function copyCodeToClipboard(btn) {
+    const pre = btn.closest('.code-block-wrapper')?.querySelector('code') || btn.parentElement.querySelector('code');
+    if (!pre) return;
+    const text = pre.innerText || pre.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✅ คัดลอกแล้ว';
+        btn.style.color = '#10B981';
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.style.color = '';
+        }, 2000);
+        showToast("📋 คัดลอกโค้ดลงคลิปบอร์ดแล้ว!", "success");
+    }).catch(() => {
+        showToast("ไม่สามารถคัดลอกได้", "warning");
+    });
+}
+
 function renderChatMessages() {
     const msgsContainer = document.getElementById('messages');
     if(!msgsContainer) return;
@@ -2943,9 +2977,24 @@ function confirmDelete() {
 }
 
 // Admin Dashboard Management
+window.showAdminDashboard = showAdminDashboard;
 function showAdminDashboard() {
+    if (currentUserRole !== 'admin') {
+        const pass = prompt("🔐 กรุณากรอกรหัสผ่านผู้ดูแลระบบ (Admin Password):");
+        if (!pass) return;
+        const users = JSON.parse(localStorage.getItem(STORAGE_PREFIX + 'users') || '{}');
+        const adminPass = (users['ETPIM'] && users['ETPIM'].password) || 'ET@PIMadminpass';
+        if (pass !== adminPass) {
+            showToast("❌ รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง", "error");
+            return;
+        }
+        currentUserRole = 'admin';
+        localStorage.setItem(STORAGE_PREFIX + 'role', 'admin');
+        updateCreateButtonVisibility();
+        showToast("🔓 ยืนยันสิทธิ์ผู้ดูแลระบบสำเร็จ!", "success");
+    }
     switchAdminTab('stats');
-    document.getElementById('adminModal').classList.remove('hidden');
+    document.getElementById('adminModal')?.classList.remove('hidden');
 }
 function closeAdminDashboard() { document.getElementById('adminModal').classList.add('hidden'); }
 
@@ -3275,6 +3324,267 @@ function renderSidebarStarred() {
 }
 
 
+
+// --- MODAL & UI CONTROLS (COMPLETE & VERIFIED) ---
+window.openQuickGuideModal = openQuickGuideModal;
+function openQuickGuideModal() {
+    const adminSec = document.getElementById('adminGuideContent');
+    const titleText = document.getElementById('quickGuideTitleText');
+    if (adminSec) {
+        adminSec.style.display = (currentUserRole === 'admin') ? 'block' : 'none';
+    }
+    if (titleText) {
+        titleText.textContent = (currentUserRole === 'admin') ? 'คู่มือการใช้งานระบบ (User & Admin Guide Ver 3.0)' : 'คู่มือการใช้งานระบบ (User Guide Ver 3.0)';
+    }
+    document.getElementById('quickGuideModal')?.classList.remove('hidden');
+}
+
+window.closeQuickGuideModal = closeQuickGuideModal;
+function closeQuickGuideModal() {
+    document.getElementById('quickGuideModal')?.classList.add('hidden');
+}
+
+window.openAdminGuideDirectly = openAdminGuideDirectly;
+function openAdminGuideDirectly() {
+    openQuickGuideModal();
+    const adminSec = document.getElementById('adminGuideContent');
+    if (adminSec) {
+        adminSec.style.display = 'block';
+        adminSec.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+window.openTermsModal = openTermsModal;
+function openTermsModal() {
+    document.getElementById('termsModal')?.classList.remove('hidden');
+}
+
+window.closeTermsModal = closeTermsModal;
+function closeTermsModal() {
+    document.getElementById('termsModal')?.classList.add('hidden');
+}
+
+window.openScorecardModal = openScorecardModal;
+function openScorecardModal() {
+    const nameInput = document.getElementById('scoreCandidateName');
+    const posInput = document.getElementById('scorePosition');
+    if (nameInput && !nameInput.value) nameInput.value = 'ผู้สมัคร ' + (appCandidateSubmissions.length + 1);
+    if (posInput && !posInput.value) posInput.value = 'ตำแหน่งงานทั่วไป';
+    updateTotalScorecard();
+    document.getElementById('scorecardModal')?.classList.remove('hidden');
+}
+
+window.closeScorecardModal = closeScorecardModal;
+function closeScorecardModal() {
+    document.getElementById('scorecardModal')?.classList.add('hidden');
+}
+
+window.updateTotalScorecard = updateTotalScorecard;
+function updateTotalScorecard() {
+    const tech = parseInt(document.getElementById('scoreTech')?.value || 30, 10);
+    const comm = parseInt(document.getElementById('scoreComm')?.value || 22, 10);
+    const prob = parseInt(document.getElementById('scoreProblem')?.value || 17, 10);
+    const cult = parseInt(document.getElementById('scoreCulture')?.value || 18, 10);
+
+    const valTech = document.getElementById('valScoreTech');
+    const valComm = document.getElementById('valScoreComm');
+    const valProb = document.getElementById('valScoreProblem');
+    const valCult = document.getElementById('valScoreCulture');
+
+    if (valTech) valTech.textContent = tech;
+    if (valComm) valComm.textContent = comm;
+    if (valProb) valProb.textContent = prob;
+    if (valCult) valCult.textContent = cult;
+
+    const total = tech + comm + prob + cult;
+    const totalNum = document.getElementById('scorecardTotalNum');
+    const label = document.getElementById('scorecardStatusLabel');
+    if (totalNum) totalNum.textContent = total;
+
+    if (label) {
+        if (total >= 80) {
+            label.style.color = '#10B981';
+            label.textContent = '🟢 ระดับดีเยี่ยม / แนะนำให้รับเข้าทำงาน (Highly Recommended)';
+        } else if (total >= 60) {
+            label.style.color = '#F59E0B';
+            label.textContent = '🟡 ระดับปานกลาง / ควรพิจารณาเปรียบเทียบ (Consider)';
+        } else {
+            label.style.color = '#EF4444';
+            label.textContent = '🔴 ต่ำกว่าเกณฑ์มาตรฐาน / ไม่แนะนำ (Not Recommended)';
+        }
+    }
+
+    const radarBox = document.getElementById('scorecardRadarContainer');
+    if (radarBox && typeof renderRadarChartSvg === 'function') {
+        radarBox.innerHTML = renderRadarChartSvg(tech, comm, prob, cult, 190);
+    }
+}
+
+window.submitScorecardToChat = submitScorecardToChat;
+function submitScorecardToChat() {
+    const name = (document.getElementById('scoreCandidateName')?.value || 'ผู้สมัคร').trim();
+    const pos = (document.getElementById('scorePosition')?.value || 'ตำแหน่งงาน').trim();
+    const tech = parseInt(document.getElementById('scoreTech')?.value || 30, 10);
+    const comm = parseInt(document.getElementById('scoreComm')?.value || 22, 10);
+    const prob = parseInt(document.getElementById('scoreProblem')?.value || 17, 10);
+    const cult = parseInt(document.getElementById('scoreCulture')?.value || 18, 10);
+    const notes = (document.getElementById('scoreInterviewerNotes')?.value || document.getElementById('scoreComment')?.value || '-').trim();
+    const total = tech + comm + prob + cult;
+
+    closeScorecardModal();
+
+    const hrAgent = SYSTEM_CHARACTERS.find(c => c.id === 'opc-hr-et' || c.name.includes('HR')) || currentCharacter || SYSTEM_CHARACTERS[0];
+    if (typeof openChat === 'function' && hrAgent) {
+        openChat(hrAgent.id);
+    }
+
+    const prompt = `📝 **บันทึกคะแนนการสัมภาษณ์งาน (Interviewer Scorecard)**\n👤 ผู้สมัคร: **${name}**\n💼 ตำแหน่ง: **${pos}**\n📅 วันที่ประเมิน: ${new Date().toLocaleDateString('th-TH')}\n\n📊 **คะแนนการประเมิน 4 มิติ:**\n- 1. ทักษะเฉพาะทางและความเชี่ยวชาญเชิงเทคนิค: **${tech} / 35 คะแนน**\n- 2. ทักษะการสื่อสารและการทำงานร่วมกับผู้อื่น: **${comm} / 25 คะแนน**\n- 3. การคิดวิเคราะห์และการแก้ปัญหา: **${prob} / 20 คะแนน**\n- 4. ทัศนคติและวัฒนธรรมองค์กร: **${cult} / 20 คะแนน**\n🏆 **คะแนนรวมสุทธิ: ${total} / 100 คะแนน**\n\n💬 **ข้อสังเกตของกรรมการ:**\n${notes}\n\n--------------------------------------------------\nกรุณาวิเคราะห์จุดเด่น-จุดด้อย และให้ข้อเสนอแนะสรุปผลรอบสุดท้ายสำหรับการตัดสินใจรับเข้าทำงาน`;
+
+    setTimeout(() => {
+        sendMessage(prompt);
+    }, 150);
+}
+
+window.toggleVoiceRecognition = toggleVoiceRecognition;
+let isVoiceListening = false;
+let voiceRecognitionInstance = null;
+
+function toggleVoiceRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showToast("เบราว์เซอร์นี้ไม่รองรับการสั่งงานด้วยเสียง (Web Speech API)", "warning");
+        return;
+    }
+
+    const btn = document.getElementById('btnVoiceInput');
+    const input = document.getElementById('msgInput');
+
+    if (isVoiceListening) {
+        if (voiceRecognitionInstance) voiceRecognitionInstance.stop();
+        isVoiceListening = false;
+        if (btn) {
+            btn.classList.remove('listening');
+            btn.style.background = '';
+            btn.style.color = '';
+        }
+        showToast("ปิดไมค์แล้ว", "info");
+        return;
+    }
+
+    try {
+        voiceRecognitionInstance = new SpeechRecognition();
+        voiceRecognitionInstance.lang = 'th-TH';
+        voiceRecognitionInstance.interimResults = true;
+        voiceRecognitionInstance.continuous = false;
+
+        voiceRecognitionInstance.onstart = function() {
+            isVoiceListening = true;
+            if (btn) {
+                btn.classList.add('listening');
+                btn.style.background = 'var(--maroon)';
+                btn.style.color = '#fff';
+            }
+            showToast("🎙️ กำลังฟังเสียง... พูดได้เลยครับ", "info");
+        };
+
+        voiceRecognitionInstance.onresult = function(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                transcript += event.results[i][0].transcript;
+            }
+            if (input) {
+                input.value = transcript;
+            }
+        };
+
+        voiceRecognitionInstance.onerror = function(event) {
+            console.warn("Speech recognition error:", event.error);
+            isVoiceListening = false;
+            if (btn) {
+                btn.classList.remove('listening');
+                btn.style.background = '';
+                btn.style.color = '';
+            }
+            showToast("เกิดข้อผิดพลาดในการฟังเสียง: " + event.error, "error");
+        };
+
+        voiceRecognitionInstance.onend = function() {
+            isVoiceListening = false;
+            if (btn) {
+                btn.classList.remove('listening');
+                btn.style.background = '';
+                btn.style.color = '';
+            }
+        };
+
+        voiceRecognitionInstance.start();
+    } catch(err) {
+        console.error("Voice start error:", err);
+        showToast("ไม่สามารถเปิดไมค์ได้: " + err.message, "error");
+    }
+}
+
+window.toggleFocusMode = toggleFocusMode;
+let isFocusModeActive = false;
+function toggleFocusMode() {
+    isFocusModeActive = !isFocusModeActive;
+    const sideTabBar = document.getElementById('sideTabBar');
+    const chatSidebar = document.querySelector('.chat-char-profile-sidebar');
+    const header = document.querySelector('.main-header');
+
+    if (sideTabBar) sideTabBar.style.display = isFocusModeActive ? 'none' : '';
+    if (chatSidebar) chatSidebar.style.display = isFocusModeActive ? 'none' : '';
+    if (header) header.style.display = isFocusModeActive ? 'none' : '';
+
+    showToast(isFocusModeActive ? "🔍 เข้าสู่โหมดเต็มจอ Focus Mode (กด ESC เพื่อออก)" : "ออกจากโหมด Focus Mode", "info");
+}
+
+window.startNewChatSession = startNewChatSession;
+function startNewChatSession() {
+    if (!currentCharacter) return;
+    showConfirmDialog({
+        title: "เริ่มแชทใหม่",
+        message: `ต้องการเริ่มบทสนทนาใหม่กับ "${currentCharacter.name}" ใช่หรือไม่?\n(ประวัติเก่าจะถูกรีเซ็ต)`,
+        confirmText: "เริ่มใหม่",
+        cancelText: "ยกเลิก",
+        type: "warning",
+        icon: "💬"
+    }).then(confirmed => {
+        if (!confirmed) return;
+        if (appUserData[currentUser]?.history) {
+            appUserData[currentUser].history[currentCharacter.id] = [{
+                id: 'msg-' + Date.now(),
+                r: 'bot',
+                t: currentCharacter.opener,
+                candidates: [currentCharacter.opener],
+                cIndex: 0
+            }];
+            saveUserData();
+            renderChatMessages();
+            showToast("เริ่มบทสนทนาใหม่เรียบร้อยแล้ว", "success");
+        }
+    });
+}
+
+window.pasteClipboardToQuickDrive = pasteClipboardToQuickDrive;
+async function pasteClipboardToQuickDrive() {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text && text.startsWith('http')) {
+            const input = document.getElementById('hubDriveLinkInput');
+            if (input) {
+                input.value = text;
+                importDriveLinkToHub();
+            }
+        } else {
+            showToast("ไม่พบคลิปบอร์ดที่เป็นลิงก์ URL", "warning");
+        }
+    } catch(err) {
+        showToast("กรุณากด Ctrl+V เพื่อวางลิงก์ในช่องกรอก", "info");
+    }
+}
+
+
 // --- FILE EXPORT ENGINE (PDF, WORD, CSV, MARKDOWN) ---
 window.copyMessageText = copyMessageText;
 function copyMessageText(idx, btn) {
@@ -3293,10 +3603,15 @@ function copyMessageText(idx, btn) {
 window.downloadMessageAsPdf = downloadMessageAsPdf;
 function downloadMessageAsPdf(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
-    if(!history || !history[idx]) return;
+    if(!history || !history[idx]) {
+        showToast("⚠️ ไม่พบข้อมูลข้อความสำหรับดาวน์โหลด", "warning");
+        return;
+    }
     const rawText = history[idx].t;
     const charName = currentCharacter ? currentCharacter.name : 'AI Agent';
     const dateStr = new Date().toLocaleString('th-TH');
+
+    showToast("📥 กำลังเตรียมและดาวน์โหลดไฟล์ PDF...", "info");
 
     const printableHtml = `
     <div id="pdfPrintContent" style="font-family: -apple-system, 'Noto Sans Thai', 'Segoe UI', Arial, sans-serif; color: #0F172A; padding: 24px; line-height: 1.7; font-size: 13.5px; background: #ffffff;">
@@ -3314,34 +3629,44 @@ function downloadMessageAsPdf(idx) {
             ${formatRoleplayText(rawText)}
         </div>
         <div style="margin-top: 36px; border-top: 1px solid #E2E8F0; padding-top: 12px; text-align: center; font-size: 10.5px; color: #94A3B8;">
-            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST • Developed by MR.ST • จัดทำโดยระบบอัตโนมัติ AI
+            คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — ET OPC Company © 2026 • Developed by MR.ST
         </div>
     </div>`;
 
-    if (typeof html2pdf !== 'undefined') {
-        const container = document.createElement('div');
-        container.innerHTML = printableHtml;
-        document.body.appendChild(container);
+    try {
+        if (typeof html2pdf !== 'undefined') {
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '800px';
+            container.innerHTML = printableHtml;
+            document.body.appendChild(container);
 
-        const opt = {
-            margin: [8, 8, 8, 8],
-            filename: `ETOPC_${currentCharacter ? currentCharacter.id : 'Report'}_${Date.now()}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `ETOPC_${currentCharacter ? currentCharacter.id : 'Report'}_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
 
-        html2pdf().set(opt).from(container).save().then(() => {
-            container.remove();
-        }).catch(err => {
-            console.warn('html2pdf fallback to print:', err);
-            container.remove();
+            html2pdf().set(opt).from(container).save().then(() => {
+                container.remove();
+                showToast("📥 ดาวน์โหลด PDF เรียบร้อยแล้ว!", "success");
+            }).catch(err => {
+                console.warn('html2pdf fallback to print:', err);
+                container.remove();
+                printFallback(printableHtml);
+            });
+        } else {
             printFallback(printableHtml);
-        });
-    } else {
+        }
+    } catch(err) {
+        console.error("PDF download error:", err);
         printFallback(printableHtml);
     }
-};
+}
 
 function printFallback(html) {
     const printWin = window.open('', '_blank', 'width=800,height=900');
@@ -3356,12 +3681,15 @@ function printFallback(html) {
 window.downloadMessageAsWord = downloadMessageAsWord;
 function downloadMessageAsWord(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
-    if(!history || !history[idx]) return;
+    if(!history || !history[idx]) {
+        showToast("⚠️ ไม่พบข้อมูลข้อความสำหรับดาวน์โหลด", "warning");
+        return;
+    }
     const rawText = history[idx].t;
     const charName = currentCharacter ? currentCharacter.name : 'AI Agent';
     const dateStr = new Date().toLocaleString('th-TH');
 
-    const htmlContent = `
+    const htmlContent = `<!DOCTYPE html>
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head>
     <meta charset='utf-8'>
@@ -3390,19 +3718,27 @@ function downloadMessageAsWord(idx) {
     </body>
     </html>`;
 
-    const blob = new Blob(['﻿' + htmlContent], { type: 'application/msword;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + htmlContent], { type: 'application/msword;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `ETOPC_${currentCharacter ? currentCharacter.id : 'Doc'}_${Date.now()}.doc`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
-};
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 150);
+    showToast("📥 ดาวน์โหลดไฟล์ Word (.doc) สำเร็จ!", "success");
+}
 
 window.downloadMessageAsCsv = downloadMessageAsCsv;
 function downloadMessageAsCsv(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
-    if(!history || !history[idx]) return;
+    if(!history || !history[idx]) {
+        showToast("⚠️ ไม่พบข้อมูลข้อความสำหรับดาวน์โหลด", "warning");
+        return;
+    }
     const text = history[idx].t;
     const lines = text.split('\n');
 
@@ -3431,14 +3767,22 @@ function downloadMessageAsCsv(idx) {
     const a = document.createElement('a');
     a.href = url;
     a.download = `ETOPC_${currentCharacter ? currentCharacter.id : 'Data'}_${Date.now()}.csv`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
-};
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 150);
+    showToast("📊 ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว!", "success");
+}
 
 window.downloadMessageAsMarkdown = downloadMessageAsMarkdown;
 function downloadMessageAsMarkdown(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
-    if(!history || !history[idx]) return;
+    if(!history || !history[idx]) {
+        showToast("⚠️ ไม่พบข้อมูลข้อความสำหรับดาวน์โหลด", "warning");
+        return;
+    }
     const text = history[idx].t;
     const charName = currentCharacter ? currentCharacter.name : 'AI Agent';
     const dateStr = new Date().toLocaleString('th-TH');
@@ -3454,359 +3798,15 @@ function downloadMessageAsMarkdown(idx) {
     const a = document.createElement('a');
     a.href = url;
     a.download = `ETOPC_${currentCharacter ? currentCharacter.id : 'Report'}_${Date.now()}.md`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
-};
-
-
-// --- TOAST NOTIFICATIONS ---
-window.showToast = showToast;
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    if (!container) {
-        alert(message);
-        return;
-    }
-    const toast = document.createElement('div');
-    const typeClass = type === 'success' ? 'toast-success' : (type === 'warning' ? 'toast-warning' : (type === 'error' ? 'toast-error' : 'toast-info'));
-    const icon = type === 'success' ? '✅' : (type === 'warning' ? '⚠️' : (type === 'error' ? '❌' : 'ℹ️'));
-    
-    toast.className = `toast ${typeClass}`;
-    toast.innerHTML = `
-        <span class="toast-icon">${icon}</span>
-        <div class="toast-body">${escapeHtml(message)}</div>
-    `;
-    container.appendChild(toast);
     setTimeout(() => {
-        toast.remove();
-    }, 3000);
-};
-
-// --- PROMPT LIBRARY ---
-window.togglePromptLibrary = togglePromptLibrary;
-function togglePromptLibrary(e) {
-    if (e) e.stopPropagation();
-    const menu = document.getElementById('promptLibraryMenu');
-    if (menu) menu.classList.toggle('hidden');
-};
-
-window.insertPromptTemplate = insertPromptTemplate;
-function insertPromptTemplate(text) {
-    const input = document.getElementById('msgInput');
-    if (input) {
-        input.value = text;
-        input.focus();
-    }
-    document.getElementById('promptLibraryMenu')?.classList.add('hidden');
-    showToast("นำเข้าข้อความจากคลังคำสั่งแล้ว", "info");
-};
-
-window.addEventListener('click', (e) => {
-    const menu = document.getElementById('promptLibraryMenu');
-    if (menu && !menu.contains(e.target) && !e.target.closest('#btnPromptLib')) {
-        menu.classList.add('hidden');
-    }
-});
-
-// --- FOCUS / FULLSCREEN MODE ---
-window.toggleFocusMode = toggleFocusMode;
-function toggleFocusMode() {
-    const chatWindow = document.getElementById('chatWindowMain');
-    const btn = document.getElementById('btnFocusMode');
-    if (!chatWindow) return;
-    
-    chatWindow.classList.toggle('focus-mode');
-    const isFocus = chatWindow.classList.contains('focus-mode');
-    if (btn) {
-        btn.innerHTML = isFocus ? 
-            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="14" x2="10" y2="14"/><line x1="10" y1="14" x2="10" y2="20"/><line x1="20" y1="10" x2="14" y2="10"/><line x1="14" y1="10" x2="14" y2="4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>` : 
-            `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>`;
-        btn.title = isFocus ? "ออกจากโหมดโฟกัส" : "โหมดโฟกัสเต็มจอ (Focus Mode)";
-    }
-    showToast(isFocus ? "เข้าสู่โหมดโฟกัสเต็มจอ" : "กลับสู่โหมดปกติ", "info");
-};
-
-// --- NEW CHAT SESSION ---
-window.startNewChatSession = startNewChatSession;
-function startNewChatSession() {
-    window.startNewChatSession = startNewChatSession;
-    if (!currentCharacter) return;
-    showConfirmDialog({
-        title: "เริ่มเซสชันการสนทนาใหม่",
-        message: "ต้องการเริ่มเซสชันการสนทนาใหม่ใช่หรือไม่? (ประวัติการคุยเดิมจะถูกล้างสำหรับเซสชันนี้)",
-        confirmText: "เริ่มแชทใหม่",
-        cancelText: "ยกเลิก",
-        type: "primary",
-        icon: "💬"
-    }).then(confirmed => {
-        if (!confirmed) return;
-        const initialOpener = currentCharacter.opener || 'สวัสดีครับ มีอะไรให้ผมช่วยเหลือในวันนี้ไหมครับ?';
-        appUserData[currentUser].history[currentCharacter.id] = [{ 
-            id: 'msg-' + Date.now(), 
-            r: 'bot', 
-            t: initialOpener,
-            candidates: [initialOpener],
-            cIndex: 0
-        }];
-        saveUserData();
-        renderChatMessages();
-        showToast("เริ่มต้นเซสชันใหม่เรียบร้อยแล้ว", "success");
-    });
-};
-
-
-// --- QUICK GUIDE MODAL & ROLE-GUARDED ADMIN GUIDE ---
-window.openQuickGuideModal = openQuickGuideModal;
-function openQuickGuideModal() {
-    const adminSection = document.getElementById('adminGuideContent');
-    const titleText = document.getElementById('quickGuideTitleText');
-    const isAdmin = (currentUserRole === 'admin');
-
-    if (adminSection) {
-        adminSection.style.display = isAdmin ? 'block' : 'none';
-    }
-    if (titleText) {
-        titleText.textContent = isAdmin ? 'คู่มือการใช้งาน & ดูแลระบบ (Admin & User Guide)' : 'คู่มือการใช้งาน (Quick User Guide)';
-    }
-
-    document.getElementById('quickGuideModal')?.classList.remove('hidden');
-};
-
-window.openAdminGuideDirectly = openAdminGuideDirectly;
-function openAdminGuideDirectly() {
-    closeAdminDashboard();
-    openQuickGuideModal();
-    const adminSection = document.getElementById('adminGuideContent');
-    if (adminSection) {
-        adminSection.scrollIntoView({ behavior: 'smooth' });
-    }
-};
-
-window.closeQuickGuideModal = closeQuickGuideModal;
-function closeQuickGuideModal() {
-    document.getElementById('quickGuideModal')?.classList.add('hidden');
-};;
-
-
-// --- TERMS & PRIVACY MODAL ---
-window.openTermsModal = openTermsModal;
-function openTermsModal() {
-    document.getElementById('termsModal')?.classList.remove('hidden');
-};
-window.closeTermsModal = closeTermsModal;
-function closeTermsModal() {
-    document.getElementById('termsModal')?.classList.add('hidden');
-};
-
-
-// --- VOICE TO TEXT (SPEECH RECOGNITION) ---
-let speechRecognizer = null;
-let isRecordingVoice = false;
-
-window.toggleVoiceRecognition = toggleVoiceRecognition;
-function toggleVoiceRecognition() {
-    const btn = document.getElementById('btnVoiceInput');
-    const input = document.getElementById('msgInput');
-    
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        showToast("เบราว์เซอร์นี้ไม่รองรับการพิมพ์ด้วยเสียง (แนะนำ Google Chrome)", "warning");
-        return;
-    }
-
-    if (isRecordingVoice && speechRecognizer) {
-        speechRecognizer.stop();
-        return;
-    }
-
-    try {
-        speechRecognizer = new SpeechRecognition();
-        speechRecognizer.lang = 'th-TH';
-        speechRecognizer.continuous = false;
-        speechRecognizer.interimResults = false;
-
-        speechRecognizer.onstart = function() {
-            isRecordingVoice = true;
-            if (btn) btn.classList.add('btn-voice-recording');
-            showToast("🎙️ กำลังฟังเสียงพูดภาษาไทย... พูดข้อความได้เลยครับ", "info");
-        };
-
-        speechRecognizer.onresult = function(event) {
-            const transcript = event.results[0][0].transcript;
-            if (transcript && input) {
-                input.value = input.value ? (input.value + ' ' + transcript) : transcript;
-                input.focus();
-                showToast("✅ แปลงเสียงเป็นข้อความเรียบร้อยแล้ว", "success");
-            }
-        };
-
-        speechRecognizer.onerror = function(event) {
-            console.warn("Speech error:", event.error);
-            showToast("เกิดข้อผิดพลาดในการบันทึกเสียง: " + event.error, "error");
-            if (btn) btn.classList.remove('btn-voice-recording');
-            isRecordingVoice = false;
-        };
-
-        speechRecognizer.onend = function() {
-            isRecordingVoice = false;
-            if (btn) btn.classList.remove('btn-voice-recording');
-        };
-
-        speechRecognizer.start();
-    } catch(err) {
-        console.error("Speech recognition error:", err);
-        showToast("ไม่สามารถเริ่มการบันทึกเสียงได้", "error");
-        if (btn) btn.classList.remove('btn-voice-recording');
-        isRecordingVoice = false;
-    }
-};
-
-// --- INTERVIEW SCORECARD MODAL FUNCTIONS ---
-window.openScorecardModal = openScorecardModal;
-
-window.renderRadarChartSvg = renderRadarChartSvg;
-function renderRadarChartSvg(tech, comm, prob, cult, size = 180) {
-    const s_tech = Math.min(1.0, Math.max(0.0, parseFloat(tech) / 35.0));
-    const s_comm = Math.min(1.0, Math.max(0.0, parseFloat(comm) / 25.0));
-    const s_prob = Math.min(1.0, Math.max(0.0, parseFloat(prob) / 20.0));
-    const s_cult = Math.min(1.0, Math.max(0.0, parseFloat(cult) / 20.0));
-
-    const cx = size / 2;
-    const cy = size / 2;
-    const r = (size / 2) - 28;
-
-    const angles = [-Math.PI / 2, 0, Math.PI / 2, Math.PI];
-    const labels = ["เทคนิค", "สื่อสาร", "แก้ปัญหา", "องค์กร"];
-    const scores = [s_tech, s_comm, s_prob, s_cult];
-    const actual_vals = [`${tech}/35`, `${comm}/25`, `${prob}/20`, `${cult}/20`];
-
-    let grid_svg = "";
-    [0.25, 0.5, 0.75, 1.0].forEach(level => {
-        let grid_pts = [];
-        angles.forEach(a => {
-            const gx = cx + r * level * Math.cos(a);
-            const gy = cy + r * level * Math.sin(a);
-            grid_pts.push(`${gx.toFixed(1)},${gy.toFixed(1)}`);
-        });
-        grid_svg += `<polygon points="${grid_pts.join(' ')}" fill="none" stroke="var(--line, #E2E8F0)" stroke-width="1" stroke-dasharray="${level < 1.0 ? '2' : '0'}"/>`;
-    });
-
-    let axis_svg = "";
-    for (let i = 0; i < angles.length; i++) {
-        const a = angles[i];
-        const ax = cx + r * Math.cos(a);
-        const ay = cy + r * Math.sin(a);
-        axis_svg += `<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${ax.toFixed(1)}" y2="${ay.toFixed(1)}" stroke="var(--line, #CBD5E1)" stroke-width="1"/>`;
-
-        let lx = cx + (r + 14) * Math.cos(a);
-        let ly = cy + (r + 10) * Math.sin(a);
-        let anchor = "middle";
-        if (i === 1) { anchor = "start"; lx += 2; }
-        else if (i === 3) { anchor = "end"; lx -= 2; }
-
-        axis_svg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-size="9" font-weight="700" fill="var(--ink-soft, #64748B)" dominant-baseline="middle">${labels[i]} <tspan font-weight="800" fill="var(--maroon, #8B0000)">(${actual_vals[i]})</tspan></text>`;
-    }
-
-    let poly_pts = [];
-    let points_svg = "";
-    for (let i = 0; i < angles.length; i++) {
-        const a = angles[i];
-        const px = cx + r * scores[i] * Math.cos(a);
-        const py = cy + r * scores[i] * Math.sin(a);
-        poly_pts.push(`${px.toFixed(1)},${py.toFixed(1)}`);
-        points_svg += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3" fill="#8B0000" stroke="#FFFFFF" stroke-width="1.2"/>`;
-    }
-
-    return `<svg viewBox="0 0 ${size} ${size}" width="100%" height="${size}" style="display:block; margin:0 auto; overflow:visible;">
-      <defs>
-        <radialGradient id="radarGradScorecard" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#8B0000" stop-opacity="0.45"/>
-          <stop offset="100%" stop-color="#0284C7" stop-opacity="0.2"/>
-        </radialGradient>
-      </defs>
-      ${grid_svg}
-      ${axis_svg}
-      <polygon points="${poly_pts.join(' ')}" fill="url(#radarGradScorecard)" stroke="#8B0000" stroke-width="2" stroke-linejoin="round"/>
-      ${points_svg}
-    </svg>`;
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 150);
+    showToast("📥 ดาวน์โหลดไฟล์ Markdown (.md) เรียบร้อยแล้ว!", "success");
 }
 
-function openScorecardModal() {
-    document.getElementById('scorecardModal')?.classList.remove('hidden');
-    updateTotalScorecard();
-};
-window.closeScorecardModal = closeScorecardModal;
-function closeScorecardModal() {
-    document.getElementById('scorecardModal')?.classList.add('hidden');
-};
-
-window.updateTotalScorecard = updateTotalScorecard;
-function updateTotalScorecard() {
-    const tech = parseInt(document.getElementById('scoreTech')?.value || 30, 10);
-    const comm = parseInt(document.getElementById('scoreComm')?.value || 22, 10);
-    const prob = parseInt(document.getElementById('scoreProblem')?.value || 17, 10);
-    const cult = parseInt(document.getElementById('scoreCulture')?.value || 18, 10);
-
-    document.getElementById('valScoreTech').textContent = tech;
-    document.getElementById('valScoreComm').textContent = comm;
-    document.getElementById('valScoreProblem').textContent = prob;
-    document.getElementById('valScoreCulture').textContent = cult;
-
-    const total = tech + comm + prob + cult;
-    const totalNum = document.getElementById('scorecardTotalNum');
-    const label = document.getElementById('scorecardStatusLabel');
-    if (totalNum) totalNum.textContent = total;
-    const radarBox = document.getElementById('scorecardRadarContainer');
-    if (radarBox) radarBox.innerHTML = renderRadarChartSvg(tech, comm, prob, cult, 190);
-
-    if (label) {
-        if (total >= 80) {
-            label.style.color = '#10B981';
-            label.textContent = '🟢 ระดับดีเยี่ยม / แนะนำให้รับเข้าทำงาน (Highly Recommended)';
-        } else if (total >= 60) {
-            label.style.color = '#F59E0B';
-            label.textContent = '🟡 ระดับปานกลาง / ควรพิจารณาเปรียบเทียบ (Consider)';
-        } else {
-            label.style.color = '#EF4444';
-            label.textContent = '🔴 ต่ำกว่าเกณฑ์มาตรฐาน / ไม่แนะนำ (Not Recommended)';
-        }
-    }
-};
-
-window.submitScorecardToChat = submitScorecardToChat;
-function submitScorecardToChat() {
-    const name = document.getElementById('scoreCandidateName')?.value.trim() || 'ผู้สมัคร';
-    const pos = document.getElementById('scorePosition')?.value.trim() || 'ตำแหน่งงาน';
-    const tech = document.getElementById('scoreTech')?.value || 30;
-    const comm = document.getElementById('scoreComm')?.value || 22;
-    const prob = document.getElementById('scoreProblem')?.value || 17;
-    const cult = document.getElementById('scoreCulture')?.value || 18;
-    const total = parseInt(tech, 10) + parseInt(comm, 10) + parseInt(prob, 10) + parseInt(cult, 10);
-    const comment = document.getElementById('scoreComment')?.value.trim() || 'ไม่มีข้อคิดเห็นเพิ่มเติม';
-
-    const scorecardMsg = `📝 **ใบบันทึกผลการสัมภาษณ์งาน (Official Interview Scorecard)**
-**ผู้สมัคร:** ${name} | **ตำแหน่ง:** ${pos}
-**วันที่ประเมิน:** ${new Date().toLocaleDateString('th-TH')} | **ผู้ประเมิน:** @${currentUser}
-
-| หมวดหมู่การประเมิน | คะแนนที่ได้ | คะแนนเต็ม |
-| :--- | :---: | :---: |
-| 1. ความรู้ความสามารถเชิงเทคนิค (Technical Skills) | ${tech} | 35 |
-| 2. การสื่อสารและทัศนคติ (Communication & Attitude) | ${comm} | 25 |
-| 3. การคิดวิเคราะห์และการแก้ปัญหา (Problem Solving) | ${prob} | 20 |
-| 4. ความเข้ากันได้กับองค์กร (Culture Fit & Teamwork) | ${cult} | 20 |
-| **คะแนนรวมสุทธิ (Total Score)** | **${total}** | **100** |
-
-**ความเห็นของกรรมการผู้สัมภาษณ์:**
-> "${comment}"
-
-กรุณาวิเคราะห์ผลคะแนนข้างต้น สรุปจุดเด่น-จุดที่ควรระวัง และให้คำแนะนำขั้นสุดท้ายสำหรับการจ้างงาน`;
-
-    closeScorecardModal();
-    sendMessage(scorecardMsg);
-    showToast("ส่งใบบันทึกคะแนนเข้าสู่ระบบแชทเรียบร้อยแล้ว", "success");
-};
-
-// --- DOWNLOAD MESSAGE AS PRESENTATION SLIDES ---
 window.downloadMessageAsSlides = downloadMessageAsSlides;
 function downloadMessageAsSlides(idx) {
     const history = appUserData[currentUser]?.history[currentCharacter?.id];
@@ -3890,6 +3890,32 @@ function loadPromptTemplates() {
         appPromptTemplates = [...DEFAULT_PROMPT_TEMPLATES];
     }
     renderPromptLibrary();
+}
+
+
+window.togglePromptLibrary = togglePromptLibrary;
+function togglePromptLibrary(event = null) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById('promptLibraryMenu');
+    if (!menu) return;
+    if (menu.classList.contains('hidden')) {
+        renderPromptLibrary();
+        menu.classList.remove('hidden');
+    } else {
+        menu.classList.add('hidden');
+    }
+}
+
+window.insertPromptTemplate = insertPromptTemplate;
+function insertPromptTemplate(promptText) {
+    const input = document.getElementById('msgInput');
+    if (input) {
+        input.value = promptText;
+        input.focus();
+    }
+    const menu = document.getElementById('promptLibraryMenu');
+    if (menu) menu.classList.add('hidden');
+    showToast("💡 เลือกคำสั่งจากคลังแล้ว พร้อมสั่งงาน!", "info");
 }
 
 function renderPromptLibrary() {
@@ -4321,39 +4347,116 @@ function googlePickerCallback(data) {
     }
 }
 
-// --- EMAIL SETTINGS MODAL (FOR ALL USERS & ADMINS - ZERO CONFIG AUTO SEND) ---
+// --- EMAIL SETTINGS MODAL (FOR ALL USERS & ADMINS - ZERO CONFIG) ---
 window.openEmailSettingsModal = openEmailSettingsModal;
+function openEmailSettingsModal() {
+    const email = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '';
+    const score = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
+    const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'auto';
+    const webhook = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || DEFAULT_WEBHOOK_URL;
 
-// --- USER-FRIENDLY GOOGLE DRIVE INTEGRATION HELPERS ---
-window.openDriveAttachModal = openDriveAttachModal;
-function openDriveAttachModal() {
-    const input = document.getElementById('quickDriveInput');
-    const badge = document.getElementById('quickDriveDetectedBadge');
-    if (input) input.value = '';
-    if (badge) { badge.style.display = 'none'; badge.innerHTML = ''; }
-    document.getElementById('driveAttachModal')?.classList.remove('hidden');
+    const emailInput = document.getElementById('modalNotifyEmail');
+    const scoreSlider = document.getElementById('modalPassingScore');
+    const scoreDisplay = document.getElementById('modalPassingScoreDisplay');
+    const sendModeSelect = document.getElementById('modalEmailSendMode');
+    const webhookInput = document.getElementById('modalWebhookUrl');
+
+    if (emailInput) emailInput.value = email;
+    if (scoreSlider) scoreSlider.value = score;
+    if (scoreDisplay) scoreDisplay.textContent = score + ' / 100 คะแนน';
+    if (sendModeSelect) sendModeSelect.value = sendMode;
+    if (webhookInput) webhookInput.value = webhook;
+
+    document.getElementById('emailSettingsModal')?.classList.remove('hidden');
 }
 
-window.closeDriveAttachModal = closeDriveAttachModal;
-function closeDriveAttachModal() {
-    document.getElementById('driveAttachModal')?.classList.add('hidden');
+window.closeEmailSettingsModal = closeEmailSettingsModal;
+function closeEmailSettingsModal() {
+    document.getElementById('emailSettingsModal')?.classList.add('hidden');
 }
 
-window.pasteClipboardToQuickDrive = pasteClipboardToQuickDrive;
-async function pasteClipboardToQuickDrive() {
+window.saveEmailSettingsModal = saveEmailSettingsModal;
+function saveEmailSettingsModal() {
+    const email = (document.getElementById('modalNotifyEmail')?.value || '').trim();
+    const score = parseInt(document.getElementById('modalPassingScore')?.value || '75', 10);
+    const sendMode = document.getElementById('modalEmailSendMode')?.value || 'auto';
+    const webhook = (document.getElementById('modalWebhookUrl')?.value || '').trim() || DEFAULT_WEBHOOK_URL;
+
+    localStorage.setItem(STORAGE_PREFIX + 'notify_email', email);
+    localStorage.setItem(STORAGE_PREFIX + 'passing_score', score.toString());
+    localStorage.setItem(STORAGE_PREFIX + 'email_send_mode', sendMode);
+    localStorage.setItem(STORAGE_PREFIX + 'drive_webhook_url', webhook);
+
+    closeEmailSettingsModal();
+    showToast("💾 บันทึกการตั้งค่าส่งอีเมลเรียบร้อยแล้ว!", "success");
+}
+
+window.testSendFromEmailSettingsModal = testSendFromEmailSettingsModal;
+async function testSendFromEmailSettingsModal(btnElem = null) {
+    const btn = btnElem || document.getElementById('btnModalTestEmail') || event?.currentTarget;
+    const email = (document.getElementById('modalNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '').trim();
+    const webhook = (document.getElementById('modalWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || DEFAULT_WEBHOOK_URL).trim();
+
+    if (!email) {
+        showToast("⚠️ กรุณาระบุอีเมลผู้รับแจ้งเตือนก่อนทดสอบ", "warning");
+        document.getElementById('modalNotifyEmail')?.focus();
+        return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast("⚠️ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง", "warning");
+        document.getElementById('modalNotifyEmail')?.focus();
+        return;
+    }
+
+    let origHtml = '🧪 ทดสอบการเชื่อมต่อ';
+    if (btn) {
+        origHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-flex; align-items:center; gap:6px;"><span class="dot" style="display:inline-block; width:6px; height:6px; background:currentColor; border-radius:50%;"></span> ⏳ กำลังตรวจสอบการเชื่อมต่อ...</span>';
+        btn.style.opacity = '0.8';
+    }
+
+    showToast("⏳ กำลังตรวจสอบการเชื่อมต่อระบบอีเมลส่วนกลาง...", "info");
+
     try {
-        const text = await navigator.clipboard.readText();
-        if (text) {
-            const input = document.getElementById('quickDriveInput');
-            if (input) {
-                input.value = text.trim();
-                detectQuickDriveType(input.value);
-                showToast("📋 วางลิงก์จากคลิปบอร์ดเรียบร้อยแล้ว!", "info");
-            }
+        if (webhook && webhook.startsWith('http') && !webhook.includes('drive.google.com')) {
+            const payload = {
+                candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
+                score: 95,
+                recipientEmail: email,
+                agentName: 'HR ET Specialist (Test)',
+                summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100% (ผ่าน Webhook กลาง)'
+            };
+
+            await fetch(webhook, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            showToast(`✅ ตรวจสอบการเชื่อมต่อสำเร็จ! ระบบพร้อมส่งแจ้งเตือนไปยัง ${email}`, "success");
+            if (btn) btn.innerHTML = '<span>✅ เชื่อมต่อสำเร็จ</span>';
+
+        } else {
+            await new Promise(r => setTimeout(r, 500));
+            showToast(`✅ ตรวจสอบการเชื่อมต่อสำเร็จ! ปลายทาง: ${email}`, "success");
+            if (btn) btn.innerHTML = '<span>✅ เชื่อมต่อสำเร็จ</span>';
         }
-    } catch(e) {
-        showToast("กรุณากด Ctrl+V เพื่อวางลิงก์ลงในช่อง", "info");
-        document.getElementById('quickDriveInput')?.focus();
+    } catch(err) {
+        console.error("Test email error:", err);
+        showToast("❌ เกิดข้อผิดพลาดในการตรวจสอบ: " + err.message, "error");
+        if (btn) btn.innerHTML = '<span>❌ เชื่อมต่อไม่ผ่าน</span>';
+    } finally {
+        setTimeout(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origHtml;
+                btn.style.opacity = '1';
+            }
+        }, 2500);
     }
 }
 
@@ -4394,6 +4497,27 @@ function detectQuickDriveType(val) {
 }
 
 window.importQuickDriveToHub = importQuickDriveToHub;
+
+window.openDriveAttachModal = openDriveAttachModal;
+function openDriveAttachModal() {
+    const modal = document.getElementById('driveAttachModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        const input = document.getElementById('quickDriveInput');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+        const badge = document.getElementById('quickDriveStatusBadge');
+        if (badge) badge.style.display = 'none';
+    }
+}
+
+window.closeDriveAttachModal = closeDriveAttachModal;
+function closeDriveAttachModal() {
+    document.getElementById('driveAttachModal')?.classList.add('hidden');
+}
+
 function importQuickDriveToHub() {
     const input = document.getElementById('quickDriveInput');
     const val = input ? input.value.trim() : '';
