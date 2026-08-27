@@ -1,11 +1,11 @@
-const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3xO_xI7lLcZ6TzF455ePEP2c8s2e3PthfH4a4qGzI6FyWWeCMEsGXa3GWcqG2lT7vw/exec";
+const DEFAULT_CENTRAL_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3xO_xI7lLcZ6TzF455ePEP2c8s2e3PthfH4a4qGzI6FyWWeCMEsGXa3GWcqG2lT7vw/exec";
 
 function getWebhookUrl() {
-    const saved = (localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+    const saved = (localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || "").trim();
     if (saved && saved.startsWith('http') && !saved.includes('drive.google.com')) {
         return saved;
     }
-    return DEFAULT_WEBHOOK_URL;
+    return DEFAULT_CENTRAL_WEBHOOK_URL;
 }
 
 function createCharacterCard(c) {
@@ -106,6 +106,7 @@ function showConfirmDialog({
 }
 window.showConfirmDialog = showConfirmDialog;
 
+const DEFAULT_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwQ3xO_xI7lLcZ6TzF455ePEP2c8s2e3PthfH4a4qGzI6FyWWeCMEsGXa3GWcqG2lT7vw/exec";
 const STORAGE_PREFIX = 'etopc_company_';
 
 // SVG Icons helper
@@ -899,6 +900,11 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
             });
         }
 
+                // Ensure contents array ends with a user turn (Google Gemini requirement)
+        while (contents.length > 0 && contents[contents.length - 1].role === 'model') {
+            contents.pop();
+        }
+
         if (contents.length === 0) throw new Error("ไม่มีข้อความส่งให้ AI");
 
         const payload = {
@@ -1025,6 +1031,11 @@ User: @${profile.displayName || currentUser} (${profile.persona || 'Staff'})
                     messages.push({ role: role, content: text });
                 }
             });
+        }
+
+                // Ensure messages array ends with a user turn
+        while (messages.length > 1 && messages[messages.length - 1].role === 'assistant') {
+            messages.pop();
         }
 
         if (messages.length <= 1) throw new Error("ไม่มีข้อความส่งให้ AI");
@@ -1219,26 +1230,31 @@ async function requestAiReply(regenerateBotIdx = null, attachedFile = null) {
         saveUserData();
         renderChatMessages();
 
-        // Check for Auto Email Notification & Update Hub Candidate Scores (Single & Batch)
+                // Check for Auto Email Notification & Update Hub Candidate Scores (Single & Batch)
         const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
-        const isAutoEmail = (localStorage.getItem(STORAGE_PREFIX + 'auto_email_notify') === 'true') && (sendMode === 'auto');
+        const isAutoNotifyEnabled = localStorage.getItem(STORAGE_PREFIX + 'auto_email_notify') !== 'false';
+        const isAutoEmail = (sendMode === 'auto') || isAutoNotifyEnabled;
         const passingThreshold = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
 
+        const scoreMatch = replyText.match(/(?:คะแนน(?:ความเหมาะสม)?(?:รวม)?|Match\s*Score|Overall\s*Score|Total\s*Score)[^0-9\n\r]{0,40}?([0-9]{1,3})\s*(?:\/\s*100|%|\s*คะแนน)/i);
+        const detectedScore = (scoreMatch && scoreMatch[1]) ? parseInt(scoreMatch[1], 10) : null;
+
+        // 1. AUTO-SEND EMAIL NOTIFICATION TO GMAIL IF PASSED
+        if (detectedScore && detectedScore >= passingThreshold && (sendMode === 'auto' || isAutoNotifyEnabled)) {
+            sendCandidatePassedEmail(detectedScore, null, true);
+        }
+
+        // 2. UPDATE CANDIDATE HUB (if running from Hub or matching candidates)
         if (typeof appCandidateSubmissions !== 'undefined' && Array.isArray(appCandidateSubmissions)) {
             let updatedAny = false;
 
             if (currentEvaluatingCandidateId) {
-                const scoreMatch = replyText.match(/(?:คะแนน(?:ความเหมาะสม)?(?:รวม)?|Match\s*Score|Overall\s*Score|Total\s*Score)[^0-9\n\r]{0,40}?([0-9]{1,3})\s*(?:\/\s*100|%|\s*คะแนน)/i);
-                if (scoreMatch && scoreMatch[1]) {
-                    const detectedScore = parseInt(scoreMatch[1], 10);
+                if (detectedScore) {
                     const targetCand = appCandidateSubmissions.find(c => c.id === currentEvaluatingCandidateId);
                     if (targetCand) {
                         targetCand.score = detectedScore;
                         targetCand.status = detectedScore >= passingThreshold ? 'passed' : 'evaluated';
                         updatedAny = true;
-                        if (detectedScore >= passingThreshold && isAutoEmail) {
-                            sendCandidatePassedEmail(detectedScore, null, true);
-                        }
                     }
                 }
             } else {
@@ -4141,25 +4157,292 @@ window.deleteAdminModel = deleteAdminModel;
 
 // --- GOOGLE DRIVE & AUTOMATED EMAIL EVALUATION INTEGRATION ---
 
-// --- EMAIL SETTINGS MODAL (FOR ALL USERS & ADMINS) ---
+
+// --- GOOGLE PICKER API & GOOGLE IDENTITY SERVICES (GIS) INTEGRATION ---
+let googleTokenClient = null;
+let googlePickerAccessToken = null;
+
+function initGooglePickerServices() {
+    if (typeof gapi !== 'undefined') {
+        gapi.load('picker', () => {
+            console.log("Google Picker API loaded successfully.");
+        });
+    }
+}
+window.addEventListener('load', initGooglePickerServices);
+
+window.openGooglePickerConfigModal = openGooglePickerConfigModal;
+function openGooglePickerConfigModal() {
+    const clientId = localStorage.getItem(STORAGE_PREFIX + 'google_client_id') || '';
+    const apiKey = localStorage.getItem(STORAGE_PREFIX + 'google_picker_api_key') || '';
+    
+    const clientInput = document.getElementById('googlePickerClientIdInput');
+    const apiInput = document.getElementById('googlePickerApiKeyInput');
+    
+    if (clientInput) clientInput.value = clientId;
+    if (apiInput) apiInput.value = apiKey;
+    
+    document.getElementById('googlePickerConfigModal')?.classList.remove('hidden');
+}
+
+window.closeGooglePickerConfigModal = closeGooglePickerConfigModal;
+function closeGooglePickerConfigModal() {
+    document.getElementById('googlePickerConfigModal')?.classList.add('hidden');
+}
+
+window.saveGooglePickerConfig = saveGooglePickerConfig;
+function saveGooglePickerConfig() {
+    const clientId = (document.getElementById('googlePickerClientIdInput')?.value || '').trim();
+    const apiKey = (document.getElementById('googlePickerApiKeyInput')?.value || '').trim();
+
+    if (!clientId) {
+        showToast("กรุณากรอก Google OAuth Client ID", "warning");
+        document.getElementById('googlePickerClientIdInput')?.focus();
+        return;
+    }
+
+    localStorage.setItem(STORAGE_PREFIX + 'google_client_id', clientId);
+    localStorage.setItem(STORAGE_PREFIX + 'google_picker_api_key', apiKey);
+    closeGooglePickerConfigModal();
+    showToast("💾 บันทึกการตั้งค่า Google Picker เรียบร้อยแล้ว! กำลังเปิดหน้าต่างเลือกไฟล์...", "success");
+    setTimeout(() => {
+        openGoogleDrivePicker();
+    }, 400);
+}
+
+window.openGoogleDrivePicker = openGoogleDrivePicker;
+function openGoogleDrivePicker() {
+    const clientId = localStorage.getItem(STORAGE_PREFIX + 'google_client_id') || '';
+    const apiKey = localStorage.getItem(STORAGE_PREFIX + 'google_picker_api_key') || '';
+
+    if (!clientId) {
+        openGooglePickerConfigModal();
+        return;
+    }
+
+    if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) {
+        showToast("⚠️ กำลังเชื่อมต่อ Google Identity Services กรุณารอสักครู่...", "info");
+        setTimeout(openGoogleDrivePicker, 1000);
+        return;
+    }
+
+    if (!googlePickerAccessToken) {
+        googleTokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                    googlePickerAccessToken = tokenResponse.access_token;
+                    createAndShowPicker(apiKey);
+                } else {
+                    showToast("❌ การยืนยันตัวตนกับ Google ล้มเหลว", "error");
+                }
+            },
+        });
+        googleTokenClient.requestAccessToken({ prompt: '' });
+    } else {
+        createAndShowPicker(apiKey);
+    }
+}
+
+function createAndShowPicker(apiKey) {
+    if (typeof google === 'undefined' || typeof google.picker === 'undefined') {
+        if (typeof gapi !== 'undefined') {
+            gapi.load('picker', () => createAndShowPicker(apiKey));
+        } else {
+            showToast("⚠️ ไม่สามารถโหลด Google Picker API ได้ กรุณารีเฟรชหน้าเว็บ", "error");
+        }
+        return;
+    }
+
+    try {
+        const docsView = new google.picker.DocsView(google.picker.ViewId.DOCS)
+            .setIncludeFolders(true)
+            .setSelectFolderEnabled(true);
+            
+        const pdfView = new google.picker.DocsView(google.picker.ViewId.PDFS);
+        const folderView = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+            .setSelectFolderEnabled(true);
+
+        let builder = new google.picker.PickerBuilder()
+            .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+            .addView(docsView)
+            .addView(pdfView)
+            .addView(folderView)
+            .setOAuthToken(googlePickerAccessToken)
+            .setCallback(googlePickerCallback)
+            .setTitle("เลือกไฟล์เรซูเม่ หรือโฟลเดอร์จาก Google Drive");
+
+        if (apiKey && apiKey.trim()) {
+            builder.setDeveloperKey(apiKey.trim());
+        }
+
+        const picker = builder.build();
+        picker.setVisible(true);
+    } catch(err) {
+        console.error("Picker error:", err);
+        showToast("❌ เกิดข้อผิดพลาดในการเปิด Google Picker: " + err.message, "error");
+    }
+}
+
+function googlePickerCallback(data) {
+    if (data[google.picker.Response.ACTION] === google.picker.Action.PICKED) {
+        const docs = data[google.picker.Response.DOCUMENTS] || [];
+        if (docs.length === 0) return;
+
+        let addedCount = 0;
+        docs.forEach(doc => {
+            const isFolder = doc[google.picker.Document.MIME_TYPE] === 'application/vnd.google-apps.folder';
+            const rawName = doc[google.picker.Document.NAME] || 'เอกสารจาก Drive';
+            const sizeBytes = doc[google.picker.Document.SIZE_BYTES];
+            const sizeFormatted = isFolder ? 'Folder Link' : (sizeBytes ? (sizeBytes / 1024).toFixed(1) + ' KB' : 'Drive File');
+
+            const newCand = {
+                id: 'cand-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                name: isFolder ? `📁 ${rawName}` : rawName.replace(/\.[^/.]+$/, ""),
+                fileName: isFolder ? `${rawName}.pdf` : rawName,
+                driveUrl: doc[google.picker.Document.URL],
+                driveId: doc[google.picker.Document.ID],
+                isDriveFolder: isFolder,
+                size: sizeFormatted,
+                mimeType: doc[google.picker.Document.MIME_TYPE] || 'application/pdf',
+                status: 'pending',
+                score: null,
+                date: new Date().toLocaleDateString('th-TH'),
+                content: `เอกสารเรซูเม่จาก Google Drive (${isFolder ? 'โฟลเดอร์' : 'ไฟล์'}): ${rawName}\nลิงก์: ${doc[google.picker.Document.URL]}\nID: ${doc[google.picker.Document.ID]}`
+            };
+            appCandidateSubmissions.unshift(newCand);
+            addedCount++;
+        });
+
+        saveCandidateSubmissions();
+        renderCandidateQueueList();
+        showToast(`📥 นำเข้าไฟล์จาก Google Drive (${addedCount} รายการ) ผ่าน Google Picker สำเร็จ!`, "success");
+    }
+}
+
+// --- EMAIL SETTINGS MODAL (FOR ALL USERS & ADMINS - ZERO CONFIG AUTO SEND) ---
 window.openEmailSettingsModal = openEmailSettingsModal;
+
+// --- USER-FRIENDLY GOOGLE DRIVE INTEGRATION HELPERS ---
+window.openDriveAttachModal = openDriveAttachModal;
+function openDriveAttachModal() {
+    const input = document.getElementById('quickDriveInput');
+    const badge = document.getElementById('quickDriveDetectedBadge');
+    if (input) input.value = '';
+    if (badge) { badge.style.display = 'none'; badge.innerHTML = ''; }
+    document.getElementById('driveAttachModal')?.classList.remove('hidden');
+}
+
+window.closeDriveAttachModal = closeDriveAttachModal;
+function closeDriveAttachModal() {
+    document.getElementById('driveAttachModal')?.classList.add('hidden');
+}
+
+window.pasteClipboardToQuickDrive = pasteClipboardToQuickDrive;
+async function pasteClipboardToQuickDrive() {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+            const input = document.getElementById('quickDriveInput');
+            if (input) {
+                input.value = text.trim();
+                detectQuickDriveType(input.value);
+                showToast("📋 วางลิงก์จากคลิปบอร์ดเรียบร้อยแล้ว!", "info");
+            }
+        }
+    } catch(e) {
+        showToast("กรุณากด Ctrl+V เพื่อวางลิงก์ลงในช่อง", "info");
+        document.getElementById('quickDriveInput')?.focus();
+    }
+}
+
+window.pasteClipboardToHubDrive = pasteClipboardToHubDrive;
+async function pasteClipboardToHubDrive() {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+            const input = document.getElementById('hubDriveLinkInput');
+            if (input) {
+                input.value = text.trim();
+                showToast("📋 วางลิงก์ลงในช่องแล้ว กด 'ดึงลงคลัง' ได้เลย!", "info");
+            }
+        }
+    } catch(e) {
+        showToast("กรุณากด Ctrl+V เพื่อวางลิงก์ลงในช่อง", "info");
+        document.getElementById('hubDriveLinkInput')?.focus();
+    }
+}
+
+window.detectQuickDriveType = detectQuickDriveType;
+function detectQuickDriveType(val) {
+    const badge = document.getElementById('quickDriveDetectedBadge');
+    if (!badge) return;
+    const trimmed = (val || '').trim();
+    if (!trimmed) {
+        badge.style.display = 'none';
+        return;
+    }
+
+    const { driveId, isFolder } = extractGoogleDriveInfo(trimmed);
+    badge.style.display = 'block';
+    if (isFolder) {
+        badge.innerHTML = `<span style="color:#0284C7; font-weight:800;">📁 ตรวจพบ: โฟลเดอร์ Google Drive</span> (ID: <code style="background:var(--surface); padding:2px 4px; border-radius:4px;">${driveId}</code>)`;
+    } else {
+        badge.innerHTML = `<span style="color:#059669; font-weight:800;">📄 ตรวจพบ: ไฟล์เอกสาร Google Drive</span> (ID: <code style="background:var(--surface); padding:2px 4px; border-radius:4px;">${driveId}</code>)`;
+    }
+}
+
+window.importQuickDriveToHub = importQuickDriveToHub;
+function importQuickDriveToHub() {
+    const input = document.getElementById('quickDriveInput');
+    const val = input ? input.value.trim() : '';
+    if (!val) {
+        showToast("กรุณากรอกหรือวางลิงก์ Google Drive ก่อน", "warning");
+        return;
+    }
+    closeDriveAttachModal();
+    const hubInput = document.getElementById('hubDriveLinkInput');
+    if (hubInput) hubInput.value = val;
+    openCandidateHubModal();
+    importDriveLinkToHub();
+}
+
+window.sendQuickDriveToChat = sendQuickDriveToChat;
+function sendQuickDriveToChat() {
+    const input = document.getElementById('quickDriveInput');
+    const val = input ? input.value.trim() : '';
+    if (!val) {
+        showToast("กรุณากรอกหรือวางลิงก์ Google Drive ก่อน", "warning");
+        return;
+    }
+    const { driveId, isFolder } = extractGoogleDriveInfo(val);
+    closeDriveAttachModal();
+
+    const promptText = isFolder ? 
+        `📁 กรุณาวิเคราะห์และประเมินเรซูเม่/เอกสารของผู้สมัครทุกคนในโฟลเดอร์ Google Drive นี้:\n${val}\nพร้อมทำตาราง Head-to-Head Candidate Matrix และจัดอันดับ` :
+        `📄 กรุณาช่วยวิเคราะห์และประเมินเอกสารจาก Google Drive นี้:\n${val}\nสรุปประเด็นสำคัญ คะแนนความเหมาะสม และข้อเสนอแนะ`;
+
+    sendMessage(promptText);
+}
+
 function openEmailSettingsModal() {
     const email = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '';
+    const senderName = localStorage.getItem(STORAGE_PREFIX + 'sender_display_name') || 'ET OPC Company — แจ้งเตือนผู้สมัครผ่านเกณฑ์';
     const score = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
-    const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
-    const webhook = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
+    const isNotifyEnabled = localStorage.getItem(STORAGE_PREFIX + 'auto_email_notify') !== 'false';
 
     const emailInput = document.getElementById('modalNotifyEmail');
     const scoreSlider = document.getElementById('modalPassingScore');
     const scoreDisplay = document.getElementById('modalPassingScoreDisplay');
-    const sendModeSelect = document.getElementById('modalEmailSendMode');
-    const webhookInput = document.getElementById('modalWebhookUrl');
+    const toggleSwitch = document.getElementById('modalToggleEmailNotify');
 
     if (emailInput) emailInput.value = email;
+    const senderInput = document.getElementById('modalSenderName');
+    if (senderInput) senderInput.value = senderName;
     if (scoreSlider) scoreSlider.value = score;
     if (scoreDisplay) scoreDisplay.textContent = score + ' / 100 คะแนน';
-    if (sendModeSelect) sendModeSelect.value = sendMode;
-    if (webhookInput) webhookInput.value = webhook;
+    if (toggleSwitch) toggleSwitch.checked = isNotifyEnabled;
 
     document.getElementById('emailSettingsModal')?.classList.remove('hidden');
 }
@@ -4173,13 +4456,15 @@ window.saveEmailSettingsModal = saveEmailSettingsModal;
 function saveEmailSettingsModal() {
     const email = (document.getElementById('modalNotifyEmail')?.value || '').trim();
     const score = parseInt(document.getElementById('modalPassingScore')?.value || '75', 10);
-    const sendMode = document.getElementById('modalEmailSendMode')?.value || 'manual';
-    const webhook = (document.getElementById('modalWebhookUrl')?.value || '').trim();
+    const isNotifyEnabled = document.getElementById('modalToggleEmailNotify') ? document.getElementById('modalToggleEmailNotify').checked : true;
 
+    const senderName = (document.getElementById('modalSenderName')?.value || 'ET OPC Company — แจ้งเตือนผู้สมัครผ่านเกณฑ์').trim();
+    localStorage.setItem(STORAGE_PREFIX + 'sender_display_name', senderName);
     localStorage.setItem(STORAGE_PREFIX + 'notify_email', email);
     localStorage.setItem(STORAGE_PREFIX + 'passing_score', score.toString());
-    localStorage.setItem(STORAGE_PREFIX + 'email_send_mode', sendMode);
-    localStorage.setItem(STORAGE_PREFIX + 'drive_webhook_url', webhook);
+    localStorage.setItem(STORAGE_PREFIX + 'email_send_mode', 'auto');
+    localStorage.setItem(STORAGE_PREFIX + 'auto_email_notify', isNotifyEnabled.toString());
+    localStorage.setItem(STORAGE_PREFIX + 'drive_webhook_url', DEFAULT_CENTRAL_WEBHOOK_URL);
 
     closeEmailSettingsModal();
     showToast("💾 บันทึกการตั้งค่าส่งอีเมลเรียบร้อยแล้ว!", "success");
@@ -4189,8 +4474,7 @@ window.testSendFromEmailSettingsModal = testSendFromEmailSettingsModal;
 async function testSendFromEmailSettingsModal(btnElem = null) {
     const btn = btnElem || document.getElementById('btnModalTestEmail') || event?.currentTarget;
     const email = (document.getElementById('modalNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '').trim();
-    const sendMode = document.getElementById('modalEmailSendMode')?.value || localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
-    const webhook = (document.getElementById('modalWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+    const webhook = DEFAULT_CENTRAL_WEBHOOK_URL;
 
     if (!email) {
         showToast("⚠️ กรุณาระบุอีเมลผู้รับแจ้งเตือนก่อนทดสอบ", "warning");
@@ -4198,68 +4482,45 @@ async function testSendFromEmailSettingsModal(btnElem = null) {
         return;
     }
 
-    let origHtml = '🧪 ทดสอบส่งอีเมล';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast("⚠️ รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง", "warning");
+        document.getElementById('modalNotifyEmail')?.focus();
+        return;
+    }
+
+    let origHtml = '🧪 ทดสอบการเชื่อมต่อ';
     if (btn) {
         origHtml = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<span style="display:inline-flex; align-items:center; gap:6px;"><span class="dot" style="display:inline-block; width:6px; height:6px; background:currentColor; border-radius:50%;"></span> ⏳ กำลังทดสอบส่งอีเมล...</span>';
+        btn.innerHTML = '<span style="display:inline-flex; align-items:center; gap:6px;"><span class="dot" style="display:inline-block; width:6px; height:6px; background:currentColor; border-radius:50%;"></span> ⏳ กำลังตรวจสอบการเชื่อมต่อ...</span>';
         btn.style.opacity = '0.8';
     }
 
-    showToast("⏳ กำลังเตรียมการและทดสอบระบบส่งอีเมล...", "info");
+    showToast("⏳ กำลังตรวจสอบการเชื่อมต่อระบบอีเมล...", "info");
 
     try {
-        if (sendMode === 'auto' && webhook && webhook.startsWith('http') && !webhook.includes('drive.google.com')) {
-            showToast(`⏳ กำลังยิง Webhook ส่งอีเมลจำลองไปยัง ${email}...`, "info");
-            
-            const payload = {
-                candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
-                score: 95,
-                recipientEmail: email,
-                agentName: 'HR ET Specialist (Test)',
-                summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100%'
-            };
+        const payload = {
+            candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
+            score: 95,
+            recipientEmail: email,
+            agentName: 'HR ET Specialist (Test)',
+            summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100%'
+        };
 
-            await fetch(webhook, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        await fetch(webhook, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-            showToast(`✅ ส่งคำขออีเมลทดสอบไปยัง ${email} สำเร็จแล้ว!`, "success");
-            if (btn) btn.innerHTML = '<span>✅ ส่งผ่าน Webhook สำเร็จ</span>';
-
-        } else {
-            // 1-Click Direct Gmail Compose
-            showToast(`⏳ กำลังจัดรูปแบบและเปิดหน้าต่าง Gmail สำหรับ ${email}...`, "info");
-            
-            await new Promise(r => setTimeout(r, 350));
-
-            const subject = "[ET OPC #TeamET] 🧪 ทดสอบการส่งอีเมลแจ้งเตือน (Test Email)";
-            const bodyText = `สวัสดีครับ/ค่ะ,
-
-นี่คือข้อความทดสอบจากระบบ ET OPC Company — Enterprise AI Workspace
-วันที่ทดสอบ: ${new Date().toLocaleString('th-TH')}
-ผู้ทดสอบ: @${currentUser}
-
-ระบบส่งอีเมลพร้อมทำงาน 100% เรียบร้อยแล้วครับ!
----
-คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST`;
-
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-            const win = window.open(gmailUrl, '_blank');
-            if (!win) {
-                window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
-            }
-
-            showToast(`📧 เปิดหน้าต่าง Gmail พร้อมส่งไปยัง ${email} เรียบร้อยแล้ว!`, "success");
-            if (btn) btn.innerHTML = '<span>✅ เปิด Gmail สำเร็จ</span>';
-        }
+        showToast(`✅ ตรวจสอบการเชื่อมต่อสำเร็จ! พร้อมส่งเข้า ${email}`, "success");
+        if (btn) btn.innerHTML = '<span>✅ ตรวจสอบการเชื่อมต่อสำเร็จ</span>';
     } catch(err) {
         console.error("Test email error:", err);
-        showToast("❌ เกิดข้อผิดพลาดในการทดสอบ: " + err.message, "error");
-        if (btn) btn.innerHTML = '<span>❌ เกิดข้อผิดพลาด</span>';
+        showToast("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err.message, "error");
+        if (btn) btn.innerHTML = '<span>❌ ตรวจสอบไม่ผ่าน</span>';
     } finally {
         setTimeout(() => {
             if (btn) {
@@ -4271,181 +4532,18 @@ async function testSendFromEmailSettingsModal(btnElem = null) {
     }
 }
 
-function renderIntegrationSettings() {
-    window.renderIntegrationSettings = renderIntegrationSettings;
-    const folderInput = document.getElementById('adminDriveFolderUrl');
-    const webhookInput = document.getElementById('adminDriveWebhookUrl');
-    const emailInput = document.getElementById('adminNotifyEmail');
-    const scoreSlider = document.getElementById('adminPassingScore');
-    const scoreDisplay = document.getElementById('passingScoreDisplay');
-    const sendModeSelect = document.getElementById('adminEmailSendMode');
-    const autoToggle = document.getElementById('toggleAutoEmailNotify');
-
-    const folder = localStorage.getItem(STORAGE_PREFIX + 'drive_folder_url') || '';
-    const webhook = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
-    const email = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '';
-    const score = parseInt(localStorage.getItem(STORAGE_PREFIX + 'passing_score') || '75', 10);
-    const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
-    const isAuto = localStorage.getItem(STORAGE_PREFIX + 'auto_email_notify') === 'true';
-
-    if (folderInput) folderInput.value = folder;
-    if (webhookInput) webhookInput.value = webhook;
-    if (emailInput) emailInput.value = email;
-    if (scoreSlider) scoreSlider.value = score;
-    if (scoreDisplay) scoreDisplay.textContent = score + ' / 100 คะแนน';
-    if (sendModeSelect) sendModeSelect.value = sendMode;
-    if (autoToggle) autoToggle.checked = isAuto;
-}
-window.renderIntegrationSettings = renderIntegrationSettings;
-
-function toggleAutoEmailState() {
-    window.toggleAutoEmailState = toggleAutoEmailState;
-    const toggle = document.getElementById('toggleAutoEmailNotify');
-    const active = toggle ? toggle.checked : false;
-    localStorage.setItem(STORAGE_PREFIX + 'auto_email_notify', active ? 'true' : 'false');
-    showToast(active ? "🟢 เปิดใช้งานระบบส่งอีเมลแจ้งเตือนอัตโนมัติแล้ว" : "⚪ ปิดระบบส่งอีเมลแจ้งเตือนอัตโนมัติ", "info");
-}
-window.toggleAutoEmailState = toggleAutoEmailState;
-
-function saveIntegrationSettings() {
-    window.saveIntegrationSettings = saveIntegrationSettings;
-    const folder = (document.getElementById('adminDriveFolderUrl')?.value || '').trim();
-    const webhook = (document.getElementById('adminDriveWebhookUrl')?.value || '').trim();
-    const email = (document.getElementById('adminNotifyEmail')?.value || '').trim();
-    const score = parseInt(document.getElementById('adminPassingScore')?.value || '75', 10);
-    const sendMode = document.getElementById('adminEmailSendMode')?.value || 'manual';
-
-    localStorage.setItem(STORAGE_PREFIX + 'drive_folder_url', folder);
-    localStorage.setItem(STORAGE_PREFIX + 'drive_webhook_url', webhook);
-    localStorage.setItem(STORAGE_PREFIX + 'notify_email', email);
-    localStorage.setItem(STORAGE_PREFIX + 'passing_score', score.toString());
-    localStorage.setItem(STORAGE_PREFIX + 'email_send_mode', sendMode);
-
-    showToast("💾 บันทึกการตั้งค่า Google Drive & Email สำเร็จแล้ว!", "success");
-}
-window.saveIntegrationSettings = saveIntegrationSettings;
-
-function copyGoogleAppsScriptCode() {
-    window.copyGoogleAppsScriptCode = copyGoogleAppsScriptCode;
-    const scriptCode = `// Google Apps Script Webhook (ET OPC Company - PIM Engineering)
-function doPost(e) {
-  try {
-    var data = JSON.parse(e.postData.contents);
-    var candidateName = data.candidateName || 'ผู้สมัคร';
-    var score = data.score || 0;
-    var recipient = data.recipientEmail || 'your-email@pim.ac.th';
-    var summary = data.summary || 'ผลการประเมินผ่านเกณฑ์มาตรฐาน';
-    var agentName = data.agentName || 'HR ET Specialist';
-    var dateStr = new Date().toLocaleString('th-TH');
-    
-    // ส่งอีเมลแจ้งเตือนอัตโนมัติผ่าน Gmail ของผู้ดูแลระบบ
-    MailApp.sendEmail({
-      to: recipient,
-      subject: '[ET OPC Company] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก: ' + candidateName + ' (คะแนน: ' + score + '/100)',
-      htmlBody: '<div style="font-family:Segoe UI, sans-serif; padding:20px; border:2px solid #8B0000; border-radius:14px; max-width:600px;">' +
-                '<h2 style="color:#8B0000; margin-top:0;">ET OPC Company — แจ้งเตือนผู้สมัครผ่านเกณฑ์</h2>' +
-                '<p><strong>ผู้สมัคร:</strong> ' + candidateName + '<br>' +
-                '<strong>ผู้ประเมิน:</strong> ' + agentName + ' (AI Agent)<br>' +
-                '<strong>วันที่ประเมิน:</strong> ' + dateStr + '<br>' +
-                '<strong>คะแนนความเหมาะสม:</strong> <span style="color:#059669; font-size:18px; font-weight:bold;">' + score + ' / 100 คะแนน</span></p>' +
-                '<hr style="border:none; border-top:1px solid #E2E8F0; margin:16px 0;">' +
-                '<div style="background:#F8FAFC; padding:14px; border-radius:10px; font-size:13.5px; line-height:1.6;">' +
-                summary.replace(/\n/g, '<br>') +
-                '</div>' +
-                '<br><small style="color:#64748B;">คณะวิศวกรรมศาสตร์และเทคโนโลยี (ET) — สถาบันการจัดการปัญญาภิวัฒน์ (PIM) • MR.ST</small>' +
-                '</div>'
-    });
-    
-    return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Email sent successfully!' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', error: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}`;
-
-    navigator.clipboard.writeText(scriptCode).then(() => {
-        showToast("📋 คัดลอกโค้ด Google Apps Script เรียบร้อยแล้ว นำไปวางใน script.google.com ได้ทันที", "success");
-    });
-}
-window.copyGoogleAppsScriptCode = copyGoogleAppsScriptCode;
-
-
-// --- GOOGLE APPS SCRIPT WEBHOOK & CANDIDATE PASSED EMAIL HELPERS ---
-window.testSendWebhookEmail = testSendWebhookEmail;
-window.testSendWebhookEmail = testSendWebhookEmail;
-async function testSendWebhookEmail(btnElem = null) {
-    const notifyEmail = (document.getElementById('adminNotifyEmail')?.value || localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'your-email@pim.ac.th').trim();
-    const webhookUrl = (document.getElementById('adminDriveWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
-
-    if (!notifyEmail) {
-        showToast("⚠️ กรุณาระบุอีเมลผู้รับแจ้งเตือนก่อนทดสอบ", "warning");
-        document.getElementById('adminNotifyEmail')?.focus();
-        return;
-    }
-
-    if (!webhookUrl) {
-        showToast("⚠️ กรุณาระบุ Google Apps Script Webhook URL", "warning");
-        document.getElementById('adminDriveWebhookUrl')?.focus();
-        return;
-    }
-
-    if (webhookUrl.includes('drive.google.com')) {
-        alert("⚠️ แจ้งเตือน: ลิงก์ที่กรอกเป็นลิงก์ Google Drive\n\nต้องนำ Web App URL ที่ได้จาก Deploy ใน script.google.com ที่ขึ้นต้นด้วย:\nhttps://script.google.com/macros/s/.../exec มาใส่ครับ");
-        return;
-    }
-
-    let origHtml = '🧪 ทดสอบการเชื่อมต่อ';
-    if (btnElem) {
-        origHtml = btnElem.innerHTML;
-        btnElem.disabled = true;
-        btnElem.textContent = '⏳ กำลังตรวจสอบการเชื่อมต่อ...';
-    }
-
-    try {
-        const payload = {
-            candidateName: 'นายทดสอบ ระบบดีเยี่ยม',
-            score: 95,
-            recipientEmail: notifyEmail,
-            agentName: 'HR ET Specialist (Test)',
-            summary: 'ทดสอบส่งอีเมลแจ้งเตือนอัตโนมัติจากระบบ ET OPC Company — ระบบพร้อมทำงาน 100%'
-        };
-
-        await fetch(webhookUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        showToast(`✅ ตรวจสอบการเชื่อมต่อ Webhook สำเร็จ! พร้อมส่งเข้า ${notifyEmail}`, "success");
-        if (btnElem) btnElem.textContent = `✅ ตรวจสอบการเชื่อมต่อสำเร็จ`;
-    } catch(err) {
-        console.error("Test email error:", err);
-        showToast("❌ เกิดข้อผิดพลาดในการเชื่อมต่อ Webhook: " + err.message, "error");
-        if (btnElem) btnElem.textContent = '🧪 ทดสอบการเชื่อมต่อ';
-    } finally {
-        setTimeout(() => {
-            if (btnElem) {
-                btnElem.disabled = false;
-                btnElem.innerHTML = origHtml;
-            }
-        }, 2500);
-    }
-}
-
+// --- GMAIL NOTIFICATION & EMAIL DISPATCH DISPATCHER ---
 window.sendCandidatePassedEmail = sendCandidatePassedEmail;
 async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
-    const notifyEmail = localStorage.getItem(STORAGE_PREFIX + 'notify_email') || '';
-    const webhookUrl = localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '';
-    const sendMode = localStorage.getItem(STORAGE_PREFIX + 'email_send_mode') || 'manual';
+    const notifyEmail = (localStorage.getItem(STORAGE_PREFIX + 'notify_email') || 'your-email@pim.ac.th').trim();
+    const webhookUrl = DEFAULT_CENTRAL_WEBHOOK_URL;
     const charName = currentCharacter ? currentCharacter.name : 'HR ET Specialist';
     const history = appUserData[currentUser]?.history[currentCharacter?.id] || [];
     const lastMsg = history.length > 0 ? history[history.length - 1].t : '';
 
     if (btnElem) {
         btnElem.disabled = true;
-        btnElem.textContent = '⏳ กำลังเตรียมส่งอีเมล...';
+        btnElem.innerHTML = '<span>⏳ กำลังส่งอีเมลเข้า Gmail...</span>';
     }
 
     let fileBase64 = null;
@@ -4457,13 +4555,14 @@ async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
         fileMimeType = pendingAttachedFile.mimeType;
     }
 
-    // Mode 1: Automated Webhook (if configured)
-    if (webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com') && (sendMode === 'auto' || isAuto)) {
+    // Try Central Webhook
+    if (webhookUrl && webhookUrl.startsWith('http') && !webhookUrl.includes('drive.google.com')) {
         try {
             const payload = {
                 candidateName: 'ผู้สมัครผ่านเกณฑ์ (CV Assessment)',
                 score: score,
-                recipientEmail: notifyEmail || 'your-email@pim.ac.th',
+                recipientEmail: notifyEmail,
+                senderName: (localStorage.getItem(STORAGE_PREFIX + 'sender_display_name') || 'ET OPC Company — แจ้งเตือนผู้สมัครผ่านเกณฑ์').trim(),
                 agentName: charName,
                 summary: lastMsg,
                 hasAttachment: !!fileBase64,
@@ -4479,18 +4578,18 @@ async function sendCandidatePassedEmail(score, btnElem = null, isAuto = false) {
                 body: JSON.stringify(payload)
             });
 
-            showToast(`✅ ส่งอีเมลแจ้งเตือนพร้อมแนบไฟล์ไปยัง ${notifyEmail} สำเร็จแล้ว!`, "success");
+            showToast(`✅ ส่งอีเมลแจ้งเตือนเข้า Gmail (${notifyEmail}) สำเร็จแล้ว!`, "success");
             if (btnElem) {
                 btnElem.disabled = false;
-                btnElem.textContent = `✅ ส่งเข้า Gmail (${notifyEmail}) แล้ว`;
+                btnElem.innerHTML = `<span>✅ ส่งเข้า Gmail (${escapeHtml(notifyEmail)}) เรียบร้อยแล้ว</span>`;
             }
             return;
         } catch (err) {
-            console.warn("Webhook send error:", err);
+            console.warn("Webhook send fallback to Gmail client:", err);
         }
     }
 
-    // Mode 2: 1-Click Direct Gmail Compose (Easy Mode - No Script Required!)
+    // Fallback: 1-Click Direct Gmail Web Compose
     const subject = `[ET OPC #TeamET] 🎉 ผู้สมัครผ่านเกณฑ์การคัดเลือก (คะแนน: ${score}/100)`;
     const bodyText = `รายงานผลการประเมินผู้สมัคร - ET OPC Company (Ver 3.0)
 --------------------------------------------------
@@ -4518,11 +4617,12 @@ ${lastMsg}
 
     if (btnElem) {
         btnElem.disabled = false;
-        btnElem.textContent = targetEmail ? `📧 ส่งเข้า Gmail (${targetEmail})` : `📧 เปิดส่งใน Gmail`;
+        btnElem.innerHTML = `<span>📧 ส่งเข้า Gmail (${escapeHtml(targetEmail)})</span>`;
     }
 }
 
-// --- RE-BUILT CANDIDATE HUB & RESUME REPOSITORY SYSTEM (VER 3.0 ENHANCED) ---
+
+// --- RE-BUILT CANDIDATE & DOCUMENT HUB REPOSITORY SYSTEM (VER 3.0 PRO) ---
 let currentHubFilter = 'all';
 
 function loadCandidateSubmissions() {
@@ -4658,7 +4758,7 @@ function renderCandidateQueueList() {
         return true;
     });
 
-        // Top Candidate Leaderboard Podium
+    // Top Candidate Leaderboard Podium
     const scoredList = appCandidateSubmissions.filter(c => c && typeof c.score === 'number').sort((a, b) => b.score - a.score);
     let leaderboardHtml = '';
 
@@ -4704,8 +4804,9 @@ function renderCandidateQueueList() {
     }
 
     list.innerHTML = leaderboardHtml;
+
     if (filtered.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:28px; color:var(--ink-faint); font-size:13px; background:var(--surface-2); border-radius:12px; border:1px dashed var(--line); margin:4px 0;">📄 ยังไม่มีเอกสารในหมวดหมู่นี้ (กด <strong>+ เพิ่มไฟล์</strong> หรือวางลิงก์ Google Drive ด้านบน)</div>';
+        list.innerHTML += '<div style="text-align:center; padding:28px; color:var(--ink-faint); font-size:13px; background:var(--surface-2); border-radius:12px; border:1px dashed var(--line); margin:4px 0;">📄 ยังไม่มีเอกสารในหมวดหมู่นี้ (กด <strong>+ เพิ่มไฟล์</strong> หรือวางลิงก์ Google Drive ด้านบน)</div>';
         return;
     }
 
@@ -4830,7 +4931,7 @@ function extractGoogleDriveInfo(url) {
 }
 
 window.importDriveLinkToHub = importDriveLinkToHub;
-async function importDriveLinkToHub() {
+async function importDriveLinkToHub(autoEvaluate = false) {
     const input = document.getElementById('hubDriveLinkInput');
     const rawInput = input ? input.value.trim() : '';
     if (!rawInput) {
@@ -4844,8 +4945,9 @@ async function importDriveLinkToHub() {
         return;
     }
 
-    const webhookUrl = (document.getElementById('adminDriveWebhookUrl')?.value || localStorage.getItem(STORAGE_PREFIX + 'drive_webhook_url') || '').trim();
+    const webhookUrl = DEFAULT_CENTRAL_WEBHOOK_URL;
     let addedCount = 0;
+    let firstAddedIdx = 0;
 
     for (let link of urls) {
         const { driveId, isFolder } = extractGoogleDriveInfo(link);
@@ -4911,7 +5013,18 @@ async function importDriveLinkToHub() {
     saveCandidateSubmissions();
     renderCandidateQueueList();
     if (input) input.value = '';
-    showToast(`📥 เพิ่มรายการจาก Google Drive (${addedCount} รายการ) เรียบร้อยแล้ว!`, "success");
+    
+    if (autoEvaluate && addedCount > 0) {
+        showToast("⚡ ดึงข้อมูลจาก Google Drive สำเร็จ กำลังส่งให้ AI ประเมินทันที...", "success");
+        evaluateSingleCandidateFromHub(0);
+    } else {
+        showToast(`📥 เพิ่มรายการจาก Google Drive (${addedCount} รายการ) เรียบร้อยแล้ว!`, "success");
+    }
+}
+
+window.importAndEvaluateDriveLink = importAndEvaluateDriveLink;
+function importAndEvaluateDriveLink() {
+    importDriveLinkToHub(true);
 }
 
 window.expandDriveFolderCandidates = expandDriveFolderCandidates;
